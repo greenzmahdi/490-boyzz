@@ -6,6 +6,8 @@
 // Load Wi-Fi library
 #include <WiFi.h>
 #include <FastLED.h>
+#include <Wire.h>
+
 
 // Replace with your network credentials
 const char* ssid = "REPLACE_WITH_YOUR_SSID";
@@ -20,6 +22,7 @@ String header;
 // Auxiliar variables to store the current output state
 String output26State = "off";
 String output27State = "off";
+String encoderposition = "0";
 
 // Assign output variables to GPIO pins
 const int output26 = 26;
@@ -31,6 +34,63 @@ const int LEDColorDisconnected[] = { 0, 0, 0 };
 
 const int LEDNum = 12;
 CRGB LEDs[LEDNum];
+
+const int PIN_A1 = 33;
+const int PIN_A2 = 32;
+const int PIN_A3 = 35;
+const int PIN_A4 = 34;
+const int PIN_A5 = 18;
+const int PIN_A6 = 27;
+const int PIN_B1 = 26;
+const int PIN_B2 = 4;
+const int PIN_B3 = 17;
+const int PIN_B4 = 22;
+const int PIN_B5 = 23;
+const int PIN_B6 = 14;
+
+/// Encoder variables ///
+volatile int encoderPos = 0;  // This variable will increase or decrease based on the encoder's rotation
+unsigned long lastEncoderRead = 0;
+
+int lastEncoded = 0;  // This will store the last state of the encoder
+
+//// I2C FUNCTIONS ////
+
+bool I2CReadReg(int address, int size, int idx) {
+  byte regs = I2CReadRegs(address, size);
+
+  return bitRead(regs, idx);
+}
+
+byte I2CReadRegs(int address, int size) {
+  Wire.beginTransmission(address);
+  Wire.write(0x00);
+  Wire.endTransmission();
+
+  Wire.requestFrom(address, size);
+
+  return Wire.read();
+}
+
+
+void encoderISR() {
+  unsigned long currentTime = millis();
+  if (currentTime - lastEncoderRead < 6) {  // original: 5 milliseconds debounce time
+    return;
+  }
+  lastEncoderRead = currentTime;
+
+  int newA = digitalRead(PIN_A1);
+  int newB = digitalRead(PIN_B1);
+
+  int encoded = (newA << 1) | newB;
+  int sum = (lastEncoded << 2) | encoded;
+
+  if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011) encoderPos++;
+  if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) encoderPos--;
+
+  lastEncoded = encoded;
+}
 
 //// LED FUNCTIONS ////
 
@@ -64,7 +124,7 @@ void LEDInit() {
 // Current time
 unsigned long currentTime = millis();
 // Previous time
-unsigned long previousTime = 0; 
+unsigned long previousTime = 0;
 // Define timeout time in milliseconds (example: 2000ms = 2s)
 const long timeoutTime = 2000;
 
@@ -73,18 +133,23 @@ void setup() {
   // Initialize the output variables as outputs
   // pinMode(output26, OUTPUT);
   // pinMode(output27, OUTPUT);
-    pinMode(PIN_LED, OUTPUT);
+  pinMode(PIN_LED, OUTPUT);
   // Set outputs to LOW
   // digitalWrite(output26, LOW);
   // digitalWrite(output27, LOW);
-    digitalWrite(PIN_LED, LOW);
+  digitalWrite(PIN_LED, LOW);
 
+  // set up the pins
+  pinMode(PIN_A1, INPUT);
+  pinMode(PIN_B1, INPUT);
 
-    
-    FastLED.setBrightness(24);
+  attachInterrupt(digitalPinToInterrupt(PIN_A1), encoderISR, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(PIN_B1), encoderISR, CHANGE);
 
-    // LEDInit();
-      for (int i = 0; i < LEDNum; i++)
+  FastLED.setBrightness(24);
+
+  // LEDInit();
+  for (int i = 0; i < LEDNum; i++)
     LEDSet(i, LEDColorConnected);
 
   // LEDShow();
@@ -105,21 +170,21 @@ void setup() {
   server.begin();
 }
 
-void loop(){
-  WiFiClient client = server.available();   // Listen for incoming clients
+void loop() {
+  WiFiClient client = server.available();  // Listen for incoming clients
 
-  if (client) {                             // If a new client connects,
+  if (client) {  // If a new client connects,
     currentTime = millis();
     previousTime = currentTime;
-    Serial.println("New Client.");          // print a message out in the serial port
-    String currentLine = "";                // make a String to hold incoming data from the client
+    Serial.println("New Client.");                                             // print a message out in the serial port
+    String currentLine = "";                                                   // make a String to hold incoming data from the client
     while (client.connected() && currentTime - previousTime <= timeoutTime) {  // loop while the client's connected
       currentTime = millis();
-      if (client.available()) {             // if there's bytes to read from the client,
-        char c = client.read();             // read a byte, then
-        Serial.write(c);                    // print it out the serial monitor
+      if (client.available()) {  // if there's bytes to read from the client,
+        char c = client.read();  // read a byte, then
+        Serial.write(c);         // print it out the serial monitor
         header += c;
-        if (c == '\n') {                    // if the byte is a newline character
+        if (c == '\n') {  // if the byte is a newline character
           // if the current line is blank, you got two newline characters in a row.
           // that's the end of the client HTTP request, so send a response:
           if (currentLine.length() == 0) {
@@ -129,16 +194,34 @@ void loop(){
             client.println("Content-type:text/html");
             client.println("Connection: close");
             client.println();
-            
+
             // turns the GPIOs on and off
             if (header.indexOf("GET /26/on") >= 0) {
               Serial.println("GPIO 26 on");
               output26State = "on";
               digitalWrite(output26, HIGH);
+              //===============================================
+              FastLED.setBrightness(24);
+
+              LEDInit();
+              for (int i = 0; i < LEDNum; i++)
+                LEDSet(i, LEDColorConnected);
+
+              LEDShow();
+              //===============================================
             } else if (header.indexOf("GET /26/off") >= 0) {
               Serial.println("GPIO 26 off");
               output26State = "off";
               digitalWrite(output26, LOW);
+              //===============================================
+              FastLED.setBrightness(24);
+
+              LEDInit();
+              for (int i = 0; i < LEDNum; i++)
+                LEDSet(i, LEDColorDisconnected);
+
+              LEDShow();
+              //===============================================
             } else if (header.indexOf("GET /27/on") >= 0) {
               Serial.println("GPIO 27 on");
               output27State = "on";
@@ -148,45 +231,50 @@ void loop(){
               output27State = "off";
               digitalWrite(output27, LOW);
             }
-            
+
             // Display the HTML web page
             client.println("<!DOCTYPE html><html>");
             client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
             client.println("<link rel=\"icon\" href=\"data:,\">");
-            // CSS to style the on/off buttons 
+            // CSS to style the on/off buttons
             // Feel free to change the background-color and font-size attributes to fit your preferences
             client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}");
             client.println(".button { background-color: #4CAF50; border: none; color: white; padding: 16px 40px;");
             client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}");
             client.println(".button2 {background-color: #555555;}</style></head>");
-            
+
             // Web Page Heading
             client.println("<body><h1>ESP32 Web Server</h1>");
-            
-            // Display current state, and ON/OFF buttons for GPIO 26  
+
+            // Display current state, and ON/OFF buttons for GPIO 26
             client.println("<p>GPIO 26 - State " + output26State + "</p>");
-            // If the output26State is off, it displays the ON button       
-            if (output26State=="off") {
+            // If the output26State is off, it displays the ON button
+            if (output26State == "off") {
               client.println("<p><a href=\"/26/on\"><button class=\"button\">ON</button></a></p>");
             } else {
               client.println("<p><a href=\"/26/off\"><button class=\"button button2\">OFF</button></a></p>");
-            } 
-               
-            // Display current state, and ON/OFF buttons for GPIO 27  
+            }
+
+            // Display current state, and ON/OFF buttons for GPIO 27
             client.println("<p>GPIO 27 - State " + output27State + "</p>");
-            // If the output27State is off, it displays the ON button       
-            if (output27State=="off") {
+            // If the output27State is off, it displays the ON button
+            if (output27State == "off") {
               client.println("<p><a href=\"/27/on\"><button class=\"button\">ON</button></a></p>");
             } else {
               client.println("<p><a href=\"/27/off\"><button class=\"button button2\">OFF</button></a></p>");
             }
+
+            client.println("<p>Encoder (X): " + String(encoderPos) + "</p>");
+
+
+
             client.println("</body></html>");
-            
+
             // The HTTP response ends with another blank line
             client.println();
             // Break out of the while loop
             break;
-          } else { // if you got a newline, then clear currentLine
+          } else {  // if you got a newline, then clear currentLine
             currentLine = "";
           }
         } else if (c != '\r') {  // if you got anything else but a carriage return character,
