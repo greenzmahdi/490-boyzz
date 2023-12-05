@@ -10,8 +10,8 @@
 
 
 // Replace with your network credentials
-const char* ssid = "REPLACE_WITH_YOUR_SSID";
-const char* password = "REPLACE_WITH_YOUR_PASSWORD";
+const char* ssid = "[]";
+const char* password = "";
 
 // Set web server port number to 80
 WiFiServer server(80);
@@ -236,39 +236,42 @@ void loop() {
             client.println("<!DOCTYPE html><html>");
             client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
             client.println("<link rel=\"icon\" href=\"data:,\">");
-            // CSS to style the on/off buttons
-            // Feel free to change the background-color and font-size attributes to fit your preferences
-            client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}");
-            client.println(".button { background-color: #4CAF50; border: none; color: white; padding: 16px 40px;");
-            client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}");
-            client.println(".button2 {background-color: #555555;}</style></head>");
+            // Bootstrap CSS
+            client.println("<link rel=\"stylesheet\" href=\"https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css\">");
+            client.println("<style>");
+            client.println("body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; }");
+            client.println(".button { background-color: #007bff; border: none; color: white; padding: 12px 24px; text-decoration: none; font-size: 20px; margin: 10px; cursor: pointer; border-radius: 5px; transition: background-color 0.3s; }");
+            client.println(".button:hover { background-color: #0056b3; }");
+            client.println(".status { font-size: 24px; margin-top: 20px; }");
+            client.println("</style></head>");
 
-            // Web Page Heading
-            client.println("<body><h1>ESP32 Web Server</h1>");
+            client.println("<body>");
+            client.println("<h1>ESP32 Web Server</h1>");
 
             // Display current state, and ON/OFF buttons for GPIO 26
-            client.println("<p>GPIO 12 - State " + output12State + "</p>");
-            // If the output26State is off, it displays the ON button
+            client.println("<div class=\"status\">GPIO 12 - State <span id=\"gpio12State\">" + output12State + "</span></div>");
             if (output12State == "off") {
               client.println("<p><a href=\"/12/on\"><button class=\"button\">ON</button></a></p>");
             } else {
-              client.println("<p><a href=\"/12/off\"><button class=\"button button2\">OFF</button></a></p>");
+              client.println("<p><a href=\"/12/off\"><button class=\"button\">OFF</button></a></p>");
             }
 
             // Display current state, and ON/OFF buttons for GPIO 27
-            client.println("<p>GPIO 27 - State " + output27State + "</p>");
-            // If the output27State is off, it displays the ON button
-            if (output27State == "off") {
-              client.println("<p><a href=\"/27/on\"><button class=\"button\">ON</button></a></p>");
-            } else {
-              client.println("<p><a href=\"/27/off\"><button class=\"button button2\">OFF</button></a></p>");
-            }
+            // Uncomment and modify if needed
+            // client.println("<div class=\"status\">GPIO 27 - State <span id=\"gpio27State\">" + output27State + "</span></div>");
+            // if (output27State == "off") {
+            //     client.println("<p><a href=\"/27/on\"><button class=\"button\">ON</button></a></p>");
+            // } else {
+            //     client.println("<p><a href=\"/27/off\"><button class=\"button\">OFF</button></a></p>");
+            // }
 
-            client.println("<p>Encoder (X): " + String(encoderPos) + "</p>");
-
-
-
+            client.println("<div class=\"status\">Encoder Position: <span id=\"encoderPosition\">" + String(encoderPos) + "</span></div>");
+            client.println("<script src=\"https://code.jquery.com/jquery-3.3.1.slim.min.js\"></script>");
+            client.println("<script src=\"https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js\"></script>");
+            client.println("<script src=\"https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js\"></script>");
+            // Add JavaScript here to dynamically update encoder position
             client.println("</body></html>");
+
 
             // The HTTP response ends with another blank line
             client.println();
