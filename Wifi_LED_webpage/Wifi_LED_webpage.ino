@@ -8,10 +8,15 @@
 #include <FastLED.h>
 #include <Wire.h>
 
+// extra pw
+// gabygon19
 
-// Replace with your network credentials
-const char* ssid = "[]";
-const char* password = "";
+// const char* ssid = "gabyshome";
+// const char* password = "gabygon19";
+
+// // Replace with your network credentials
+const char* ssid = "[SOSA_HOME]";
+const char* password = "armando1!";
 
 // Set web server port number to 80
 WiFiServer server(80);
