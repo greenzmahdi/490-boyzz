@@ -225,7 +225,7 @@ void setup() {
 
   LEDShow();
 
-  LCDTextDraw(10, 6, "Testing Platform.IO", 1, 1, 0);
+  LCDTextDraw(10, 6, "TTT Platform.IO", 1, 1, 0);
   delay(1000);
   // delay(2000);
   // MenuPrint();
