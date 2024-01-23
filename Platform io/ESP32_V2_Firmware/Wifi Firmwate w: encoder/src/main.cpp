@@ -10,10 +10,10 @@
 #include <Wire.h>
 #include "esp_wpa2.h" //wpa2 library for connections to Enterprise networks
 
-#define EAP_ANONYMOUS_IDENTITY "gabriel.sosa.191@my.csun.edu" //anonymous@example.com, or you can use also nickname@example.com
-#define EAP_IDENTITY "gabriel.sosa.191@my.csun.edu" //nickname@example.com, at some organizations should work nickname only without realm, but it is not recommended
-#define EAP_PASSWORD "TeslaMinnieLover123!DD" //password for eduroam account
-#define EAP_USERNAME "gabriel.sosa.191@my.csun.edu" // the Username is the same as the Identity in most eduroam networks.
+#define EAP_ANONYMOUS_IDENTITY "ADD_YOUR_EMAIL" //anonymous@example.com, or you can use also nickname@example.com
+#define EAP_IDENTITY "ADD_YOUR_EMAIL" //nickname@example.com, at some organizations should work nickname only without realm, but it is not recommended
+#define EAP_PASSWORD "ADD_YOUR_PASSWORD" //password for eduroam account
+#define EAP_USERNAME "ADD_YOUR_EMAIL" // the Username is the same as the Identity in most eduroam networks.
 
 const char* ssid = "eduroam"; // eduroam SSID
 
