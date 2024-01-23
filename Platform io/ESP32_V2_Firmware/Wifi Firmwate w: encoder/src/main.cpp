@@ -8,11 +8,18 @@
 #include <WiFi.h>
 #include <FastLED.h>
 #include <Wire.h>
+#include "esp_wpa2.h" //wpa2 library for connections to Enterprise networks
 
+#define EAP_ANONYMOUS_IDENTITY "gabriel.sosa.191@my.csun.edu" //anonymous@example.com, or you can use also nickname@example.com
+#define EAP_IDENTITY "gabriel.sosa.191@my.csun.edu" //nickname@example.com, at some organizations should work nickname only without realm, but it is not recommended
+#define EAP_PASSWORD "TeslaMinnieLover123!DD" //password for eduroam account
+#define EAP_USERNAME "gabriel.sosa.191@my.csun.edu" // the Username is the same as the Identity in most eduroam networks.
+
+const char* ssid = "eduroam"; // eduroam SSID
 
 // // Replace with your network credentials
-const char* ssid = "YOUR_WIFI_NAME";
-const char* password = "YOUR_WIFI_PASSWORD";
+// const char* ssid = "YOUR_WIFI_NAME";
+// const char* password = "YOUR_WIFI_PASSWORD";
 
 // Set web server port number to 80
 WiFiServer server(80);
@@ -162,7 +169,8 @@ void setup() {
   // Connect to Wi-Fi network with SSID and password
   Serial.print("Connecting to ");
   Serial.println(ssid);
-  WiFi.begin(ssid, password);
+  // WiFi.begin(ssid, EAP_PASSWORD);
+  WiFi.begin(ssid, WPA2_AUTH_PEAP, EAP_IDENTITY, EAP_USERNAME, EAP_PASSWORD); // without CERTIFICATE, RADIUS server EXCEPTION "for old devices" required
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");

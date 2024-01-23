@@ -294,7 +294,7 @@ void loop() {
   MotorStatesBPrev[1] = stateB2;
   MotorStatesBPrev[2] = stateB3;
   MotorStatesBPrev[3] = stateB4;
-  MotorStatesBPrev[4] = stateB5;
+  MotorStatesBPrev[4] = stateB5; 
   MotorStatesBPrev[5] = stateB6;
 
   MotorStatesZPrev[0] = stateZ1;
