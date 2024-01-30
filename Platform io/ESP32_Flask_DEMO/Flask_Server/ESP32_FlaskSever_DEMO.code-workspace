@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "../ESP32_FlaskSever_DEMO"
+		},
+		{
+			"path": "."
+		}
+	],
+	"settings": {}
+}

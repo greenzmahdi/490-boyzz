@@ -21,10 +21,10 @@
 
 //Identity for user with password related to his realm (organization)
 //Available option of anonymous identity for federation of RADIUS servers or 1st Domain RADIUS servers
-#define EAP_ANONYMOUS_IDENTITY "ADD_YOU_EMAIL"  //anonymous@example.com, or you can use also nickname@example.com
-#define EAP_IDENTITY "ADD_YOU_EMAIL"            //nickname@example.com, at some organizations should work nickname only without realm, but it is not recommended
-#define EAP_PASSWORD "ADD_YOUR_PASSWORD"                  //password for eduroam account
-#define EAP_USERNAME "ADD_YOU_EMAIL"            // the Username is the same as the Identity in most eduroam networks.
+#define EAP_ANONYMOUS_IDENTITY "email"  //anonymous@example.com, or you can use also nickname@example.com
+#define EAP_IDENTITY "email"            //nickname@example.com, at some organizations should work nickname only without realm, but it is not recommended
+#define EAP_PASSWORD "password"                  //password for eduroam account
+#define EAP_USERNAME "email"            // the Username is the same as the Identity in most eduroam networks.
 
 // Set web server port number to 80
 WiFiServer server(80);
@@ -356,7 +356,7 @@ void loop() {
             currentLine = "";
           }
         } else if (c != '\r') {  // if you got anything else but a carriage return character,
-          currentLine += c;      // add it to the end of the currentLine
+          currentLine += c;      // add it to the end of the currentLisne
         }
       }
     }

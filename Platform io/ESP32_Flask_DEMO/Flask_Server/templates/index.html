@@ -1,67 +1,22 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="{{url_for('static', filename='/favicon.ico')}}" />
 
-    <title>ESP32 DRO Display</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
-      }
-      .dro-container {
-        text-align: center;
-        background: #000;
-        color: #0f0;
-        padding: 20px;
-        border-radius: 10px;
-      }
-      .axis {
-        font-size: 2em;
-        margin: 10px 0;
-      }
-      .axis label {
-        font-size: 0.5em;
-        margin-right: 10px;
-      }
-      .axis-value {
-        font-size: 1.5em;
-      }
-      .unit {
-        font-size: 0.5em;
-        margin-left: 5px;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="dro-container">
-      <h1>ESP32 DRO</h1>
-      <div class="axis">
-        <label>X:</label>
-        <span id="xValue" class="axis-value">0.000</span>
-        <span class="unit">inch</span>
-      </div>
-      <div class="axis">
-        <label>Y:</label>
-        <span id="yValue" class="axis-value">0.000</span>
-        <span class="unit">inch</span>
-      </div>
-      <div class="axis">
-        <label>Z:</label>
-        <span id="zValue" class="axis-value">0.000</span>
-        <span class="unit">inch</span>
-      </div>
-      <!-- Add additional controls and indicators here -->
-    </div>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LED Control</title>
+    <!-- Add CSS styles if needed -->
+</head>
+<body>
+    <h1>LED Control Panel</h1>
+    <button onclick="controlLED('on')">Turn LED On</button>
+    <button onclick="controlLED('off')">Turn LED Off</button>
 
     <script>
-      // JavaScript will go here
+        function controlLED(action) {
+            fetch('/led/' + action)
+            .then(response => response.json())
+            .then(data => console.log(data.status));
+        }
     </script>
-  </body>
+</body>
 </html>
