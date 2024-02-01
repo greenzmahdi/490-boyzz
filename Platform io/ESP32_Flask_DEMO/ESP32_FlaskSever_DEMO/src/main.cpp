@@ -4,8 +4,8 @@
 #include <Wire.h>
 #include <iostream>
 
-const char *ssid = "WIFI";
-const char *password = "PASSWORD";
+const char *ssid = "";
+const char *password = "";
 
 // LED const
 const int PIN_LED = 12;
@@ -56,16 +56,6 @@ void setup()
   delay(10);
   FastLED.setBrightness(24);
 
-  // LEDInit();
-  // // Code to turn on LED
-  // for (int i = 0; i < LEDNum; i++)
-  //   LEDSet(i, LEDColorConnected);
-  // LEDShow();
-
-  // // LEDInit();
-  // for (int i = 0; i < LEDNum; i++)
-  //   LEDSet(i, LEDColorConnected);
-
   Serial.println('\n');
 
   WiFi.begin(ssid, password);
@@ -93,31 +83,27 @@ void loop()
   if (WiFi.status() == WL_CONNECTED)
   {
     HTTPClient http;
-    http.begin("http://192.168.1.17:5000/led/off"); // Use the IP address of the Flask server 192.168.1.17:5000
+    http.begin("http://192.168.1.17:5000/status"); // Change Flask server URL to your local wifi ip adress
     int httpCode = http.GET();
-    // Send the request
-    Serial.println("HTTP Request sent.");
 
     if (httpCode > 0)
     {
       String payload = http.getString();
-      Serial.print("Received payload: ");
-      Serial.println(payload);
 
-      LEDInit();
-      if (payload.indexOf("LED turned on") != -1)
+      if (payload == "purple")
       {
-        Serial.println("Turning LEDs ON.");
+        LEDInit();
         for (int i = 0; i < LEDNum; i++)
           LEDSet(i, LEDColorPurple);
+        LEDShow();
       }
-      else if (payload.indexOf("LED turned off") != -1)
+      else if (payload == "turquoise")
       {
-        Serial.println("Turning LEDs OFF.");
+        LEDInit();
         for (int i = 0; i < LEDNum; i++)
           LEDSet(i, LEDColorTurqoise);
+        LEDShow();
       }
-      LEDShow();
     }
     else
     {
