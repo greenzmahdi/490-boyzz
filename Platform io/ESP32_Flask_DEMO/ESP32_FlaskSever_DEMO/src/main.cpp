@@ -89,21 +89,20 @@ void loop()
     if (httpCode > 0)
     {
       String payload = http.getString();
-
+      LEDInit();
       if (payload == "purple")
       {
-        LEDInit();
+
         for (int i = 0; i < LEDNum; i++)
           LEDSet(i, LEDColorPurple);
-        LEDShow();
       }
       else if (payload == "turquoise")
       {
-        LEDInit();
+
         for (int i = 0; i < LEDNum; i++)
           LEDSet(i, LEDColorTurqoise);
-        LEDShow();
       }
+      LEDShow();
     }
     else
     {
@@ -113,5 +112,4 @@ void loop()
 
     http.end(); // Close connection
   }
-  delay(10000); // Wait for 10 seconds
 }
