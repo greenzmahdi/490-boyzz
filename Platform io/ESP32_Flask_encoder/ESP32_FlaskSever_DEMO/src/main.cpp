@@ -1,61 +1,26 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <FastLED.h>
-#include <Wire.h>
+// #include <Wire.h>
 #include <iostream>
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_GFX.h>
 
-const char *ssid = "ADD_YOUR_WIFI";
-const char *password = "ADD_YOUR_PASSWORD";
+// file imports
+#include "pin_setup.h"
+#include "led_setup.h"
 
-// LED const
-const int PIN_LED = 12;
-const int LEDNum = 12;
-const int LEDColorConnected[] = {204, 102, 0}; // change the color of the LED light A
-const int LEDColorDisconnected[] = {0, 0, 0};
+// Wifi credentials
+const char *ssid = "[SOSA_HOME]";
+const char *password = "armando1!";
 
-// Test (on/off) colors
-const int LEDColorPurple[] = {128, 0, 128};
-const int LEDColorTurqoise[] = {83, 195, 189};
-const int LEDColorGreen[] = {0, 255, 0};
+// Define LED colors as global constants
+const int LEDColorDisconnected[3] = {0, 0, 0};
+const int LEDColorPurple[3] = {128, 0, 128};
+const int LEDColorTurquoise[3] = {83, 195, 189};
 
-CRGB LEDs[LEDNum];
 
-//// LED FUNCTIONS ////
-
-void LEDSet(const int idx, const int colorR, const int colorG, const int colorB)
-{
-  if ((idx < 0) || (idx >= LEDNum))
-    return;
-  if ((colorR < 0) || (colorR >= 256))
-    return;
-  if ((colorG < 0) || (colorG >= 256))
-    return;
-  if ((colorB < 0) || (colorB >= 256))
-    return;
-
-  LEDs[idx] = CRGB(colorR, colorG, colorB);
-}
-
-void LEDSet(const int idx, const int *color)
-{
-  LEDSet(idx, color[0], color[1], color[2]);
-}
-
-void LEDShow()
-{
-  FastLED.show();
-}
-
-void LEDInit()
-{
-  FastLED.addLeds<WS2812, PIN_LED, GRB>(LEDs, LEDNum);
-}
-
-// OLED const
-const int PIN_I2C_SCL = 16;
-const int PIN_I2C_SDA = 13;
+// OLED var const
 const int RefreshDelay = 5;
 
 const char *MenuItems[] = {"Connection 1 (X)", "Connection 2 (Y)", "Connection 3", "Connection 4", "Connection 5", "Connection 6"};
@@ -163,20 +128,6 @@ const int IdxZ4 = 2;
 const int IdxZ5 = 1;
 const int IdxZ6 = 0;
 
-// PIN setup
-const int PIN_A1 = 33;
-const int PIN_A2 = 32;
-const int PIN_A3 = 35;
-const int PIN_A4 = 34;
-const int PIN_A5 = 18;
-const int PIN_A6 = 27;
-const int PIN_B1 = 26;
-const int PIN_B2 = 4;
-const int PIN_B3 = 17;
-const int PIN_B4 = 22;
-const int PIN_B5 = 23;
-const int PIN_B6 = 14;
-
 // Encoder variables
 volatile int encoderPos = 0; // This variable will increase or decrease based on the encoder's rotation
 unsigned long lastEncoderRead = 0;
@@ -211,29 +162,16 @@ void setup()
 {
   Serial.begin(115200);
   delay(10);
+  // PIN SETUP
+  setUpPins();
+  
 
   LEDInit();
-  LEDShow();
+  
   for (int i = 0; i < LEDNum; i++)
     LEDSet(i, LEDColorDisconnected);
 
-  // Setting PINs
-  pinMode(PIN_I2C_SCL, OUTPUT);
-  pinMode(PIN_I2C_SDA, OUTPUT);
-
-  pinMode(PIN_LED, OUTPUT);
-  pinMode(PIN_A1, INPUT);
-  pinMode(PIN_A2, INPUT);
-  pinMode(PIN_A3, INPUT);
-  pinMode(PIN_A4, INPUT);
-  pinMode(PIN_A5, INPUT);
-  pinMode(PIN_A6, INPUT);
-  pinMode(PIN_B1, INPUT);
-  pinMode(PIN_B2, INPUT);
-  pinMode(PIN_B3, INPUT);
-  pinMode(PIN_B4, INPUT);
-  pinMode(PIN_B5, INPUT);
-  pinMode(PIN_B6, INPUT);
+  LEDShow();
 
   // Init OLED
   Wire.setPins(PIN_I2C_SDA, PIN_I2C_SCL);
@@ -273,21 +211,28 @@ void setup()
   Serial.println(WiFi.localIP());
 
   // Test screen display when connected
-  for (int i = 0; i < LEDNum; i++)
-    LEDSet(i, LEDColorGreen);
 
-  LCDTextDraw(10, 6, "ESP32 DRO", 1, 1, 0);
-  delay(3000);
+  LCDTextDraw(12, 6, "COMP491 ESP32 DRO", 1, 1, 0);
+  // delay(3000);
 }
 
 void loop()
 {
-  LCDRectFill(70, 54, 20, 8, BLACK); // Adjust the x, y, width, and height as needed
+
+  // I need to find out why this part of the code is needed for my encoder to displa teh correct data
+  LCDRectFill(10, 20, 20, 8, BLACK); // Adjust the x, y, width, and height as needed
+  FastLED.setBrightness(14);
 
   // Display the encoder position on the LCD
   char buffer[10];
-  sprintf(buffer, "%d", encoderPos);
-  LCDTextDraw(70, 54, buffer, 1, WHITE, BLACK);
+  sprintf(buffer, "x: %d", encoderPos);
+  LCDTextDraw(10, 20, buffer, 1, WHITE, BLACK);
+
+  // sprintf(buffer, "y: %d", encoderPos);
+  // LCDTextDraw(10, 35, buffer, 1, WHITE, BLACK);
+
+  // sprintf(buffer, "z: %d", encoderPos);
+  // LCDTextDraw(10, 50, buffer, 1, WHITE, BLACK);
 
   delayMicroseconds(RefreshDelay);
   if (WiFi.status() == WL_CONNECTED)
@@ -310,7 +255,7 @@ void loop()
       {
 
         for (int i = 0; i < LEDNum; i++)
-          LEDSet(i, LEDColorTurqoise);
+          LEDSet(i, LEDColorTurquoise);
       }
       LEDShow();
     }
