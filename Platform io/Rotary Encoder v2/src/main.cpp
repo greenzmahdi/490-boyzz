@@ -25,10 +25,10 @@ const int PIN_B6 = 14;
 
 const int RefreshDelay = 5;
 const int LEDNum = 12;
-const int LEDColorDisconnected[] = { 0, 0, 0 };
-const int LEDColorConnectedA[] = { 204, 102, 0 };  // change the color of the LED light A
-const int LEDColorConnectedB[] = { 0, 204, 0 };    // change the color of the LED light B
-const char* MenuItems[] = { "Connection 1 (X)", "Connection 2 (Y)", "Connection 3", "Connection 4", "Connection 5", "Connection 6" };
+const int LEDColorDisconnected[] = {0, 0, 0};
+const int LEDColorConnectedA[] = {204, 102, 0}; // change the color of the LED light A
+const int LEDColorConnectedB[] = {0, 204, 0};   // change the color of the LED light B
+const char *MenuItems[] = {"Connection 1 (X)", "Connection 2 (Y)", "Connection 3", "Connection 4", "Connection 5", "Connection 6"};
 
 const int IdxZ1 = 5;
 const int IdxZ2 = 4;
@@ -38,24 +38,25 @@ const int IdxZ5 = 1;
 const int IdxZ6 = 0;
 
 // Encoder variables
-volatile int encoderPos = 0;  // This variable will increase or decrease based on the encoder's rotation
+volatile int encoderPos = 0; // This variable will increase or decrease based on the encoder's rotation
 unsigned long lastEncoderRead = 0;
 
-int lastEncoded = 0;  // This will store the last state of the encoder
+int lastEncoded = 0; // This will store the last state of the encoder
 
 // DO NOT EDIT
 
 CRGB LEDs[LEDNum];
 Adafruit_SSD1306 LCD(128, 64, &Wire);
-bool MotorStatesAPrev[] = { false, false, false, false, false, false };
-bool MotorStatesBPrev[] = { false, false, false, false, false, false };
-bool MotorStatesZPrev[] = { false, false, false, false, false, false };
-bool ButtonStatesPrev[] = { false, false, false, false, false };
+bool MotorStatesAPrev[] = {false, false, false, false, false, false};
+bool MotorStatesBPrev[] = {false, false, false, false, false, false};
+bool MotorStatesZPrev[] = {false, false, false, false, false, false};
+bool ButtonStatesPrev[] = {false, false, false, false, false};
 int MotorChannelSelected = 0;
 int MotorChannelWatched = -1;
 
 //// LED FUNCTIONS ////
-void LEDSet(const int idx, const int colorR, const int colorG, const int colorB) {
+void LEDSet(const int idx, const int colorR, const int colorG, const int colorB)
+{
   if ((idx < 0) && (idx >= LEDNum))
     return;
   if ((colorR < 0) && (colorR >= 256))
@@ -68,26 +69,30 @@ void LEDSet(const int idx, const int colorR, const int colorG, const int colorB)
   LEDs[idx] = CRGB(colorR, colorG, colorB);
 }
 
-void LEDSet(const int idx, const int* color) {
+void LEDSet(const int idx, const int *color)
+{
   LEDSet(idx, color[0], color[1], color[2]);
 }
 
-
-void LEDShow() {
+void LEDShow()
+{
   FastLED.show();
 }
 
-void LEDInit() {
+void LEDInit()
+{
   FastLED.addLeds<WS2812, PIN_LED, GRB>(LEDs, LEDNum);
 }
 
 //// LCD FUNCTIONS ////
 
-void LCDRectFill(int x, int y, int w, int h, int color) {
+void LCDRectFill(int x, int y, int w, int h, int color)
+{
   LCD.fillRect(x, y, w, h, color);
 }
 
-void LCDTextDraw(int x, int y, const char* text, byte size, int colorFont, int colorBG) {
+void LCDTextDraw(int x, int y, const char *text, byte size, int colorFont, int colorBG)
+{
   LCD.setCursor(x, y);
   LCD.setTextSize(size);
   LCD.setTextColor(colorFont, colorBG);
@@ -95,19 +100,21 @@ void LCDTextDraw(int x, int y, const char* text, byte size, int colorFont, int c
   LCD.display();
 }
 
-void LCDScreenClear() {
+void LCDScreenClear()
+{
   LCD.clearDisplay();
   LCD.display();
   LCD.setTextColor(WHITE, BLACK);
 }
 
-void LCDInit() {
+void LCDInit()
+{
   LCD.begin(SSD1306_SWITCHCAPVCC, 0x3C);
 }
 
-
 //// I2C FUNCTIONS ////
-byte I2CReadRegs(int address, int size) {
+byte I2CReadRegs(int address, int size)
+{
   Wire.beginTransmission(address);
   Wire.write(0x00);
   Wire.endTransmission();
@@ -117,17 +124,17 @@ byte I2CReadRegs(int address, int size) {
   return Wire.read();
 }
 
-bool I2CReadReg(int address, int size, int idx) {
+bool I2CReadReg(int address, int size, int idx)
+{
   byte regs = I2CReadRegs(address, size);
 
   return bitRead(regs, idx);
 }
 
-
-
 //// BUTTON FUNCTIONS ////
 
-bool ButtonRead(int idx) {
+bool ButtonRead(int idx)
+{
   // 0 - left
   // 1 - center
   // 2 - up
@@ -140,32 +147,36 @@ bool ButtonRead(int idx) {
   return !I2CReadReg(0x20, 1, idx);
 }
 
-bool ButtonLeftPressed() {
+bool ButtonLeftPressed()
+{
   return ButtonRead(0);
 }
 
-bool ButtonCenterPressed() {
+bool ButtonCenterPressed()
+{
   return ButtonRead(1);
 }
 
-bool ButtonUpPressed() {
+bool ButtonUpPressed()
+{
   return ButtonRead(2);
 }
 
-bool ButtonDownPressed() {
+bool ButtonDownPressed()
+{
   return ButtonRead(3);
 }
 
-bool ButtonRightPressed() {
+bool ButtonRightPressed()
+{
   return ButtonRead(4);
 }
 
-
-
-
-void encoderISR() {
+void encoderISR()
+{
   unsigned long currentTime = millis();
-  if (currentTime - lastEncoderRead < 6) {  // original: 5 milliseconds debounce time
+  if (currentTime - lastEncoderRead < 6)
+  { // original: 5 milliseconds debounce time
     return;
   }
   lastEncoderRead = currentTime;
@@ -176,16 +187,18 @@ void encoderISR() {
   int encoded = (newA << 1) | newB;
   int sum = (lastEncoded << 2) | encoded;
 
-  if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011) encoderPos++;
-  if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) encoderPos--;
+  if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011)
+    encoderPos++;
+  if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000)
+    encoderPos--;
 
   lastEncoded = encoded;
 }
 
 
 
-
-void setup() {
+void setup()
+{
   Serial.begin(9600);
 
   pinMode(PIN_I2C_SCL, OUTPUT);
@@ -215,10 +228,8 @@ void setup() {
 
   LEDInit();
 
-
   attachInterrupt(digitalPinToInterrupt(PIN_A1), encoderISR, CHANGE);
   attachInterrupt(digitalPinToInterrupt(PIN_B1), encoderISR, CHANGE);
-
 
   for (int i = 0; i < LEDNum; i++)
     LEDSet(i, LEDColorConnectedA);
@@ -231,7 +242,8 @@ void setup() {
   // MenuPrint();
 }
 
-void loop() {
+void loop()
+{
   bool stateA1 = digitalRead(PIN_A1);
   bool stateA2 = digitalRead(PIN_A2);
   bool stateA3 = digitalRead(PIN_A3);
@@ -244,7 +256,7 @@ void loop() {
   bool stateB4 = digitalRead(PIN_B4);
   bool stateB5 = digitalRead(PIN_B5);
   bool stateB6 = digitalRead(PIN_B6);
-  
+
   bool stateZ1 = !I2CReadReg(0x20, 2, 8 + IdxZ1);
   bool stateZ2 = !I2CReadReg(0x20, 2, 8 + IdxZ2);
   bool stateZ3 = !I2CReadReg(0x20, 2, 8 + IdxZ3);
@@ -294,7 +306,7 @@ void loop() {
   MotorStatesBPrev[1] = stateB2;
   MotorStatesBPrev[2] = stateB3;
   MotorStatesBPrev[3] = stateB4;
-  MotorStatesBPrev[4] = stateB5; 
+  MotorStatesBPrev[4] = stateB5;
   MotorStatesBPrev[5] = stateB6;
 
   MotorStatesZPrev[0] = stateZ1;
@@ -303,14 +315,14 @@ void loop() {
   MotorStatesZPrev[3] = stateZ4;
   MotorStatesZPrev[4] = stateZ5;
   MotorStatesZPrev[5] = stateZ6;
-  
+
   ButtonStatesPrev[0] = stateButtonCenter;
   ButtonStatesPrev[1] = stateButtonUp;
   ButtonStatesPrev[2] = stateButtonDown;
   ButtonStatesPrev[3] = stateButtonLeft;
   ButtonStatesPrev[4] = stateButtonRight;
 
-LCDRectFill(70, 54, 20, 8, BLACK);  // Adjust the x, y, width, and height as needed
+  LCDRectFill(70, 54, 20, 8, BLACK); // Adjust the x, y, width, and height as needed
 
   // Display the encoder position on the LCD
   char buffer[10];

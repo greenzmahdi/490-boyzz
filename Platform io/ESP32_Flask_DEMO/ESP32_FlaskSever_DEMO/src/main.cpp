@@ -4,8 +4,8 @@
 #include <Wire.h>
 #include <iostream>
 
-const char *ssid = "";
-const char *password = "";
+const char *ssid = "ADD_YOUR_WIFI";
+const char *password = "ADD_YOUR_PASSWORD";
 
 // LED const
 const int PIN_LED = 12;
@@ -113,3 +113,4 @@ void loop()
     http.end(); // Close connection
   }
 }
+
