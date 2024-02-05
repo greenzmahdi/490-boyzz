@@ -1,3 +1,19 @@
+/*
+Notes: 
+Task Stack Sizes:
+
+Ensure that the stack size (10000) is sufficient for the tasks' needs. Too small and you'll run into stack overflows; too large and you're wasting precious memory. This often requires some trial and error to get right.
+Wi-Fi Connection Handling:
+
+After the initial connection to Wi-Fi, there's no handling for potential Wi-Fi disconnections within the TaskNetwork. It would be beneficial to implement a reconnection strategy.
+Global Variable Access:
+
+The encoderPos variable is accessed from both the ISR and TaskUpdateDisplay. It's declared volatile, which is good, but in a multitasking environment, you might need to protect its access with a mutex to avoid race conditions.
+Resource Management:
+
+If you're using I2C or any shared resource in both tasks, ensure you manage concurrent access properly, potentially with semaphores.
+*/
+
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <FastLED.h>
@@ -12,8 +28,8 @@
 #include "oled_setup.h"
 
 // Wifi credentials
-const char *ssid = "[SOSA_HOME]";
-const char *password = "armando1!";
+const char *ssid = "YOUR_WIFI";
+const char *password = "YOUR_PASSWORD";
 
 // Define LED colors as global constants
 const int LEDColorDisconnected[3] = {0, 0, 0};
@@ -24,10 +40,14 @@ const int LEDColorTurquoise[3] = {83, 195, 189};
 const int RefreshDelay = 1; // original 5
 
 // Menu Options
-const char *MenuOptions[] = {"Connect Online", "Connect Offline"};
+const char *MenuOptions[] = {"Connect Online", "Connect Offline"}; // might not need this, depends on design 
 const char *MenuDroItems[] = {"Sino", "ToAuto"};
 const char *SinoAxis[] = {"X: ", "Y: "};
 const char *ToAutoAxis[] = {"X: ", "Y: ", "Z: "};
+
+// Forward declarations
+void TaskNetwork(void *pvParameters);
+void TaskUpdateDisplay(void *pvParameters);
 
 //// I2C FUNCTIONS ////
 byte I2CReadRegs(int address, int size)
@@ -125,9 +145,9 @@ void encoderISR()
   int sum = (lastEncoded << 2) | encoded;
 
   if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011)
-    encoderPos++;
-  if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000)
     encoderPos--;
+  if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000)
+    encoderPos++;
 
   lastEncoded = encoded;
 }
@@ -160,84 +180,122 @@ void setup()
   // Dim LEDs
   FastLED.setBrightness(24);
 
-  Serial.println('\n');
-
-  // Connecting to WIFI
-  WiFi.begin(ssid, password);
-
-  Serial.print("Connecting to ");
-  Serial.print(ssid);
-  Serial.println(" ...");
-
-  int i = 0;
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(1000);
-    Serial.print(++i);
-    Serial.print(' ');
-  }
-
-  // WIFI connection has been established
-  Serial.println('\n');
-  Serial.println("Connection established!");
-  Serial.print("IP address:\t");
-  Serial.println(WiFi.localIP());
-
-  // Test screen display when connected
-
+  // Handle display updates here
   LCDTextDraw(12, 6, "COMP491 ESP32 DRO", 1, 1, 0);
-  // delay(3000);
+
+  // Serial.println('\n');
+  xTaskCreate(
+      TaskNetwork,   // Task function
+      "NetworkTask", // Name of the task
+      10000,         // Stack size of task
+      NULL,          // Parameter of the task
+      1,             // Priority of the task
+      NULL);         // Task handle
+
+  xTaskCreate(
+      TaskUpdateDisplay, // Task function
+      "DisplayTask",     // Name of the task
+      10000,             // Stack size of task
+      NULL,              // Parameter of the task
+      1,                 // Priority of the task
+      NULL);             // Task handle
+
+  // // delay(3000);
 }
 
-void loop()
+void loop(){} // might not need this 
+
+void TaskNetwork(void *pvParameters)
 {
+  // Initial connection attempt
+  Serial.print("Connecting to Wi-Fi: ");
+  Serial.println(ssid);
 
-  // I need to find out why this part of the code is needed for my encoder to displa teh correct data
-  LCDRectFill(10, 20, 20, 8, BLACK); // Adjust the x, y, width, and height as needed
-  FastLED.setBrightness(14);
-
-  // Display the encoder position on the LCD
-  char buffer[10];
-  sprintf(buffer, "x: %d", encoderPos);
-  LCDTextDraw(10, 20, buffer, 1, WHITE, BLACK);
-
-  // sprintf(buffer, "y: %d", encoderPos);
-  // LCDTextDraw(10, 35, buffer, 1, WHITE, BLACK);
-
-  // sprintf(buffer, "z: %d", encoderPos);
-  // LCDTextDraw(10, 50, buffer, 1, WHITE, BLACK);
-
-  delayMicroseconds(RefreshDelay);
-  if (WiFi.status() == WL_CONNECTED)
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED)
   {
-    HTTPClient http;
-    http.begin("http://192.168.1.17:5000/status"); // Change Flask server URL to your local wifi ip adress
-    int httpCode = http.GET();
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    Serial.print(".");
+  }
 
-    if (httpCode > 0)
+  Serial.println();
+  Serial.println("Wi-Fi connected.");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  // Task loop
+  for (;;)
+  {
+    if (WiFi.status() == WL_CONNECTED)
     {
-      String payload = http.getString();
-      LEDInit();
-      if (payload == "purple")
-      {
+      // If connected, perform HTTP operations
+      HTTPClient http;
+      http.begin("http://192.168.1.17:5000/status"); // Your server URL
+      int httpCode = http.GET();
 
-        for (int i = 0; i < LEDNum; i++)
-          LEDSet(i, LEDColorPurple);
-      }
-      else if (payload == "turquoise")
+      if (httpCode > 0)
       {
+        String payload = http.getString();
+        LEDInit(); // Make sure this function is safe to call from this task
 
-        for (int i = 0; i < LEDNum; i++)
-          LEDSet(i, LEDColorTurquoise);
+        if (payload == "purple")
+        {
+          for (int i = 0; i < LEDNum; i++)
+          {
+            LEDSet(i, LEDColorPurple);
+          }
+        }
+        else if (payload == "turquoise")
+        {
+          for (int i = 0; i < LEDNum; i++)
+          {
+            LEDSet(i, LEDColorTurquoise);
+          }
+        }
+        LEDShow();
       }
-      LEDShow();
+      else
+      {
+        Serial.print("HTTP GET failed, error code: ");
+        Serial.println(httpCode);
+      }
+      http.end(); // End the HTTP connection
     }
     else
     {
-      Serial.print("Failed to receive HTTP response. Code: ");
-      Serial.println(httpCode);
+      // If not connected, attempt to reconnect
+      Serial.println("Reconnecting to Wi-Fi...");
+      WiFi.disconnect();
+      WiFi.reconnect();
+
+      // Wait a bit before next reconnection attempt
+      // vTaskDelay(pdMS_TO_TICKS(5000));
     }
 
-    http.end(); // Close connection
+    // Delay to prevent flooding the network with requests
+    // vTaskDelay(pdMS_TO_TICKS(5000));
+  }
+
+  vTaskDelete(NULL); // Delete this task if it ever breaks out of the loop (which it shouldn't)
+}
+
+void TaskUpdateDisplay(void *pvParameters)
+{
+  for (;;)
+  { // Task loop
+
+    // Display the encoder position on the LCD
+    char buffer[10];
+    sprintf(buffer, "X: %d", encoderPos);
+    LCDTextDraw(10, 20, buffer, 1, WHITE, BLACK);
+    
+    sprintf(buffer, "Y: %d", encoderPos);
+    LCDTextDraw(10, 35, buffer, 1, WHITE, BLACK);
+
+    sprintf(buffer, "Z: %d", encoderPos);
+    LCDTextDraw(10, 50, buffer, 1, WHITE, BLACK);
+
+    // Delay for a bit to not update too frequently
+    vTaskDelay(pdMS_TO_TICKS(100)); // For example, delay for 100 milliseconds
   }
 }
