@@ -9,6 +9,7 @@
 // file imports
 #include "pin_setup.h"
 #include "led_setup.h"
+#include "oled_setup.h"
 
 // Wifi credentials
 const char *ssid = "[SOSA_HOME]";
@@ -19,41 +20,14 @@ const int LEDColorDisconnected[3] = {0, 0, 0};
 const int LEDColorPurple[3] = {128, 0, 128};
 const int LEDColorTurquoise[3] = {83, 195, 189};
 
-
 // OLED var const
-const int RefreshDelay = 5;
+const int RefreshDelay = 1; // original 5
 
-const char *MenuItems[] = {"Connection 1 (X)", "Connection 2 (Y)", "Connection 3", "Connection 4", "Connection 5", "Connection 6"};
-
-// OLED setup
-Adafruit_SSD1306 LCD(128, 64, &Wire);
-
-// OLED FUNCTIONS
-void LCDRectFill(int x, int y, int w, int h, int color)
-{
-  LCD.fillRect(x, y, w, h, color);
-}
-
-void LCDTextDraw(int x, int y, const char *text, byte size, int colorFont, int colorBG)
-{
-  LCD.setCursor(x, y);
-  LCD.setTextSize(size);
-  LCD.setTextColor(colorFont, colorBG);
-  LCD.print(text);
-  LCD.display();
-}
-
-void LCDScreenClear()
-{
-  LCD.clearDisplay();
-  LCD.display();
-  LCD.setTextColor(WHITE, BLACK);
-}
-
-void LCDInit()
-{
-  LCD.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-}
+// Menu Options
+const char *MenuOptions[] = {"Connect Online", "Connect Offline"};
+const char *MenuDroItems[] = {"Sino", "ToAuto"};
+const char *SinoAxis[] = {"X: ", "Y: "};
+const char *ToAutoAxis[] = {"X: ", "Y: ", "Z: "};
 
 //// I2C FUNCTIONS ////
 byte I2CReadRegs(int address, int size)
@@ -164,10 +138,9 @@ void setup()
   delay(10);
   // PIN SETUP
   setUpPins();
-  
 
   LEDInit();
-  
+
   for (int i = 0; i < LEDNum; i++)
     LEDSet(i, LEDColorDisconnected);
 
