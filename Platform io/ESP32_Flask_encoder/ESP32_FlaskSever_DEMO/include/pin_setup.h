@@ -23,6 +23,12 @@ const int PIN_LED = 12;
 const int PIN_I2C_SCL = 16;
 const int PIN_I2C_SDA = 13;
 
+// pin setup 
+const int PIN_PROBE = 36;
+const int PIN_TACH = 39;
+const int PIN_IOINT = 25;
+ 
+
 // Function declaration
 void setUpPins();
 

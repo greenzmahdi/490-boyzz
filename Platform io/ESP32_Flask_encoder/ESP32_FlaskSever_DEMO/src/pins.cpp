@@ -4,7 +4,7 @@
 // Pin func setup
 void setUpPins()
 {
-    // Setting PINs
+    // Setting OLED PINs
     pinMode(PIN_I2C_SCL, OUTPUT);
     pinMode(PIN_I2C_SDA, OUTPUT);
 
@@ -21,4 +21,9 @@ void setUpPins()
     pinMode(PIN_B4, INPUT);
     pinMode(PIN_B5, INPUT);
     pinMode(PIN_B6, INPUT);
+
+    pinMode(PIN_PROBE, INPUT);
+    pinMode(PIN_TACH, INPUT);
+    pinMode(PIN_IOINT ,INPUT);
+
 };
