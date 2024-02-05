@@ -1,5 +1,5 @@
 /*
-Notes: 
+Notes:
 Task Stack Sizes:
 
 Ensure that the stack size (10000) is sufficient for the tasks' needs. Too small and you'll run into stack overflows; too large and you're wasting precious memory. This often requires some trial and error to get right.
@@ -35,12 +35,13 @@ const char *password = "YOUR_PASSWORD";
 const int LEDColorDisconnected[3] = {0, 0, 0};
 const int LEDColorPurple[3] = {128, 0, 128};
 const int LEDColorTurquoise[3] = {83, 195, 189};
+const int LEDColorPink[3] = {255, 292, 203};
 
 // OLED var const
 const int RefreshDelay = 1; // original 5
 
 // Menu Options
-const char *MenuOptions[] = {"Connect Online", "Connect Offline"}; // might not need this, depends on design 
+const char *MenuOptions[] = {"Connect Online", "Connect Offline"}; // might not need this, depends on design
 const char *MenuDroItems[] = {"Sino", "ToAuto"};
 const char *SinoAxis[] = {"X: ", "Y: "};
 const char *ToAutoAxis[] = {"X: ", "Y: ", "Z: "};
@@ -128,20 +129,8 @@ unsigned long lastEncoderRead = 0;
 
 int lastEncoded = 0; // This will store the last state of the encoder
 
-// Encoder functions
-void encoderISR()
-{
-  unsigned long currentTime = millis();
-  if (currentTime - lastEncoderRead < 6) // works alright with 6
-  {                                      // original: 5 milliseconds debounce time
-    return;
-  }
-  lastEncoderRead = currentTime;
-
-  int newA = digitalRead(PIN_A1);
-  int newB = digitalRead(PIN_B1);
-
-  int encoded = (newA << 1) | newB;
+void monitorPins(int A, int B){
+  int encoded = (A << 1) | B;
   int sum = (lastEncoded << 2) | encoded;
 
   if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011)
@@ -149,7 +138,33 @@ void encoderISR()
   if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000)
     encoderPos++;
 
-  lastEncoded = encoded;
+    lastEncoded = encoded;
+}
+
+// Encoder functions
+void encoderISR()
+{
+  unsigned long currentTime = millis();
+  if (currentTime - lastEncoderRead < 3.4) // works alright with 6
+  {                                        // original: 5 milliseconds debounce time
+    return;
+  }
+  lastEncoderRead = currentTime;
+
+  int newA1 = digitalRead(PIN_A1);
+  int newB1 = digitalRead(PIN_B1);
+
+  monitorPins(newA1, newB1);
+
+  // int encoded = (newA << 1) | newB;
+  // int sum = (lastEncoded << 2) | encoded;
+
+  // if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011)
+  //   encoderPos--;
+  // if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000)
+  //   encoderPos++;
+
+  
 }
 
 void setup()
@@ -203,7 +218,7 @@ void setup()
   // // delay(3000);
 }
 
-void loop(){} // might not need this 
+void loop() {} // might not need this
 
 void TaskNetwork(void *pvParameters)
 {
@@ -222,6 +237,9 @@ void TaskNetwork(void *pvParameters)
   Serial.println("Wi-Fi connected.");
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
+
+  // Dim LEDs
+  FastLED.setBrightness(14);
 
   // Task loop
   for (;;)
@@ -249,7 +267,7 @@ void TaskNetwork(void *pvParameters)
         {
           for (int i = 0; i < LEDNum; i++)
           {
-            LEDSet(i, LEDColorTurquoise);
+            LEDSet(i, LEDColorPink);
           }
         }
         LEDShow();
@@ -267,6 +285,12 @@ void TaskNetwork(void *pvParameters)
       Serial.println("Reconnecting to Wi-Fi...");
       WiFi.disconnect();
       WiFi.reconnect();
+      LEDInit();
+
+      for (int i = 0; i < LEDNum; i++)
+        LEDSet(i, LEDColorDisconnected);
+
+      LEDShow();
 
       // Wait a bit before next reconnection attempt
       // vTaskDelay(pdMS_TO_TICKS(5000));
@@ -288,12 +312,6 @@ void TaskUpdateDisplay(void *pvParameters)
     char buffer[10];
     sprintf(buffer, "X: %d", encoderPos);
     LCDTextDraw(10, 20, buffer, 1, WHITE, BLACK);
-    
-    sprintf(buffer, "Y: %d", encoderPos);
-    LCDTextDraw(10, 35, buffer, 1, WHITE, BLACK);
-
-    sprintf(buffer, "Z: %d", encoderPos);
-    LCDTextDraw(10, 50, buffer, 1, WHITE, BLACK);
 
     // Delay for a bit to not update too frequently
     vTaskDelay(pdMS_TO_TICKS(100)); // For example, delay for 100 milliseconds
