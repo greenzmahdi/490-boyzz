@@ -1,36 +1,3 @@
-// #ifndef PINS_H
-// #define PINS_H
-
-// // PIN SETUP //
-
-// // Pin (A & B)
-// const int PIN_A1;
-// const int PIN_A2;
-// const int PIN_A3;
-// const int PIN_A4;
-// const int PIN_A5;
-// const int PIN_A6;
-// const int PIN_B1;
-// const int PIN_B2;
-// const int PIN_B3;
-// const int PIN_B4;
-// const int PIN_B5;
-// const int PIN_B6;
-
-// // Led pin
-// extern const int PIN_LED = 12;
-
-// // OLED pins
-// extern const int PIN_I2C_SCL = 16;
-// extern const int PIN_I2C_SDA = 13;
-
-// // Function declarations 
-// void setUpPins();
-
-// #endif
-
-
-
 // pin_setup.h
 #ifndef PIN_SETUP_H
 #define PIN_SETUP_H
