@@ -18,5 +18,13 @@ def toggle_led():
 def status():
     return led_color
 
+@app.route('/getposition', methods=['POST'])
+def getposition():
+    data = request.get_json()
+    outgoingvalue = data['outgoingvalue']
+    return render_template(index.html, outgoingvalue = outgoingvalue)
+
+
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')

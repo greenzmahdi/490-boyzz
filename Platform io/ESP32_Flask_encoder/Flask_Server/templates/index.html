@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <style>
+        body 
+            {background-color: black;}
+        #pinkbox
+            {background-color: pink;}
+    </style>
     <title>LED Control</title>
     <script>
         function toggleLED() {
@@ -17,6 +23,18 @@
     <button onclick="toggleLED()">Toggle LED Color</button>
     <p>LED Color: <span id="led_color">{{ led_color }}</span></p>
     <hr/>
+    
+    <div id="holder">
+    <form action="/getposition" method="GET">
+        <button type="submit" id="pinkbox">Get Position</button>
+        <p>{{outgoingvalue}}</p>
+    </form>
+    </div>
+        <form action="/mahdi" method="'GET">
+            <button type="submit">Mahdi's Button</button>
+        </form>
+
+    <hr>
 </body>
 </html>
 

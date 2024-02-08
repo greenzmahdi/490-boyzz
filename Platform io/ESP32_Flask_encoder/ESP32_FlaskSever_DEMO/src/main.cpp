@@ -21,6 +21,7 @@ If you're using I2C or any shared resource in both tasks, ensure you manage conc
 #include <iostream>
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_GFX.h>
+#include <ArduinoJson.h>
 
 // file imports
 #include "pin_setup.h"
@@ -28,8 +29,8 @@ If you're using I2C or any shared resource in both tasks, ensure you manage conc
 #include "oled_setup.h"
 
 // Wifi credentials
-const char *ssid = "YOUR_WIFI";
-const char *password = "YOUR_PASSWORD";
+const char *ssid = "randy.herrera.928@my.csun.edu";
+const char *password = "meandcsun0210!";
 
 // Define LED colors as global constants
 const int LEDColorDisconnected[3] = {0, 0, 0};
@@ -246,14 +247,33 @@ void TaskNetwork(void *pvParameters)
   {
     if (WiFi.status() == WL_CONNECTED)
     {
-      // If connected, perform HTTP operations
-      HTTPClient http;
-      http.begin("http://192.168.1.17:5000/status"); // Your server URL
-      int httpCode = http.GET();
+    
+    /* creating test JSON data*/
+      int outgoingvalue = 123;
+      StaticJsonDocument<200> doc;
+      doc["outgoingvalue"] = outgoingvalue;
+      String jsonstring;
+      serializeJson(doc, jsonstring);
+    
+    // If connected, perform HTTP operations
+
+      
+      HTTPClient http1;
+      HTTPClient http2;
+
+      http1.begin("http://127.0.0.1:5000/getposition");
+      http1.addHeader("Content-Type", "application/json");
+      int httpCode = http1.POST(jsonstring);
+      String payload = http1.getString();
+      http1.end();
+
+      
+      http2.begin("http://192.168.1.17:5000/status"); // Your server URL
+      httpCode = http2.GET();
 
       if (httpCode > 0)
       {
-        String payload = http.getString();
+        String payload = http2.getString();
         LEDInit(); // Make sure this function is safe to call from this task
 
         if (payload == "purple")
@@ -277,7 +297,7 @@ void TaskNetwork(void *pvParameters)
         Serial.print("HTTP GET failed, error code: ");
         Serial.println(httpCode);
       }
-      http.end(); // End the HTTP connection
+      http2.end(); // End the HTTP connection
     }
     else
     {
