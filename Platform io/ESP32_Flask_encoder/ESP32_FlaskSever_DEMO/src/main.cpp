@@ -29,8 +29,8 @@ If you're using I2C or any shared resource in both tasks, ensure you manage conc
 #include "oled_setup.h"
 
 // Wifi credentials
-const char *ssid = "randy.herrera.928@my.csun.edu";
-const char *password = "meandcsun0210!";
+const char *ssid = "[SOSA_HOME]";
+const char *password = "armando1!";
 
 // Define LED colors as global constants
 const int LEDColorDisconnected[3] = {0, 0, 0};
@@ -39,7 +39,7 @@ const int LEDColorTurquoise[3] = {83, 195, 189};
 const int LEDColorPink[3] = {255, 292, 203};
 
 // OLED var const
-const int RefreshDelay = 1; // original 5
+// const int RefreshDelay = 1; // original 5
 
 // Menu Options
 const char *MenuOptions[] = {"Connect Online", "Connect Offline"}; // might not need this, depends on design
@@ -124,49 +124,50 @@ const int IdxZ4 = 2;
 const int IdxZ5 = 1;
 const int IdxZ6 = 0;
 
-// Encoder variables
-volatile int encoderPos = 0; // This variable will increase or decrease based on the encoder's rotation
-unsigned long lastEncoderRead = 0;
+// // Encoder variables
+// volatile int encoderPos = 0; // This variable will increase or decrease based on the encoder's rotation
+// unsigned long lastEncoderRead = 0;
 
-int lastEncoded = 0; // This will store the last state of the encoder
+// int lastEncoded = 0; // This will store the last state of the encoder
 
-void monitorPins(int A, int B){
-  int encoded = (A << 1) | B;
-  int sum = (lastEncoded << 2) | encoded;
+// // Encoder functions
+// void encoderISR()
+// {
+//   unsigned long currentTime = millis();
+//   if (currentTime - lastEncoderRead < 3.4) // works alright with 6
+//   {                                        // original: 5 milliseconds debounce time
+//     return;
+//   }
+//   lastEncoderRead = currentTime;
 
-  if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011)
-    encoderPos--;
-  if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000)
-    encoderPos++;
+//   int newA1 = digitalRead(PIN_A1);
+//   int newB1 = digitalRead(PIN_B1);
 
-    lastEncoded = encoded;
+//   // monitorPins(newA1, newB1);
+
+//   int encoded = (newA1 << 1) | newB1;
+//   int sum = (lastEncoded << 2) | encoded;
+
+//   if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011)
+//     encoderPos--;
+//   if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000)
+//     encoderPos++;
+
+volatile int encoderPos = 0;  // Encoder position
+volatile int lastEncoded = 0; // Last encoded state
+
+void updateEncoder() {
+  int MSB = digitalRead(PIN_A1); // Most significant bit (MSB) - pinA
+  int LSB = digitalRead(PIN_B1); // Least significant bit (LSB) - pinB
+  int encoded = (MSB << 1) | LSB; // Converting the 2 pin value to single number
+  int sum = (lastEncoded << 2) | encoded; // Adding it to the previous encoded value
+
+  if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011) encoderPos++;
+  if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) encoderPos--;
+
+  lastEncoded = encoded; // Store this value for next time
 }
-
-// Encoder functions
-void encoderISR()
-{
-  unsigned long currentTime = millis();
-  if (currentTime - lastEncoderRead < 3.4) // works alright with 6
-  {                                        // original: 5 milliseconds debounce time
-    return;
-  }
-  lastEncoderRead = currentTime;
-
-  int newA1 = digitalRead(PIN_A1);
-  int newB1 = digitalRead(PIN_B1);
-
-  monitorPins(newA1, newB1);
-
-  // int encoded = (newA << 1) | newB;
-  // int sum = (lastEncoded << 2) | encoded;
-
-  // if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011)
-  //   encoderPos--;
-  // if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000)
-  //   encoderPos++;
-
-  
-}
+// }
 
 void setup()
 {
@@ -190,14 +191,17 @@ void setup()
   LCDScreenClear();
 
   // Monitor pin setup
-  attachInterrupt(digitalPinToInterrupt(PIN_A1), encoderISR, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(PIN_B1), encoderISR, CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(PIN_A1), encoderISR, CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(PIN_B1), encoderISR, CHANGE);
+
+  attachInterrupt(PIN_A1, updateEncoder, CHANGE);
+  attachInterrupt(PIN_B1, updateEncoder, CHANGE);
 
   // Dim LEDs
   FastLED.setBrightness(24);
 
   // Handle display updates here
-  LCDTextDraw(12, 6, "COMP491 ESP32 DRO", 1, 1, 0);
+  LCDTextDraw(12, 6, "-COMP491 ESP32 DRO-", 1, 1, 0);
 
   // Serial.println('\n');
   xTaskCreate(
@@ -247,17 +251,16 @@ void TaskNetwork(void *pvParameters)
   {
     if (WiFi.status() == WL_CONNECTED)
     {
-    
-    /* creating test JSON data*/
+
+      /* creating test JSON data*/
       int outgoingvalue = 123;
       StaticJsonDocument<200> doc;
       doc["outgoingvalue"] = outgoingvalue;
       String jsonstring;
       serializeJson(doc, jsonstring);
-    
-    // If connected, perform HTTP operations
 
-      
+      // If connected, perform HTTP operations
+
       HTTPClient http1;
       HTTPClient http2;
 
@@ -267,7 +270,6 @@ void TaskNetwork(void *pvParameters)
       String payload = http1.getString();
       http1.end();
 
-      
       http2.begin("http://192.168.1.17:5000/status"); // Your server URL
       httpCode = http2.GET();
 
@@ -328,8 +330,17 @@ void TaskUpdateDisplay(void *pvParameters)
   for (;;)
   { // Task loop
 
+  static int lastPos = 0; // Last position to check for changes
+  
+  if (encoderPos != lastPos) {
+    Serial.println(encoderPos); // Print the change in position
+    lastPos = encoderPos; // Update last position
+  }
+
+    LCDRectFill(10, 20, 50, 10, BLACK);  // Fill a rectangle area with BLACK to clear previous number
+            
     // Display the encoder position on the LCD
-    char buffer[10];
+    char buffer[15];
     sprintf(buffer, "X: %d", encoderPos);
     LCDTextDraw(10, 20, buffer, 1, WHITE, BLACK);
 

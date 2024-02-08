@@ -9,13 +9,13 @@ void setUpPins()
     pinMode(PIN_I2C_SDA, OUTPUT);
 
     pinMode(PIN_LED, OUTPUT);
-    pinMode(PIN_A1, INPUT);
+    pinMode(PIN_A1, INPUT_PULLUP);
     pinMode(PIN_A2, INPUT);
     pinMode(PIN_A3, INPUT);
     pinMode(PIN_A4, INPUT);
     pinMode(PIN_A5, INPUT);
     pinMode(PIN_A6, INPUT);
-    pinMode(PIN_B1, INPUT);
+    pinMode(PIN_B1, INPUT_PULLUP);
     pinMode(PIN_B2, INPUT);
     pinMode(PIN_B3, INPUT);
     pinMode(PIN_B4, INPUT);
