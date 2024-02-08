@@ -29,8 +29,8 @@ If you're using I2C or any shared resource in both tasks, ensure you manage conc
 #include "oled_setup.h"
 
 // Wifi credentials
-const char *ssid = "[SOSA_HOME]";
-const char *password = "armando1!";
+const char *ssid = "YOUR_WIFI";
+const char *password = "YOUR_PASSWORD";
 
 // Define LED colors as global constants
 const int LEDColorDisconnected[3] = {0, 0, 0};
@@ -156,14 +156,17 @@ const int IdxZ6 = 0;
 volatile int encoderPos = 0;  // Encoder position
 volatile int lastEncoded = 0; // Last encoded state
 
-void updateEncoder() {
-  int MSB = digitalRead(PIN_A1); // Most significant bit (MSB) - pinA
-  int LSB = digitalRead(PIN_B1); // Least significant bit (LSB) - pinB
-  int encoded = (MSB << 1) | LSB; // Converting the 2 pin value to single number
+void updateEncoder()
+{
+  int MSB = digitalRead(PIN_A1);          // Most significant bit (MSB) - pinA
+  int LSB = digitalRead(PIN_B1);          // Least significant bit (LSB) - pinB
+  int encoded = (MSB << 1) | LSB;         // Converting the 2 pin value to single number
   int sum = (lastEncoded << 2) | encoded; // Adding it to the previous encoded value
 
-  if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011) encoderPos++;
-  if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) encoderPos--;
+  if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011)
+    encoderPos++;
+  if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000)
+    encoderPos--;
 
   lastEncoded = encoded; // Store this value for next time
 }
@@ -330,19 +333,34 @@ void TaskUpdateDisplay(void *pvParameters)
   for (;;)
   { // Task loop
 
-  static int lastPos = 0; // Last position to check for changes
-  
-  if (encoderPos != lastPos) {
-    Serial.println(encoderPos); // Print the change in position
-    lastPos = encoderPos; // Update last position
-  }
+    static int lastPos = 0; // Last position to check for changes
 
-    LCDRectFill(10, 20, 50, 10, BLACK);  // Fill a rectangle area with BLACK to clear previous number
-            
+    if (encoderPos != lastPos)
+    {
+      Serial.println(encoderPos); // Print the change in position
+      lastPos = encoderPos;       // Update last position
+    }
+
+    // X position
+    LCDRectFill(10, 20, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
+
     // Display the encoder position on the LCD
     char buffer[15];
     sprintf(buffer, "X: %d", encoderPos);
     LCDTextDraw(10, 20, buffer, 1, WHITE, BLACK);
+
+
+    //// This is just an example of how it would display on the OLED screen ////
+
+    // Y position
+    LCDRectFill(10, 35, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
+    sprintf(buffer, "Y: %d", encoderPos);
+    LCDTextDraw(10, 35, buffer, 1, WHITE, BLACK);
+
+    // Z position
+    LCDRectFill(10, 50, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
+    sprintf(buffer, "Z: %d", encoderPos);
+    LCDTextDraw(10, 50, buffer, 1, WHITE, BLACK);
 
     // Delay for a bit to not update too frequently
     vTaskDelay(pdMS_TO_TICKS(100)); // For example, delay for 100 milliseconds
