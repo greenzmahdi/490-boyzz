@@ -1,40 +1,41 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <style>
-        body 
-            {background-color: black;}
-        #pinkbox
-            {background-color: pink;}
+      body {
+        background-color: rgb(255, 255, 255);
+      }
+      #pinkbox {
+        background-color: pink;
+      }
     </style>
     <title>LED Control</title>
     <script>
-        function toggleLED() {
-            fetch('/toggle_led')
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('led_color').innerText = data;
-            });
-        }
+      function toggleLED() {
+        fetch("/toggle_led")
+          .then((response) => response.text())
+          .then((data) => {
+            document.getElementById("led_color").innerText = data;
+          });
+      }
     </script>
-</head>
-<body>
+  </head>
+  <body>
     <h1>LED Control</h1>
     <button onclick="toggleLED()">Toggle LED Color</button>
     <p>LED Color: <span id="led_color">{{ led_color }}</span></p>
-    <hr/>
-    
+    <hr />
+
     <div id="holder">
-    <form action="/getposition" method="GET">
+      <form action="/getposition" method="GET">
         <button type="submit" id="pinkbox">Get Position</button>
         <p>{{outgoingvalue}}</p>
-    </form>
+      </form>
     </div>
-        <form action="/mahdi" method="'GET">
-            <button type="submit">Mahdi's Button</button>
-        </form>
+    <form action="/mahdi" method="'GET">
+      <button type="submit">Mahdi's Button</button>
+    </form>
 
-    <hr>
-</body>
+    <hr />
+  </body>
 </html>
-

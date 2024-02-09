@@ -29,8 +29,8 @@ If you're using I2C or any shared resource in both tasks, ensure you manage conc
 #include "oled_setup.h"
 
 // Wifi credentials
-const char *ssid = "YOUR_WIFI";
-const char *password = "YOUR_PASSWORD";
+const char *ssid = "[SOSA_HOME]";
+const char *password = "armando1!";
 
 // Define LED colors as global constants
 const int LEDColorDisconnected[3] = {0, 0, 0};
@@ -264,19 +264,19 @@ void TaskNetwork(void *pvParameters)
 
       // If connected, perform HTTP operations
 
-      HTTPClient http1;
+      // HTTPClient http1;
       HTTPClient http2;
 
-      http1.begin("http://127.0.0.1:5000/getposition");
-      http1.addHeader("Content-Type", "application/json");
-      int httpCode = http1.POST(jsonstring);
-      String payload = http1.getString();
-      http1.end();
+      // http1.begin("http://192.168.1.17:5000/getposition");
+      // http1.addHeader("Content-Type", "application/json");       // I commented out Randy b/c our flask sever was bugging out due to a (fuc option has no attribute)
+      // int httpCode = http1.POST(jsonstring);
+      // String payload = http1.getString();
+      // http1.end();
 
       http2.begin("http://192.168.1.17:5000/status"); // Your server URL
-      httpCode = http2.GET();
+      int httpCode2 = http2.GET();
 
-      if (httpCode > 0)
+      if (httpCode2 > 0)
       {
         String payload = http2.getString();
         LEDInit(); // Make sure this function is safe to call from this task
@@ -292,7 +292,7 @@ void TaskNetwork(void *pvParameters)
         {
           for (int i = 0; i < LEDNum; i++)
           {
-            LEDSet(i, LEDColorPink);
+            LEDSet(i, LEDColorTurquoise);
           }
         }
         LEDShow();
@@ -300,7 +300,7 @@ void TaskNetwork(void *pvParameters)
       else
       {
         Serial.print("HTTP GET failed, error code: ");
-        Serial.println(httpCode);
+        Serial.println(httpCode2);
       }
       http2.end(); // End the HTTP connection
     }
@@ -341,14 +341,13 @@ void TaskUpdateDisplay(void *pvParameters)
       lastPos = encoderPos;       // Update last position
     }
 
-    // X position
-    LCDRectFill(10, 20, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
-
     // Display the encoder position on the LCD
     char buffer[15];
+
+    // X position
+    LCDRectFill(10, 20, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
     sprintf(buffer, "X: %d", encoderPos);
     LCDTextDraw(10, 20, buffer, 1, WHITE, BLACK);
-
 
     //// This is just an example of how it would display on the OLED screen ////
 
