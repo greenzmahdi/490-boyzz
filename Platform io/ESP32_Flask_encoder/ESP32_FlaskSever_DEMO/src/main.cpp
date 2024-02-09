@@ -124,34 +124,7 @@ const int IdxZ4 = 2;
 const int IdxZ5 = 1;
 const int IdxZ6 = 0;
 
-// // Encoder variables
-// volatile int encoderPos = 0; // This variable will increase or decrease based on the encoder's rotation
-// unsigned long lastEncoderRead = 0;
-
-// int lastEncoded = 0; // This will store the last state of the encoder
-
-// // Encoder functions
-// void encoderISR()
-// {
-//   unsigned long currentTime = millis();
-//   if (currentTime - lastEncoderRead < 3.4) // works alright with 6
-//   {                                        // original: 5 milliseconds debounce time
-//     return;
-//   }
-//   lastEncoderRead = currentTime;
-
-//   int newA1 = digitalRead(PIN_A1);
-//   int newB1 = digitalRead(PIN_B1);
-
-//   // monitorPins(newA1, newB1);
-
-//   int encoded = (newA1 << 1) | newB1;
-//   int sum = (lastEncoded << 2) | encoded;
-
-//   if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011)
-//     encoderPos--;
-//   if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000)
-//     encoderPos++;
+//// Encoder variables ////
 
 volatile int encoderPos = 0;  // Encoder position
 volatile int lastEncoded = 0; // Last encoded state
@@ -194,8 +167,6 @@ void setup()
   LCDScreenClear();
 
   // Monitor pin setup
-  // attachInterrupt(digitalPinToInterrupt(PIN_A1), encoderISR, CHANGE);
-  // attachInterrupt(digitalPinToInterrupt(PIN_B1), encoderISR, CHANGE);
 
   attachInterrupt(PIN_A1, updateEncoder, CHANGE);
   attachInterrupt(PIN_B1, updateEncoder, CHANGE);
