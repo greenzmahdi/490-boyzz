@@ -29,8 +29,8 @@ If you're using I2C or any shared resource in both tasks, ensure you manage conc
 #include "oled_setup.h"
 
 // Wifi credentials
-const char *ssid = "[SOSA_HOME]";
-const char *password = "armando1!";
+const char *ssid = "ssid";
+const char *password = "pw";
 
 // Define LED colors as global constants
 const int LEDColorDisconnected[3] = {0, 0, 0};
