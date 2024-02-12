@@ -29,7 +29,7 @@ If you're using I2C or any shared resource in both tasks, ensure you manage conc
 #include "oled_setup.h"
 
 // Wifi credentials
-const char *ssid = "ssid";
+const char *ssid = "ssd";
 const char *password = "pw";
 
 // Define LED colors as global constants
@@ -46,6 +46,16 @@ const char *MenuOptions[] = {"Connect Online", "Connect Offline"}; // might not 
 const char *MenuDroItems[] = {"Sino", "ToAuto"};
 const char *SinoAxis[] = {"X: ", "Y: "};
 const char *ToAutoAxis[] = {"X: ", "Y: ", "Z: "};
+
+enum MenuState
+{
+  MAIN_MENU,
+  TWO_AXIS,
+  THREE_AXIS
+};
+
+volatile MenuState currentMenuState = MAIN_MENU;
+volatile int menuItemIndex = 0; // Index of the selected menu item
 
 // Forward declarations
 void TaskNetwork(void *pvParameters);
@@ -111,8 +121,70 @@ bool ButtonRightPressed()
   return ButtonRead(4);
 }
 
-// Menu setup
 bool ButtonStatesPrev[] = {false, false, false, false, false};
+
+bool stateButtonCenter = ButtonCenterPressed();
+bool stateButtonUp = ButtonUpPressed();
+bool stateButtonDown = ButtonDownPressed();
+bool stateButtonLeft = ButtonLeftPressed();
+bool stateButtonRight = ButtonRightPressed();
+
+void updateButtonStates()
+{
+  ButtonStatesPrev[0] = ButtonLeftPressed();
+  ButtonStatesPrev[1] = ButtonCenterPressed();
+  ButtonStatesPrev[2] = ButtonUpPressed();
+  ButtonStatesPrev[3] = ButtonDownPressed();
+  ButtonStatesPrev[4] = ButtonRightPressed();
+}
+
+void handleMenuNavigation()
+{
+  if (ButtonUpPressed() && !ButtonStatesPrev[2])
+  {
+    if (currentMenuState == MAIN_MENU)
+    {
+      menuItemIndex = max(0, menuItemIndex - 1);
+    }
+  }
+  else if (ButtonDownPressed() && !ButtonStatesPrev[3])
+  {
+    if (currentMenuState == MAIN_MENU)
+    {
+      menuItemIndex = min(2, menuItemIndex + 1); // Assuming you have 3 menu items (in the case we want to add another option)
+    }
+  }
+  else if (ButtonCenterPressed() && !ButtonStatesPrev[1])
+  {
+    if (currentMenuState == MAIN_MENU)
+    {
+      switch (menuItemIndex)
+      {
+      case 0:
+        LCDScreenClear();
+        currentMenuState = TWO_AXIS;
+        break;
+      case 1:
+        LCDScreenClear();
+        currentMenuState = THREE_AXIS;
+        break;
+      }
+    }
+    else
+    {
+      currentMenuState = MAIN_MENU; // Allow going back to the main menu
+      LCDScreenClear();
+    }
+  }
+  // Update previous button states at the end of your button handling logic
+  // update button pressed
+  ButtonStatesPrev[0] = stateButtonCenter;
+  ButtonStatesPrev[1] = stateButtonUp;
+  ButtonStatesPrev[2] = stateButtonDown;
+  ButtonStatesPrev[3] = stateButtonLeft;
+  ButtonStatesPrev[4] = stateButtonRight;
+}
+// Menu setup
 int MotorChannelSelected = 0;
 int MotorChannelWatched = -1;
 
@@ -175,7 +247,7 @@ void setup()
   FastLED.setBrightness(24);
 
   // Handle display updates here
-  LCDTextDraw(12, 6, "-COMP491 ESP32 DRO-", 1, 1, 0);
+  // LCDTextDraw(12, 6, "-COMP491 ESP32 DRO-", 1, 1, 0);
 
   // Serial.println('\n');
   xTaskCreate(
@@ -183,7 +255,7 @@ void setup()
       "NetworkTask", // Name of the task
       10000,         // Stack size of task
       NULL,          // Parameter of the task
-      1,             // Priority of the task
+      2,             // Priority of the task
       NULL);         // Task handle
 
   xTaskCreate(
@@ -227,11 +299,11 @@ void TaskNetwork(void *pvParameters)
     {
 
       /* creating test JSON data*/
-      int outgoingvalue = 123;
-      StaticJsonDocument<200> doc;
-      doc["outgoingvalue"] = outgoingvalue;
-      String jsonstring;
-      serializeJson(doc, jsonstring);
+      // int outgoingvalue = 123;
+      // StaticJsonDocument<200> doc;
+      // doc["outgoingvalue"] = outgoingvalue;
+      // String jsonstring;
+      // serializeJson(doc, jsonstring);
 
       // If connected, perform HTTP operations
 
@@ -299,40 +371,100 @@ void TaskNetwork(void *pvParameters)
   vTaskDelete(NULL); // Delete this task if it ever breaks out of the loop (which it shouldn't)
 }
 
+// void TaskUpdateDisplay(void *pvParameters)
+// {
+//   for (;;)
+//   { // Task loop
+//     bool stateButtonCenter = ButtonCenterPressed();
+//     bool stateButtonUp = ButtonUpPressed();
+//     bool stateButtonDown = ButtonDownPressed();
+//     bool stateButtonLeft = ButtonLeftPressed();
+//     bool stateButtonRight = ButtonRightPressed();
+
+//     static int lastPos = 0; // Last position to check for changes
+
+//     if (encoderPos != lastPos)
+//     {
+//       Serial.println(encoderPos); // Print the change in position
+//       lastPos = encoderPos;       // Update last position
+//     }
+
+//     // Display the encoder position on the LCD
+//     char buffer[15];
+
+//     // X position
+//     LCDRectFill(10, 20, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
+//     sprintf(buffer, "X: %d", encoderPos);
+//     LCDTextDraw(10, 20, buffer, 1, WHITE, BLACK);
+
+//     //// This is just an example of how it would display on the OLED screen ////
+
+//     // Y position
+//     LCDRectFill(10, 35, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
+//     sprintf(buffer, "Y: %d", encoderPos);
+//     LCDTextDraw(10, 35, buffer, 1, WHITE, BLACK);
+
+//     // Z position
+//     LCDRectFill(10, 50, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
+//     sprintf(buffer, "Z: %d", encoderPos);
+//     LCDTextDraw(10, 50, buffer, 1, WHITE, BLACK);
+
+//     // Delay for a bit to not update too frequently
+//     vTaskDelay(pdMS_TO_TICKS(100)); // For example, delay for 100 milliseconds
+//   }
+// }
+
+void updateDisplayContent()
+{
+  char buffer[10];
+
+  switch (currentMenuState)
+  {
+  case MAIN_MENU:
+    LCDTextDraw(0, 0, "-COMP491 ESP32 DRO-", 1, WHITE, BLACK);
+    for (int i = 0; i < 2; i++)
+    {
+      sprintf(buffer, "%s %s", (i == menuItemIndex) ? ">" : " ", MenuDroItems[i]);
+      LCDTextDraw(0, 16 * (i + 1), buffer, 1, WHITE, BLACK);
+    }
+    break;
+  case TWO_AXIS:
+    LCDRectFill(0, 0, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
+    sprintf(buffer, "X: %d", encoderPos);
+    LCDTextDraw(0, 0, buffer, 1, WHITE, BLACK);
+
+    LCDRectFill(0, 16, 50, 10, BLACK);    // Fill a rectangle area with BLACK to clear previous number
+    sprintf(buffer, "Y: %d", encoderPos); // Placeholder for Y axis
+    LCDTextDraw(0, 16, buffer, 1, WHITE, BLACK);
+
+    LCDRectFill(0, 50, 50, 10, BLACK);                // Fill a rectangle area with BLACK to clear previous number
+    LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK); // menu option to return
+    break;
+  case THREE_AXIS:
+    LCDRectFill(0, 0, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
+    sprintf(buffer, "X: %d", encoderPos);
+    LCDTextDraw(0, 0, buffer, 1, WHITE, BLACK);
+
+    LCDRectFill(0, 16, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
+    sprintf(buffer, "Y: %d", encoderPos); // Placeholder for Y axis
+    LCDTextDraw(0, 16, buffer, 1, WHITE, BLACK);
+
+    LCDRectFill(0, 32, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
+    sprintf(buffer, "Z: %d", encoderPos); // Placeholder for Z axis
+    LCDTextDraw(0, 32, buffer, 1, WHITE, BLACK);
+
+    LCDRectFill(0, 50, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
+    LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK); // menu option to return
+    break;
+  }
+}
+
 void TaskUpdateDisplay(void *pvParameters)
 {
   for (;;)
-  { // Task loop
-
-    static int lastPos = 0; // Last position to check for changes
-
-    if (encoderPos != lastPos)
-    {
-      Serial.println(encoderPos); // Print the change in position
-      lastPos = encoderPos;       // Update last position
-    }
-
-    // Display the encoder position on the LCD
-    char buffer[15];
-
-    // X position
-    LCDRectFill(10, 20, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
-    sprintf(buffer, "X: %d", encoderPos);
-    LCDTextDraw(10, 20, buffer, 1, WHITE, BLACK);
-
-    //// This is just an example of how it would display on the OLED screen ////
-
-    // Y position
-    LCDRectFill(10, 35, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
-    sprintf(buffer, "Y: %d", encoderPos);
-    LCDTextDraw(10, 35, buffer, 1, WHITE, BLACK);
-
-    // Z position
-    LCDRectFill(10, 50, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
-    sprintf(buffer, "Z: %d", encoderPos);
-    LCDTextDraw(10, 50, buffer, 1, WHITE, BLACK);
-
-    // Delay for a bit to not update too frequently
-    vTaskDelay(pdMS_TO_TICKS(100)); // For example, delay for 100 milliseconds
+  {
+    handleMenuNavigation();
+    updateDisplayContent();
+    vTaskDelay(pdMS_TO_TICKS(100));
   }
 }
