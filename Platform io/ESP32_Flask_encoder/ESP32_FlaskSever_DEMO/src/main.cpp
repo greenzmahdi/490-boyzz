@@ -29,8 +29,8 @@ If you're using I2C or any shared resource in both tasks, ensure you manage conc
 #include "oled_setup.h"
 
 // Wifi credentials
-const char *ssid = "ssd";
-const char *password = "pw";
+const char *ssid = "[SOSA_HOME]";
+const char *password = "armando1!";
 
 // Define LED colors as global constants
 const int LEDColorDisconnected[3] = {0, 0, 0};
@@ -61,7 +61,7 @@ volatile int menuItemIndex = 0; // Index of the selected menu item
 void TaskNetwork(void *pvParameters);
 void TaskUpdateDisplay(void *pvParameters);
 
-//// I2C FUNCTIONS ////
+// I2C FUNCTIONS //
 byte I2CReadRegs(int address, int size)
 {
   Wire.beginTransmission(address);
@@ -80,7 +80,7 @@ bool I2CReadReg(int address, int size, int idx)
   return bitRead(regs, idx);
 }
 
-//// BUTTON FUNCTIONS ////
+// BUTTON FUNCTIONS //
 
 bool ButtonRead(int idx)
 {
@@ -196,7 +196,7 @@ const int IdxZ4 = 2;
 const int IdxZ5 = 1;
 const int IdxZ6 = 0;
 
-//// Encoder variables ////
+// Encoder variables //
 
 volatile int encoderPos = 0;  // Encoder position
 volatile int lastEncoded = 0; // Last encoded state
@@ -215,7 +215,7 @@ void updateEncoder()
 
   lastEncoded = encoded; // Store this value for next time
 }
-// }
+
 
 void setup()
 {
@@ -371,6 +371,8 @@ void TaskNetwork(void *pvParameters)
   vTaskDelete(NULL); // Delete this task if it ever breaks out of the loop (which it shouldn't)
 }
 
+// This was the first implementation //
+
 // void TaskUpdateDisplay(void *pvParameters)
 // {
 //   for (;;)
@@ -421,7 +423,7 @@ void updateDisplayContent()
   switch (currentMenuState)
   {
   case MAIN_MENU:
-    LCDTextDraw(0, 0, "-COMP491 ESP32 DRO-", 1, WHITE, BLACK);
+    LCDTextDraw(7, 0, "-COMP491 ESP32 DRO-", 1, WHITE, BLACK);
     for (int i = 0; i < 2; i++)
     {
       sprintf(buffer, "%s %s", (i == menuItemIndex) ? ">" : " ", MenuDroItems[i]);
@@ -445,15 +447,15 @@ void updateDisplayContent()
     sprintf(buffer, "X: %d", encoderPos);
     LCDTextDraw(0, 0, buffer, 1, WHITE, BLACK);
 
-    LCDRectFill(0, 16, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
+    LCDRectFill(0, 16, 50, 10, BLACK);    // Fill a rectangle area with BLACK to clear previous number
     sprintf(buffer, "Y: %d", encoderPos); // Placeholder for Y axis
     LCDTextDraw(0, 16, buffer, 1, WHITE, BLACK);
 
-    LCDRectFill(0, 32, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
+    LCDRectFill(0, 32, 50, 10, BLACK);    // Fill a rectangle area with BLACK to clear previous number
     sprintf(buffer, "Z: %d", encoderPos); // Placeholder for Z axis
     LCDTextDraw(0, 32, buffer, 1, WHITE, BLACK);
 
-    LCDRectFill(0, 50, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
+    LCDRectFill(0, 50, 50, 10, BLACK);                // Fill a rectangle area with BLACK to clear previous number
     LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK); // menu option to return
     break;
   }
