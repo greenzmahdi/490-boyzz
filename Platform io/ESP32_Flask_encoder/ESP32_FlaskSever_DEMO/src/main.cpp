@@ -124,24 +124,31 @@ void updateButtonStates()
 
 void handleMenuNavigation()
 {
+  // check if button being pressed is diff from its last prev state aka (true != false)
   if (ButtonUpPressed() && !ButtonStatesPrev[2])
   {
+    // ensures curr state is in MAIN_MENU, ensuring it does not go below 0
     if (currentMenuState == MAIN_MENU)
     {
       menuItemIndex = max(0, menuItemIndex - 1);
     }
   }
+  // check if button being pressed is diff from its last prev state aka (true != false)
   else if (ButtonDownPressed() && !ButtonStatesPrev[3])
   {
     if (currentMenuState == MAIN_MENU)
     {
-      menuItemIndex = min(2, menuItemIndex + 1); // Assuming you have 3 menu items (in the case we want to add another option)
+      menuItemIndex = min(1, menuItemIndex + 1); // For now we just have two menu options 
+      // menuItemIndex = min(2, menuItemIndex + 1); // Assuming we want to add 3 menu items (in the case we want to add another option)
     }
   }
+  // check if button being pressed is diff from its last prev state aka (true != false)
   else if (ButtonCenterPressed() && !ButtonStatesPrev[1])
   {
     if (currentMenuState == MAIN_MENU)
     {
+      // based on the state of our menu option, we update our screen with the correct screen
+      // we clear the screen and update display 
       switch (menuItemIndex)
       {
       case 0:
@@ -161,7 +168,6 @@ void handleMenuNavigation()
     }
   }
   // Update previous button states at the end of your button handling logic
-  // update button pressed
   ButtonStatesPrev[0] = stateButtonCenter;
   ButtonStatesPrev[1] = stateButtonUp;
   ButtonStatesPrev[2] = stateButtonDown;
@@ -172,7 +178,7 @@ void handleMenuNavigation()
 int MotorChannelSelected = 0;
 int MotorChannelWatched = -1;
 
-//
+// NOT BEING USED ATM //
 const int IdxZ1 = 5;
 const int IdxZ2 = 4;
 const int IdxZ3 = 3;
