@@ -1,19 +1,3 @@
-/*
-Notes:
-Task Stack Sizes:
-
-Ensure that the stack size (10000) is sufficient for the tasks' needs. Too small and you'll run into stack overflows; too large and you're wasting precious memory. This often requires some trial and error to get right.
-Wi-Fi Connection Handling:
-
-After the initial connection to Wi-Fi, there's no handling for potential Wi-Fi disconnections within the TaskNetwork. It would be beneficial to implement a reconnection strategy.
-Global Variable Access:
-
-The encoderPos variable is accessed from both the ISR and TaskUpdateDisplay. It's declared volatile, which is good, but in a multitasking environment, you might need to protect its access with a mutex to avoid race conditions.
-Resource Management:
-
-If you're using I2C or any shared resource in both tasks, ensure you manage concurrent access properly, potentially with semaphores.
-*/
-
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <FastLED.h>
@@ -29,8 +13,8 @@ If you're using I2C or any shared resource in both tasks, ensure you manage conc
 #include "oled_setup.h"
 
 // Wifi credentials
-const char *ssid = "[SOSA_HOME]";
-const char *password = "armando1!";
+const char *ssid = "ssid";
+const char *password = "pw";
 
 // Define LED colors as global constants
 const int LEDColorDisconnected[3] = {0, 0, 0};
@@ -360,8 +344,8 @@ void TaskNetwork(void *pvParameters)
 
       LEDShow();
 
-      // Wait a bit before next reconnection attempt
-      // vTaskDelay(pdMS_TO_TICKS(5000));
+      /// Wait a bit before next reconnection attempt
+      vTaskDelay(pdMS_TO_TICKS(200));
     }
 
     // Delay to prevent flooding the network with requests
@@ -416,6 +400,8 @@ void TaskNetwork(void *pvParameters)
 //   }
 // }
 
+
+
 void updateDisplayContent()
 {
   char buffer[10];
@@ -467,6 +453,6 @@ void TaskUpdateDisplay(void *pvParameters)
   {
     handleMenuNavigation();
     updateDisplayContent();
-    vTaskDelay(pdMS_TO_TICKS(100));
+    // vTaskDelay(pdMS_TO_TICKS(100));
   }
 }
