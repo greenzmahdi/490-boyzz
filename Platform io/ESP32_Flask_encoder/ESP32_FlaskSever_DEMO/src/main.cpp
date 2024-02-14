@@ -138,7 +138,7 @@ void handleMenuNavigation()
   {
     if (currentMenuState == MAIN_MENU)
     {
-      menuItemIndex = min(1, menuItemIndex + 1); // For now we just have two menu options 
+      menuItemIndex = min(1, menuItemIndex + 1); // For now we just have two menu options
       // menuItemIndex = min(2, menuItemIndex + 1); // Assuming we want to add 3 menu items (in the case we want to add another option)
     }
   }
@@ -148,7 +148,7 @@ void handleMenuNavigation()
     if (currentMenuState == MAIN_MENU)
     {
       // based on the state of our menu option, we update our screen with the correct screen
-      // we clear the screen and update display 
+      // we clear the screen and update display
       switch (menuItemIndex)
       {
       case 0:
@@ -187,26 +187,82 @@ const int IdxZ5 = 1;
 const int IdxZ6 = 0;
 
 // Encoder variables //
-
-volatile int encoderPos = 0;  // Encoder position
-volatile int lastEncoded = 0; // Last encoded state
-
-void updateEncoder()
+struct Encoder
 {
-  int MSB = digitalRead(PIN_A1);          // Most significant bit (MSB) - pinA
-  int LSB = digitalRead(PIN_B1);          // Least significant bit (LSB) - pinB
-  int encoded = (MSB << 1) | LSB;         // Converting the 2 pin value to single number
-  int sum = (lastEncoded << 2) | encoded; // Adding it to the previous encoded value
+  const uint8_t pinA;
+  const uint8_t pinB;
+  volatile int lastEncoded;
+  volatile int position;
+};
+
+// volatile int encoderPos = 0; // Encoder position
+// volatile int lastEncoded = 0; // Last encoded state
+
+// void updateEncoder()
+// {
+//   int MSB = digitalRead(PIN_A1);          // Most significant bit (MSB) - pinA
+//   int LSB = digitalRead(PIN_B1);          // Least significant bit (LSB) - pinB
+//   int encoded = (MSB << 1) | LSB;         // Converting the 2 pin value to single number
+//   int sum = (lastEncoded << 2) | encoded; // Adding it to the previous encoded value
+
+//   if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011)
+//     encoderPos++;
+//   if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000)
+//     encoderPos--;
+
+//   lastEncoded = encoded; // Store this value for next time
+// }
+
+void updateEncoderPos(Encoder *encoder)
+{
+  int MSB = digitalRead(encoder->pinA);            // Most significant bit (MSB) - pinA
+  int LSB = digitalRead(encoder->pinB);            // Least significant bit (LSB) - pinB
+  int encoded = (MSB << 1) | LSB;                  // Converting the 2 pin value to single number
+  int sum = (encoder->lastEncoded << 2) | encoded; // Adding it to the previous encoded value
 
   if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011)
-    encoderPos++;
+    encoder->position++;
   if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000)
-    encoderPos--;
+    encoder->position--;
 
-  lastEncoded = encoded; // Store this value for next time
+  encoder->lastEncoded = encoded; // Store this value for next time
 }
 
+Encoder encoder1 = {PIN_A1, PIN_B1, 0, 0};
+Encoder encoder2 = {PIN_A2, PIN_B2, 0, 0};
+Encoder encoder3 = {PIN_A3, PIN_B3, 0, 0};
+Encoder encoder4 = {PIN_A4, PIN_B4, 0, 0};
+Encoder encoder5 = {PIN_A5, PIN_B5, 0, 0};
+Encoder encoder6 = {PIN_A6, PIN_B6, 0, 0};
 
+void IRAM_ATTR handleEncoder1Interrupt()
+{
+  updateEncoderPos(&encoder1);
+}
+void IRAM_ATTR handleEncoder2Interrupt()
+{
+  updateEncoderPos(&encoder2);
+}
+
+void IRAM_ATTR handleEncoder3Interrupt()
+{ // might not need this one
+  updateEncoderPos(&encoder3);
+}
+
+void IRAM_ATTR handleEncoder4Interrupt()
+{
+  updateEncoderPos(&encoder4);
+}
+
+void IRAM_ATTR handleEncoder5Interrupt()
+{
+  updateEncoderPos(&encoder5);
+}
+
+void IRAM_ATTR handleEncoder6Interrupt()
+{
+  updateEncoderPos(&encoder6);
+}
 void setup()
 {
   Serial.begin(115200);
@@ -230,8 +286,30 @@ void setup()
 
   // Monitor pin setup
 
-  attachInterrupt(PIN_A1, updateEncoder, CHANGE);
-  attachInterrupt(PIN_B1, updateEncoder, CHANGE);
+  // original implementation //
+
+  // attachInterrupt(PIN_A1, updateEncoder, CHANGE);
+  // attachInterrupt(PIN_B1, updateEncoder, CHANGE);
+
+  // new approach //
+
+  attachInterrupt(digitalPinToInterrupt(encoder1.pinA), handleEncoder1Interrupt, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(encoder1.pinB), handleEncoder1Interrupt, CHANGE);
+
+  attachInterrupt(digitalPinToInterrupt(encoder2.pinA), handleEncoder2Interrupt, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(encoder2.pinB), handleEncoder2Interrupt, CHANGE);
+
+  attachInterrupt(digitalPinToInterrupt(encoder3.pinA), handleEncoder3Interrupt, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(encoder3.pinB), handleEncoder3Interrupt, CHANGE);
+
+  attachInterrupt(digitalPinToInterrupt(encoder4.pinA), handleEncoder4Interrupt, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(encoder4.pinB), handleEncoder4Interrupt, CHANGE);
+
+  attachInterrupt(digitalPinToInterrupt(encoder5.pinA), handleEncoder5Interrupt, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(encoder5.pinB), handleEncoder5Interrupt, CHANGE);
+
+  attachInterrupt(digitalPinToInterrupt(encoder6.pinA), handleEncoder6Interrupt, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(encoder6.pinB), handleEncoder6Interrupt, CHANGE);
 
   // Dim LEDs
   FastLED.setBrightness(24);
@@ -406,8 +484,6 @@ void TaskNetwork(void *pvParameters)
 //   }
 // }
 
-
-
 void updateDisplayContent()
 {
   char buffer[10];
@@ -424,30 +500,31 @@ void updateDisplayContent()
     break;
   case TWO_AXIS:
     LCDRectFill(0, 0, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
-    sprintf(buffer, "X: %d", encoderPos);
+    // sprintf(buffer, "X: %d", encoderPos); // original implementation
+    sprintf(buffer, "X: %d", encoder1.position);
     LCDTextDraw(0, 0, buffer, 1, WHITE, BLACK);
 
-    LCDRectFill(0, 16, 50, 10, BLACK);    // Fill a rectangle area with BLACK to clear previous number
-    sprintf(buffer, "Y: %d", encoderPos); // Placeholder for Y axis
+    LCDRectFill(0, 16, 50, 10, BLACK);
+    sprintf(buffer, "Y: %d", encoder2.position);
     LCDTextDraw(0, 16, buffer, 1, WHITE, BLACK);
 
-    LCDRectFill(0, 50, 50, 10, BLACK);                // Fill a rectangle area with BLACK to clear previous number
+    LCDRectFill(0, 50, 50, 10, BLACK);
     LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK); // menu option to return
     break;
   case THREE_AXIS:
-    LCDRectFill(0, 0, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
-    sprintf(buffer, "X: %d", encoderPos);
+    LCDRectFill(0, 0, 50, 10, BLACK);
+    sprintf(buffer, "X: %d", encoder4.position);
     LCDTextDraw(0, 0, buffer, 1, WHITE, BLACK);
 
-    LCDRectFill(0, 16, 50, 10, BLACK);    // Fill a rectangle area with BLACK to clear previous number
-    sprintf(buffer, "Y: %d", encoderPos); // Placeholder for Y axis
+    LCDRectFill(0, 16, 50, 10, BLACK);
+    sprintf(buffer, "Y: %d", encoder5.position);
     LCDTextDraw(0, 16, buffer, 1, WHITE, BLACK);
 
-    LCDRectFill(0, 32, 50, 10, BLACK);    // Fill a rectangle area with BLACK to clear previous number
-    sprintf(buffer, "Z: %d", encoderPos); // Placeholder for Z axis
+    LCDRectFill(0, 32, 50, 10, BLACK);
+    sprintf(buffer, "Z: %d", encoder6.position);
     LCDTextDraw(0, 32, buffer, 1, WHITE, BLACK);
 
-    LCDRectFill(0, 50, 50, 10, BLACK);                // Fill a rectangle area with BLACK to clear previous number
+    LCDRectFill(0, 50, 50, 10, BLACK);
     LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK); // menu option to return
     break;
   }
