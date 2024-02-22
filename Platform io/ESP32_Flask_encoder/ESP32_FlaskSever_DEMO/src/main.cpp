@@ -13,8 +13,8 @@
 #include "oled.h"
 
 // Wifi credentials
-const char *ssid = "gabyshome";
-const char *password = "gabygon19";
+const char *ssid = "ssid";
+const char *password = "pw";
 
 // Define LED colors as global constants
 const int LEDColorDisconnected[3] = {0, 0, 0};
