@@ -25,6 +25,6 @@ void setUpPins()
 
     pinMode(PIN_PROBE, INPUT);
     pinMode(PIN_TACH, INPUT);
-    pinMode(PIN_IOINT ,INPUT);
+    pinMode(PIN_IOINT ,INPUT_PULLUP);
 
 };

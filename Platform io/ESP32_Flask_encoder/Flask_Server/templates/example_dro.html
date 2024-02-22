@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DRO Interface</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f0f0f0;
+  }
+  .dro-container {
+    width: 600px;
+    margin: 0 auto;
+    background: #ddd;
+    padding: 20px;
+    border-radius: 10px;
+  }
+  .readout {
+    font-family: 'Digital', sans-serif;
+    background: #000;
+    color: #00ff00;
+    padding: 10px;
+    margin-bottom: 5px;
+  }
+  .calculator-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .calculator-button {
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: center;
+    cursor: pointer;
+  }
+  .calculator-button:hover {
+    background: #e9e9e9;
+  }
+  /* More styles for the arrows, ABS/INC, and function buttons */
+</style>
+</head>
+<body>
+<div class="dro-container">
+  <div class="readout" id="x-readout">1.23456</div>
+  <div class="readout" id="y-readout">789.012</div>
+  <div class="readout" id="milli3-readout">MILLI3</div>
+
+  <div class="calculator-grid">
+    <!-- Calculator buttons -->
+    
+    <div class="calculator-button">7</div>
+    <div class="calculator-button">8</div>
+    <div class="calculator-button">9</div>
+    <div class="calculator-button">4</div>
+    <div class="calculator-button">5</div>
+    <div class="calculator-button">6</div>
+    <div class="calculator-button">1</div>
+    <div class="calculator-button">2</div>
+    <div class="calculator-button">3</div>
+    <div class="calculator-button">0</div>
+    <div class="calculator-button">ENTER</div>
+    <!-- More buttons -->
+  </div>
+
+  <!-- Arrow buttons -->
+  <!-- ABS/INC button -->
+  <!-- F1, F2, F3, F4 buttons -->
+</div>
+<script>
+  // JavaScript code to handle button clicks and update readouts
+</script>
+</body>
+</html>
