@@ -8,13 +8,13 @@
 #include <ArduinoJson.h>
 
 // file imports
-#include "pin_setup.h"
-#include "led_setup.h"
-#include "oled_setup.h"
+#include "pin.h"
+#include "led.h"
+#include "oled.h"
 
 // Wifi credentials
-const char *ssid = "ssid";
-const char *password = "pw";
+const char *ssid = "gabyshome";
+const char *password = "gabygon19";
 
 // Define LED colors as global constants
 const int LEDColorDisconnected[3] = {0, 0, 0};
@@ -384,7 +384,7 @@ void TaskNetwork(void *pvParameters)
       // String payload = http1.getString();
       // http1.end();
 
-      http2.begin("http://192.168.1.17:5000/status"); // Your server URL
+      http2.begin("http://rhcsun.pythonanywhere.com/status"); // Your server URL
       int httpCode2 = http2.GET();
 
       if (httpCode2 > 0)
