@@ -1,5 +1,5 @@
 #include <Adafruit_SSD1306.h>
-# include "oled_setup.h"
+#include "oled.h"
 // OLED setup
 Adafruit_SSD1306 LCD(128, 64, &Wire);
 

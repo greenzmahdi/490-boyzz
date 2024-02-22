@@ -1,5 +1,5 @@
 #include <Wire.h>
-#include "pin_setup.h"
+#include "pin.h"
 
 // Pin func setup
 void setUpPins()

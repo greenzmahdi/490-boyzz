@@ -1,6 +1,6 @@
 #include <FastLED.h>
-#include "led_setup.h"
-#include "pin_setup.h"
+#include "led.h"
+#include "pin.h"
 
 // Number of LEDs
 const int LEDNum = 12;
