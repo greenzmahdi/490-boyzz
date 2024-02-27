@@ -20,9 +20,14 @@ def status():
 
 @app.route('/getposition', methods=['POST'])
 def getposition():
-    data = request.get_json()
-    outgoingvalue = data['outgoingvalue']
-    return render_template(index.html, outgoingvalue = outgoingvalue)
+    global data 
+    data = request.data.decode('utf-8')
+    return 'Sucessfully Received'
+
+@app.route('/please')
+def please():
+    print("hey", data)
+    return '<p>'+data+'</p>'
 
 
 
