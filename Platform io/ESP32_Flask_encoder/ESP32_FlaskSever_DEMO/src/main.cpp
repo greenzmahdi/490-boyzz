@@ -465,25 +465,25 @@ void TaskNetwork(void *pvParameters)
   {
     if (WiFi.status() == WL_CONNECTED)
     {
+      //Randy code
+      HTTPClient http;
+      http.begin("http://192.168.1.132:5000/getposition");
+      http.addHeader("Content-Type", "text/plain");
+      int httpResponseCode = http.POST(outgoingvalue);
 
-      /* creating test JSON data*/
-      // int outgoingvalue = 123;
-      // StaticJsonDocument<200> doc;
-      // doc["outgoingvalue"] = outgoingvalue;
-      // String jsonstring;
-      // serializeJson(doc, jsonstring);
-
-      // If connected, perform HTTP operations
-
-      // HTTPClient http1;
+      if (httpResponseCode > 0)
+      {
+        String response = http.getString();
+        Serial.print("Ok");
+        delay(5000);
+      }
+      else{
+        Serial.print("Wrong");
+        delay(10000);
+      }
+      http.end();
+      
       HTTPClient http2;
-
-      // http1.begin("http://192.168.1.17:5000/getposition");
-      // http1.addHeader("Content-Type", "application/json");       // I commented out Randy b/c our flask sever was bugging out due to a (fuc option has no attribute)
-      // int httpCode = http1.POST(jsonstring);
-      // String payload = http1.getString();
-      // http1.end();
-
       http2.begin("http://rhcsun.pythonanywhere.com/status"); // Your server URL
       int httpCode2 = http2.GET();
 
