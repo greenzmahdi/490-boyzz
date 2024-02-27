@@ -64,6 +64,98 @@ bool I2CReadReg(int address, int size, int idx)
   return bitRead(regs, idx);
 }
 
+void I2CWriteReg(int address, int pin, bool state)
+{
+  // This function should write 'state' to 'pin' at 'address' on your I2C expander
+  // The implementation details will vary depending on your specific I2C expander chip
+
+  byte dataToWrite;
+
+  // Example: If you need to write a single bit, you'll likely first read the current state
+  // of all pins, modify the bit for 'pin' to 'state', and then write back.
+  Wire.beginTransmission(address);
+  Wire.write(0x00); // Assuming the register you're writing to, often the GPIO register
+  if (state)
+  {
+    dataToWrite |= (1 << pin); // Set the bit for the pin
+  }
+  else
+  {
+    dataToWrite &= ~(1 << pin); // Clear the bit for the pin
+  }
+  Wire.write(dataToWrite);
+  Wire.endTransmission();
+}
+
+// monitor z pin state //
+bool ZPinState(int idx)
+{
+  // PIN Z1 = 9
+  // PIN Z2 = 10
+  // PIN Z3 = 11
+  // PIN Z4 = 12
+  // PIN Z5 = 13
+
+  if ((idx < 9) || (idx > 14))
+    return false;
+
+  return !I2CReadReg(0x20, 1, idx);
+}
+
+bool pinZ1State()
+{
+  return ZPinState(9);
+}
+
+bool pinZ2State()
+{
+  return ZPinState(10);
+}
+
+bool pinZ3State()
+{
+  return ZPinState(11);
+}
+
+bool pinZ4State()
+{
+  return ZPinState(12);
+}
+
+bool pinZ5State()
+{
+  return ZPinState(13);
+}
+
+bool PinStatePrev[] = {false, true, false, false, false};
+
+bool PinStateZ1 = pinZ1State();
+bool PinStateZ2 = pinZ2State();
+bool PinStateZ3 = pinZ3State();
+bool PinStateZ4 = pinZ4State();
+bool PinStateZ5 = pinZ5State();
+
+void updateAllPinZ()
+{
+  PinStatePrev[0] = pinZ1State();
+  PinStatePrev[1] = pinZ2State();
+  PinStatePrev[2] = pinZ3State();
+  PinStatePrev[3] = pinZ4State();
+  PinStatePrev[4] = pinZ5State();
+}
+
+bool updateZPinState(int pinAIdx, int pinBIdx, int pinZIdx)
+{
+  bool stateA = I2CReadReg(0x20, 1, pinAIdx); // Read state of pin A
+  bool stateB = I2CReadReg(0x20, 1, pinBIdx); // Read state of pin B
+
+  bool zState = stateA && stateB; // Z is HIGH if both A and B are HIGH
+
+  I2CWriteReg(0x20, pinZIdx, zState); // Update Z pin state
+
+  return zState;
+}
+
 // BUTTON FUNCTIONS //
 
 bool ButtonRead(int idx)
@@ -173,6 +265,8 @@ void handleMenuNavigation()
   ButtonStatesPrev[2] = stateButtonDown;
   ButtonStatesPrev[3] = stateButtonLeft;
   ButtonStatesPrev[4] = stateButtonRight;
+
+  // updateAllPinZ(); // update all
 }
 // Menu setup
 int MotorChannelSelected = 0;
@@ -263,6 +357,19 @@ void IRAM_ATTR handleEncoder6Interrupt()
 {
   updateEncoderPos(&encoder6);
 }
+
+void updateAllZPins() {
+    // Example calls, assuming pinA1Index and pinB1Index are the indexes for A1 and B1 on the expander
+    updateZPinState(encoder1.pinA, encoder1.pinB, 9); // For Z1
+    updateZPinState(encoder2.pinA, encoder2.pinB, 10); // For Z2
+    updateZPinState(encoder3.pinA, encoder3.pinB, 11); // For Z3
+    updateZPinState(encoder4.pinA, encoder4.pinB, 12); // For Z4
+    updateZPinState(encoder5.pinA, encoder5.pinB, 13); // For Z5
+    updateZPinState(encoder6.pinA, encoder6.pinB, 14); // For Z6
+    // Repeat for other Z pins and their corresponding A/B pins
+}
+
+
 void setup()
 {
   Serial.begin(115200);
@@ -284,14 +391,7 @@ void setup()
   LCDInit();
   LCDScreenClear();
 
-  // Monitor pin setup
-
-  // original implementation //
-
-  // attachInterrupt(PIN_A1, updateEncoder, CHANGE);
-  // attachInterrupt(PIN_B1, updateEncoder, CHANGE);
-
-  // new approach //
+  // Monitor pin setup //
 
   attachInterrupt(digitalPinToInterrupt(encoder1.pinA), handleEncoder1Interrupt, CHANGE);
   attachInterrupt(digitalPinToInterrupt(encoder1.pinB), handleEncoder1Interrupt, CHANGE);
@@ -439,51 +539,6 @@ void TaskNetwork(void *pvParameters)
   vTaskDelete(NULL); // Delete this task if it ever breaks out of the loop (which it shouldn't)
 }
 
-// This was the first implementation //
-
-// void TaskUpdateDisplay(void *pvParameters)
-// {
-//   for (;;)
-//   { // Task loop
-//     bool stateButtonCenter = ButtonCenterPressed();
-//     bool stateButtonUp = ButtonUpPressed();
-//     bool stateButtonDown = ButtonDownPressed();
-//     bool stateButtonLeft = ButtonLeftPressed();
-//     bool stateButtonRight = ButtonRightPressed();
-
-//     static int lastPos = 0; // Last position to check for changes
-
-//     if (encoderPos != lastPos)
-//     {
-//       Serial.println(encoderPos); // Print the change in position
-//       lastPos = encoderPos;       // Update last position
-//     }
-
-//     // Display the encoder position on the LCD
-//     char buffer[15];
-
-//     // X position
-//     LCDRectFill(10, 20, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
-//     sprintf(buffer, "X: %d", encoderPos);
-//     LCDTextDraw(10, 20, buffer, 1, WHITE, BLACK);
-
-//     //// This is just an example of how it would display on the OLED screen ////
-
-//     // Y position
-//     LCDRectFill(10, 35, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
-//     sprintf(buffer, "Y: %d", encoderPos);
-//     LCDTextDraw(10, 35, buffer, 1, WHITE, BLACK);
-
-//     // Z position
-//     LCDRectFill(10, 50, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
-//     sprintf(buffer, "Z: %d", encoderPos);
-//     LCDTextDraw(10, 50, buffer, 1, WHITE, BLACK);
-
-//     // Delay for a bit to not update too frequently
-//     vTaskDelay(pdMS_TO_TICKS(100)); // For example, delay for 100 milliseconds
-//   }
-// }
-
 void updateDisplayContent()
 {
   char buffer[10];
@@ -491,7 +546,7 @@ void updateDisplayContent()
   switch (currentMenuState)
   {
   case MAIN_MENU:
-    LCDTextDraw(7, 0, "-COMP491 ESP32 DRO-", 1, WHITE, BLACK);
+    LCDTextDraw(7, 0, " COMP491 ESP32 DRO ", 1, WHITE, BLACK);
     for (int i = 0; i < 2; i++)
     {
       sprintf(buffer, "%s %s", (i == menuItemIndex) ? ">" : " ", MenuDroItems[i]);
@@ -534,6 +589,7 @@ void TaskUpdateDisplay(void *pvParameters)
 {
   for (;;)
   {
+    updateAllZPins();
     handleMenuNavigation();
     updateDisplayContent();
     // vTaskDelay(pdMS_TO_TICKS(100));
