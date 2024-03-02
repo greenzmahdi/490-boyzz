@@ -466,10 +466,16 @@ void TaskNetwork(void *pvParameters)
     if (WiFi.status() == WL_CONNECTED)
     {
       //Randy code
+      String outgoingvalue = "123";
       HTTPClient http;
       http.begin("http://192.168.1.132:5000/getposition");
       http.addHeader("Content-Type", "text/plain");
-      int httpResponseCode = http.POST(outgoingvalue);
+      
+      int code = encoder1.position;
+      std::string strNum = std::to_string(code);
+      const char* charArray = strNum.c_str();
+      int httpResponseCode = http.POST(charArray);
+
 
       if (httpResponseCode > 0)
       {

@@ -27,8 +27,8 @@ def getposition():
 @app.route('/please')
 def please():
     print("hey", data)
-    return '<p>'+data+'</p>'
-
+    return jsonify(data=data)
+    #return render_template('index.html', data=data)
 
 
 if __name__ == '__main__':

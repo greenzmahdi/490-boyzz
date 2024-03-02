@@ -25,9 +25,34 @@
     <button onclick="toggleLED()">Toggle LED Color</button>
     <p>LED Color: <span id="led_color">{{ led_color }}</span></p>
     <hr />
+    <form action="/please" method="GET">
+      <p>This is my value <span id="data"></span></p>
+      <button type="button" onclick="getData()">Button</button>
+    </form>
 
-    <h1>This is my value {{ data }}</h1>
+    
+    <h1>This is my value {{data}}</h1>
+
+
 
     <hr />
   </body>
-</html>
+<script>
+function getData(){
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/please');
+  xhr.onload = function(){
+    if(xhr.status == 200){
+      document.getElementById('data').innerText = JSON.parse(xhr.responseText).data;
+    }
+  };
+  xhr.send();
+}
+</script>
+
+
+
+
+
+
+  </html>
