@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, render_template, request
+import json 
 app = Flask(__name__)
 
 # This will store the LED state
@@ -20,14 +21,27 @@ def status():
 
 @app.route('/getposition', methods=['POST'])
 def getposition():
-    global data 
-    data = request.data.decode('utf-8')
+    global value1
+    global value2
+    data = json.loads(request.data)
+
+    value1 = data['value1']
+    value2 = data['value2']
+
+    #global data
+    #data = request.data.decode('utf-8')
+    
     return 'Sucessfully Received'
 
 @app.route('/please')
 def please():
-    print("hey", data)
-    return jsonify(data=data)
+    temp = jsonify(data=value1)
+    temp2 = jsonify(data=value2)
+    something = temp.get_json()['data']
+    something2 = temp2.get_json()['data']
+    return render_template('index.html', something=something, something2=something2)
+    #print("hey", data)
+    #return jsonify(data=data)
     #return render_template('index.html', data=data)
 
 

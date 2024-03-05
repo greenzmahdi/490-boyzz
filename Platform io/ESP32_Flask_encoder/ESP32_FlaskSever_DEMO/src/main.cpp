@@ -467,14 +467,22 @@ void TaskNetwork(void *pvParameters)
     {
       //Randy code
       String outgoingvalue = "123";
+      
       HTTPClient http;
       http.begin("http://192.168.1.132:5000/getposition");
-      http.addHeader("Content-Type", "text/plain");
+      http.addHeader("Content-Type", "application/json");
       
-      int code = encoder1.position;
+      StaticJsonDocument<200> doc;
+      doc["value1"] = encoder1.position;
+      doc["value2"] = encoder2.position;
+      String code;
+      serializeJson(doc, code);
+      int httpResponseCode = http.POST(code);
+
+      /*int code = encoder1.position;
       std::string strNum = std::to_string(code);
       const char* charArray = strNum.c_str();
-      int httpResponseCode = http.POST(charArray);
+      int httpResponseCode = http.POST(charArray);*/
 
 
       if (httpResponseCode > 0)

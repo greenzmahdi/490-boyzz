@@ -70,8 +70,22 @@
   <!-- ABS/INC button -->
   <!-- F1, F2, F3, F4 buttons -->
 </div>
+
+<form action="/please" method="GET">
+  <p>This is my value <span id="data"></span></p>
+  <button type="button" onclick="getData()">Button</button>
+</form>
 <script>
-  // JavaScript code to handle button clicks and update readouts
-</script>
+  function getData(){
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/please');
+    xhr.onload = function(){
+      if(xhr.status == 200){
+        document.getElementById('data').innerText = JSON.parse(xhr.responseText).data;
+      }
+    };
+    xhr.send();
+  }
+  </script>
 </body>
 </html>
