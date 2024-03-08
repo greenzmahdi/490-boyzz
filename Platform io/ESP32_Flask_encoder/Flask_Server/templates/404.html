@@ -3,6 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- link google font  -->
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script&display=swap" rel="stylesheet">
+    
     <title>404 Not Found</title>
     <style>
       body,
@@ -37,9 +40,10 @@
         color: #fff;
       }
       .message {
-        font-size: 22px;
+        font-size: 48px;
         margin: 0;
         color: #fff;
+        font-family: 'Dancing Script', cursive; /* This specifies the custom font, with a generic cursive as a fallback */
       }
       .error-button {
         margin-top: 20px;
@@ -62,6 +66,7 @@
     <div class="overlay">
       <h1 class="error-code">404</h1>
       <p class="message">Hello, is it me you're looking for?</p>
+
       <button onclick="window.location.href='/'" class="error-button">
         Go Home
       </button>
