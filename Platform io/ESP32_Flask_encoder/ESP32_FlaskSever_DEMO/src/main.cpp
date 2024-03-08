@@ -13,8 +13,8 @@
 #include "oled.h"
 
 // Wifi credentials
-const char *ssid = "ssid";
-const char *password = "pw";
+const char *ssid = "[SOSA_HOME]";
+const char *password = "armando1!";
 
 // Define LED colors as global constants
 const int LEDColorDisconnected[3] = {0, 0, 0};
@@ -281,12 +281,22 @@ const int IdxZ5 = 1;
 const int IdxZ6 = 0;
 
 // Encoder variables //
+// struct Encoder
+// {
+//   const uint8_t pinA;
+//   const uint8_t pinB;
+//   volatile int lastEncoded;
+//   volatile int position;
+// };
 struct Encoder
 {
   const uint8_t pinA;
   const uint8_t pinB;
-  volatile int lastEncoded;
   volatile int position;
+  volatile int lastEncoded;
+  volatile unsigned long lastInterruptTime;
+  unsigned long pulseTimes[5]; // Array to store the last 5 pulse times for consistency calculation
+  unsigned long debounceDelay;
 };
 
 // volatile int encoderPos = 0; // Encoder position
@@ -307,68 +317,141 @@ struct Encoder
 //   lastEncoded = encoded; // Store this value for next time
 // }
 
-void updateEncoderPos(Encoder *encoder)
+// void updateEncoderPos(Encoder *encoder)
+// {
+//   int MSB = digitalRead(encoder->pinA);            // Most significant bit (MSB) - pinA
+//   int LSB = digitalRead(encoder->pinB);            // Least significant bit (LSB) - pinB
+//   int encoded = (MSB << 1) | LSB;                  // Converting the 2 pin value to single number
+//   int sum = (encoder->lastEncoded << 2) | encoded; // Adding it to the previous encoded value
+
+//   if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011)
+//     encoder->position++;
+//   if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000)
+//     encoder->position--;
+
+//   encoder->lastEncoded = encoded; // Store this value for next time
+// }
+
+unsigned long average(unsigned long arr[], int numElements)
 {
-  int MSB = digitalRead(encoder->pinA);            // Most significant bit (MSB) - pinA
-  int LSB = digitalRead(encoder->pinB);            // Least significant bit (LSB) - pinB
-  int encoded = (MSB << 1) | LSB;                  // Converting the 2 pin value to single number
-  int sum = (encoder->lastEncoded << 2) | encoded; // Adding it to the previous encoded value
-
-  if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011)
-    encoder->position++;
-  if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000)
-    encoder->position--;
-
-  encoder->lastEncoded = encoded; // Store this value for next time
+  unsigned long sum = 0;
+  for (int i = 0; i < numElements; i++)
+  {
+    sum += arr[i];
+  }
+  return sum / numElements;
 }
 
-Encoder encoder1 = {PIN_A1, PIN_B1, 0, 0};
-Encoder encoder2 = {PIN_A2, PIN_B2, 0, 0};
-Encoder encoder3 = {PIN_A3, PIN_B3, 0, 0};
-Encoder encoder4 = {PIN_A4, PIN_B4, 0, 0};
-Encoder encoder5 = {PIN_A5, PIN_B5, 0, 0};
-Encoder encoder6 = {PIN_A6, PIN_B6, 0, 0};
+unsigned long standardDeviation(unsigned long arr[], int numElements, unsigned long mean)
+{
+  unsigned long variance = 0;
+  for (int i = 0; i < numElements; i++)
+  {
+    variance += (arr[i] - mean) * (arr[i] - mean);
+  }
+  variance /= numElements;
+  return sqrt(variance);
+}
+
+void updatePulseTimes(Encoder *encoder, unsigned long pulseTime)
+{
+  // Shift previous times down and add the new time at the end
+  for (int i = 0; i < 4; i++)
+  {
+    encoder->pulseTimes[i] = encoder->pulseTimes[i + 1];
+  }
+  encoder->pulseTimes[4] = pulseTime;
+}
+
+void adjustDebounceDelay(Encoder *encoder)
+{
+  // Calculate the average and standard deviation of the encoder's pulse times
+  unsigned long avg = average(encoder->pulseTimes, 5);
+  unsigned long stdDev = standardDeviation(encoder->pulseTimes, 5, avg);
+
+  // Adjust encoder->debounceDelay based on the speed (average pulse time)
+  encoder->debounceDelay = map(avg, 0, 1000, 0, 5);
+
+  // Further adjust encoder->debounceDelay based on consistency (standard deviation)
+  encoder->debounceDelay += map(stdDev, 0, 500, 0, 5);
+
+  // Ensure encoder->debounceDelay stays within the desired range of 0-5
+  encoder->debounceDelay = constrain(encoder->debounceDelay, 0, 5);
+}
+
+void updateEncoder(Encoder *encoder)
+{
+  unsigned long currentTime = micros();
+  if (currentTime - encoder->lastInterruptTime < encoder->debounceDelay * 1000)
+  {
+    return; // Too soon, ignore this movement
+  }
+
+  int MSB = digitalRead(encoder->pinA);
+  int LSB = digitalRead(encoder->pinB);
+  int encoded = (MSB << 1) | LSB;
+  int sum = (encoder->lastEncoded << 2) | encoded;
+
+  if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011)
+    encoder->position--;
+  if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000)
+    encoder->position++;
+
+  encoder->lastEncoded = encoded;
+  encoder->lastInterruptTime = currentTime;
+
+  // Update pulse times and adjust debounceDelay
+  updatePulseTimes(encoder, currentTime - encoder->lastInterruptTime);
+  adjustDebounceDelay(encoder);
+}
+
+Encoder encoder1 = {PIN_A1, PIN_B1, 0, 0, 0, {0}, 1};
+Encoder encoder2 = {PIN_A2, PIN_B2, 0, 0, 0, {0}, 1};
+Encoder encoder3 = {PIN_A3, PIN_B3, 0, 0, 0, {0}, 1};
+Encoder encoder4 = {PIN_A4, PIN_B4, 0, 0, 0, {0}, 1};
+Encoder encoder5 = {PIN_A5, PIN_B5, 0, 0, 0, {0}, 1};
+Encoder encoder6 = {PIN_A6, PIN_B6, 0, 0, 0, {0}, 1};
 
 void IRAM_ATTR handleEncoder1Interrupt()
 {
-  updateEncoderPos(&encoder1);
+  updateEncoder(&encoder1);
 }
 void IRAM_ATTR handleEncoder2Interrupt()
 {
-  updateEncoderPos(&encoder2);
+  updateEncoder(&encoder2);
 }
 
 void IRAM_ATTR handleEncoder3Interrupt()
 { // might not need this one
-  updateEncoderPos(&encoder3);
+  updateEncoder(&encoder3);
 }
 
 void IRAM_ATTR handleEncoder4Interrupt()
 {
-  updateEncoderPos(&encoder4);
+  updateEncoder(&encoder4);
 }
 
 void IRAM_ATTR handleEncoder5Interrupt()
 {
-  updateEncoderPos(&encoder5);
+  updateEncoder(&encoder5);
 }
 
 void IRAM_ATTR handleEncoder6Interrupt()
 {
-  updateEncoderPos(&encoder6);
+  updateEncoder(&encoder6);
 }
 
-void updateAllZPins() {
-    // Example calls, assuming pinA1Index and pinB1Index are the indexes for A1 and B1 on the expander
-    updateZPinState(encoder1.pinA, encoder1.pinB, 9); // For Z1
-    updateZPinState(encoder2.pinA, encoder2.pinB, 10); // For Z2
-    updateZPinState(encoder3.pinA, encoder3.pinB, 11); // For Z3
-    updateZPinState(encoder4.pinA, encoder4.pinB, 12); // For Z4
-    updateZPinState(encoder5.pinA, encoder5.pinB, 13); // For Z5
-    updateZPinState(encoder6.pinA, encoder6.pinB, 14); // For Z6
-    // Repeat for other Z pins and their corresponding A/B pins
+void updateAllZPins()
+{
+  // Example calls, assuming pinA1Index and pinB1Index are the indexes for A1 and B1 on the expander
+  updateZPinState(encoder1.pinA, encoder1.pinB, 9);  // For Z1
+  updateZPinState(encoder2.pinA, encoder2.pinB, 10); // For Z2
+  updateZPinState(encoder3.pinA, encoder3.pinB, 11); // For Z3
+  updateZPinState(encoder4.pinA, encoder4.pinB, 12); // For Z4
+  updateZPinState(encoder5.pinA, encoder5.pinB, 13); // For Z5
+  updateZPinState(encoder6.pinA, encoder6.pinB, 14); // For Z6
+                                                     // Repeat for other Z pins and their corresponding A/B pins
 }
-
 
 void setup()
 {
@@ -393,23 +476,77 @@ void setup()
 
   // Monitor pin setup //
 
-  attachInterrupt(digitalPinToInterrupt(encoder1.pinA), handleEncoder1Interrupt, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(encoder1.pinB), handleEncoder1Interrupt, CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(encoder1.pinA), handleEncoder1Interrupt, CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(encoder1.pinB), handleEncoder1Interrupt, CHANGE);
 
-  attachInterrupt(digitalPinToInterrupt(encoder2.pinA), handleEncoder2Interrupt, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(encoder2.pinB), handleEncoder2Interrupt, CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(encoder2.pinA), handleEncoder2Interrupt, CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(encoder2.pinB), handleEncoder2Interrupt, CHANGE);
 
-  attachInterrupt(digitalPinToInterrupt(encoder3.pinA), handleEncoder3Interrupt, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(encoder3.pinB), handleEncoder3Interrupt, CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(encoder3.pinA), handleEncoder3Interrupt, CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(encoder3.pinB), handleEncoder3Interrupt, CHANGE);
 
-  attachInterrupt(digitalPinToInterrupt(encoder4.pinA), handleEncoder4Interrupt, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(encoder4.pinB), handleEncoder4Interrupt, CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(encoder4.pinA), handleEncoder4Interrupt, CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(encoder4.pinB), handleEncoder4Interrupt, CHANGE);
 
-  attachInterrupt(digitalPinToInterrupt(encoder5.pinA), handleEncoder5Interrupt, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(encoder5.pinB), handleEncoder5Interrupt, CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(encoder5.pinA), handleEncoder5Interrupt, CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(encoder5.pinB), handleEncoder5Interrupt, CHANGE);
 
-  attachInterrupt(digitalPinToInterrupt(encoder6.pinA), handleEncoder6Interrupt, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(encoder6.pinB), handleEncoder6Interrupt, CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(encoder6.pinA), handleEncoder6Interrupt, CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(encoder6.pinB), handleEncoder6Interrupt, CHANGE);
+
+  attachInterrupt(
+      digitalPinToInterrupt(encoder1.pinA), []()
+      { updateEncoder(&encoder1); },
+      CHANGE);
+  attachInterrupt(
+      digitalPinToInterrupt(encoder1.pinB), []()
+      { updateEncoder(&encoder1); },
+      CHANGE);
+
+  attachInterrupt(
+      digitalPinToInterrupt(encoder2.pinA), []()
+      { updateEncoder(&encoder2); },
+      CHANGE);
+  attachInterrupt(
+      digitalPinToInterrupt(encoder2.pinB), []()
+      { updateEncoder(&encoder2); },
+      CHANGE);
+
+  attachInterrupt(
+      digitalPinToInterrupt(encoder3.pinA), []()
+      { updateEncoder(&encoder3); },
+      CHANGE);
+  attachInterrupt(
+      digitalPinToInterrupt(encoder3.pinB), []()
+      { updateEncoder(&encoder3); },
+      CHANGE);
+
+  attachInterrupt(
+      digitalPinToInterrupt(encoder4.pinA), []()
+      { updateEncoder(&encoder4); },
+      CHANGE);
+  attachInterrupt(
+      digitalPinToInterrupt(encoder4.pinB), []()
+      { updateEncoder(&encoder4); },
+      CHANGE);
+
+  attachInterrupt(
+      digitalPinToInterrupt(encoder5.pinA), []()
+      { updateEncoder(&encoder5); },
+      CHANGE);
+  attachInterrupt(
+      digitalPinToInterrupt(encoder5.pinB), []()
+      { updateEncoder(&encoder5); },
+      CHANGE);
+
+  attachInterrupt(
+      digitalPinToInterrupt(encoder6.pinA), []()
+      { updateEncoder(&encoder6); },
+      CHANGE);
+  attachInterrupt(
+      digitalPinToInterrupt(encoder6.pinB), []()
+      { updateEncoder(&encoder6); },
+      CHANGE);
 
   // Dim LEDs
   FastLED.setBrightness(24);
@@ -465,40 +602,55 @@ void TaskNetwork(void *pvParameters)
   {
     if (WiFi.status() == WL_CONNECTED)
     {
-      //Randy code
+      // Randy code
       String outgoingvalue = "123";
-      
+
       HTTPClient http;
-      http.begin("http://192.168.1.132:5000/getposition");
+      http.begin("http://192.168.1.3:5000/getposition");
       http.addHeader("Content-Type", "application/json");
-      
+
       StaticJsonDocument<200> doc;
       doc["value1"] = encoder1.position;
       doc["value2"] = encoder2.position;
-      String code;
-      serializeJson(doc, code);
-      int httpResponseCode = http.POST(code);
 
-      /*int code = encoder1.position;
-      std::string strNum = std::to_string(code);
-      const char* charArray = strNum.c_str();
-      int httpResponseCode = http.POST(charArray);*/
+      String requestBody;
+      serializeJson(doc, requestBody);
 
-
+      int httpResponseCode = http.POST(requestBody);
       if (httpResponseCode > 0)
       {
         String response = http.getString();
-        Serial.print("Ok");
-        delay(5000);
+        Serial.println(response);
       }
-      else{
-        Serial.print("Wrong");
-        delay(10000);
+      else
+      {
+        Serial.print("Error on sending POST: ");
+        Serial.println(httpResponseCode);
       }
       http.end();
-      
+      // String code;
+      // serializeJson(doc, code);
+      // int httpResponseCode = http.POST(code);
+
+      // /*int code = encoder1.position;
+      // std::string strNum = std::to_string(code);
+      // const char* charArray = strNum.c_str();
+      // int httpResponseCode = http.POST(charArray);*/
+
+      // if (httpResponseCode > 0)
+      // {
+      //   String response = http.getString();
+      //   Serial.print("Ok");
+      //   delay(5000);
+      // }
+      // else{
+      //   Serial.print("Wrong");
+      //   delay(10000);
+      // }
+      // http.end();
+
       HTTPClient http2;
-      http2.begin("http://rhcsun.pythonanywhere.com/status"); // Your server URL
+      http2.begin("http://192.168.1.3:5000/status"); // Your server URL
       int httpCode2 = http2.GET();
 
       if (httpCode2 > 0)
