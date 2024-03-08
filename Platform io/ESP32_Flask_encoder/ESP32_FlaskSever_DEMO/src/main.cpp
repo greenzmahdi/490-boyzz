@@ -606,7 +606,7 @@ void TaskNetwork(void *pvParameters)
       String outgoingvalue = "123";
 
       HTTPClient http;
-      http.begin("http://192.168.1.3:5000/getposition");
+      http.begin("http://192.168.1.20:5000/getposition");
       http.addHeader("Content-Type", "application/json");
 
       StaticJsonDocument<200> doc;
@@ -650,7 +650,7 @@ void TaskNetwork(void *pvParameters)
       // http.end();
 
       HTTPClient http2;
-      http2.begin("http://192.168.1.3:5000/status"); // Your server URL
+      http2.begin("http://192.168.1.20:5000/status"); // Your server URL
       int httpCode2 = http2.GET();
 
       if (httpCode2 > 0)

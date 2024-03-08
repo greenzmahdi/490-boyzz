@@ -75,6 +75,33 @@
   <!--<p>This is my value <span id="data"></span></p>-->
   <button type="submit">Button</button>
 </form>
+<br>
+<p>LED Color: <span id="led-color">turquoise</span></p>
+
+<button onclick="toggleLED()">Switch</button>
+
+<script>
+  function toggleLED() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/toggle_led', true);
+    
+    xhr.onload = function() {
+      if (xhr.status === 200) {
+        // Assuming you want to update the background or some text to show the LED color
+        var ledColor = xhr.responseText;
+        
+        // Update the element showing the LED color. Adjust the selector as needed.
+        document.getElementById('led-color').innerText = ledColor;
+        document.getElementById('led-color').style.color = ledColor; // This changes text color, adjust as needed.
+      } else {
+        console.error('Error toggling LED');
+      }
+    };
+    
+    xhr.send();
+  }
+  </script>
+  
 <!--<script>
   function getData(){
     var xhr = new XMLHttpRequest();
