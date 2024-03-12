@@ -479,12 +479,36 @@ const char index_html[] PROGMEM = R"rawliteral(
       })
       .catch(console.error);
   }
+
+  function getPosition2() {
+    fetch("/position2")
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById("position2").innerHTML = data;
+      })
+      .catch(console.error);
+  }
+
+  function getPosition3() {
+    fetch("/position3")
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById("position3").innerHTML = data;
+      })
+      .catch(console.error);
+  }
+
+
   setInterval(getPosition, 10); // Update every 1000 milliseconds (modify as needed )
+  setInterval(getPosition2, 10); // Update every 1000 milliseconds (modify as needed )
+  setInterval(getPosition3, 10); // Update every 1000 milliseconds (modify as needed )
   </script>
 </head>
 <body>
   <h1>Encoder Position</h1>
-  <p>Position: <span id="position">0</span></p>
+  <p>X: <span id="position">0</span></p>
+  <p>Y: <span id="position2">0</span></p>
+  <p>Z: <span id="position3">0</span></p>
   <button onclick="toggleColor('turquoise')">Turquoise</button>
   <button onclick="toggleColor('purple')">Purple</button>
 </body>
@@ -540,6 +564,18 @@ void setup()
             {
     char temp[100];
     snprintf(temp, 100, "%d", encoder1.position); // Assuming encoder1.position is an int
+    request->send(200, "text/plain", temp); });
+
+    server.on("/position2", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
+    char temp[100];
+    snprintf(temp, 100, "%d", encoder2.position); // Assuming encoder1.position is an int
+    request->send(200, "text/plain", temp); });
+
+    server.on("/position3", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
+    char temp[100];
+    snprintf(temp, 100, "%d", encoder3.position); // Assuming encoder1.position is an int
     request->send(200, "text/plain", temp); });
 
   // Routes to toggle LED colors
