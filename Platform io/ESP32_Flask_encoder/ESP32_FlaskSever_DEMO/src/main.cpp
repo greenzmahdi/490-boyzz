@@ -558,9 +558,7 @@ const char index_html[] PROGMEM = R"rawliteral(
   }
 
   // Call updatePositions() every 1000ms (1 second)
-  setInterval(updatePositions, 10);
-  setInterval(updatePositions, 10);
-  setInterval(updatePositions, 10);
+  setInterval(updatePositions, 50);
 </script>
 </body>
 </html>
