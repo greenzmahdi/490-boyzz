@@ -457,36 +457,39 @@ void updateAllZPins()
                                                      // Repeat for other Z pins and their corresponding A/B pins
 }
 
-const char* h_ssid = "COMP490_ESP32-AP";
-const char* h_password = "123456789";
+const char *h_ssid = "COMP490_ESP32-AP";
+const char *h_password = "123456789";
 
-const int ledPin = 12; // The GPIO pin connected to your LED strip
+const int ledPin = 12;  // The GPIO pin connected to your LED strip
 const int numLeds = 12; // Number of LEDs in your strip
 
 CRGB leds[numLeds];
 AsyncWebServer server(80);
 
 const char index_html[] PROGMEM = R"rawliteral(
-<!DOCTYPE html>
-<html>
+<!DOCTYPE HTML><html>
 <head>
-    <title>ESP32 LED Controller</title>
-    <script>
-        function toggleColor(color) {
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", "/" + color, true);
-            xhr.send();
-        }
-    </script>
+  <title>ESP32 Encoder Position</title>
+  <script>
+  function getPosition() {
+    fetch("/position")
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById("position").innerHTML = data;
+      })
+      .catch(console.error);
+  }
+  setInterval(getPosition, 10); // Update every 1000 milliseconds (modify as needed )
+  </script>
 </head>
 <body>
-    <h1>ESP32 LED Controller</h1>
-    <button onclick="toggleColor('turquoise')">Turquoise</button>
-    <button onclick="toggleColor('purple')">Purple</button>
+  <h1>Encoder Position</h1>
+  <p>Position: <span id="position">0</span></p>
+  <button onclick="toggleColor('turquoise')">Turquoise</button>
+  <button onclick="toggleColor('purple')">Purple</button>
 </body>
 </html>
 )rawliteral";
-
 
 void setup()
 {
@@ -511,41 +514,48 @@ void setup()
   LCDInit();
   LCDScreenClear();
 
-// Initialize LED strip
-    FastLED.addLeds<WS2812B, ledPin, GRB>(leds, numLeds);
-    FastLED.setBrightness(50);
+  // Initialize LED strip
+  FastLED.addLeds<WS2812B, ledPin, GRB>(leds, numLeds);
+  FastLED.setBrightness(50);
 
-    // Initialize SPIFFS
-    if(!SPIFFS.begin(true)){
-        Serial.println("An Error has occurred while mounting SPIFFS");
-        return;
-    }
+  // Initialize SPIFFS
+  if (!SPIFFS.begin(true))
+  {
+    Serial.println("An Error has occurred while mounting SPIFFS");
+    return;
+  }
 
-    // Set up the ESP32 as an Access Point
-    WiFi.softAP(h_ssid, h_password);
-    Serial.println("Access Point Started");
-    Serial.print("IP Address: ");
-    Serial.println(WiFi.softAPIP());
+  // Set up the ESP32 as an Access Point
+  WiFi.softAP(h_ssid, h_password);
+  Serial.println("Access Point Started");
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.softAPIP());
 
-    // Route for root web page
-    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        request->send_P(200, "text/html", index_html);
-    });
+  // Route for root web page
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+            { request->send_P(200, "text/html", index_html); });
 
-    // Routes to toggle LED colors
-    server.on("/turquoise", HTTP_GET, [](AsyncWebServerRequest *request){
+  // New route to get the current position of encoder1
+  server.on("/position", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
+    char temp[100];
+    snprintf(temp, 100, "%d", encoder1.position); // Assuming encoder1.position is an int
+    request->send(200, "text/plain", temp); });
+
+  // Routes to toggle LED colors
+  server.on("/turquoise", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
         for(int i = 0; i < numLeds; i++) leds[i] = CRGB::Turquoise;
         FastLED.show();
-        request->send(200, "text/plain", "LEDs set to Turquoise");
-    });
+        request->send(200, "text/plain", "LEDs set to Turquoise"); });
 
-    server.on("/purple", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/purple", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
         for(int i = 0; i < numLeds; i++) leds[i] = CRGB::Purple;
         FastLED.show();
-        request->send(200, "text/plain", "LEDs set to Purple");
-    });
+        request->send(200, "text/plain", "LEDs set to Purple"); });
 
-    server.begin();
+  server.begin();
 
   // Monitor pin setup //
 
@@ -628,13 +638,13 @@ void setup()
   // LCDTextDraw(12, 6, "-COMP491 ESP32 DRO-", 1, 1, 0);
 
   // Serial.println('\n');
-  xTaskCreate(
-      TaskNetwork,   // Task function
-      "NetworkTask", // Name of the task
-      10000,         // Stack size of task
-      NULL,          // Parameter of the task
-      2,             // Priority of the task
-      NULL);         // Task handle
+  // xTaskCreate(
+  //     TaskNetwork,   // Task function
+  //     "NetworkTask", // Name of the task
+  //     10000,         // Stack size of task
+  //     NULL,          // Parameter of the task
+  //     2,             // Priority of the task
+  //     NULL);         // Task handle
 
   xTaskCreate(
       TaskUpdateDisplay, // Task function
@@ -649,134 +659,134 @@ void setup()
 
 void loop() {} // might not need this
 
-void TaskNetwork(void *pvParameters)
-{
-  // Initial connection attempt
-  Serial.print("Connecting to Wi-Fi: ");
-  Serial.println(ssid);
+// void TaskNetwork(void *pvParameters)
+// {
+//   // Initial connection attempt
+//   Serial.print("Connecting to Wi-Fi: ");
+//   Serial.println(ssid);
 
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    vTaskDelay(pdMS_TO_TICKS(1000));
-    Serial.print(".");
-  }
+//   WiFi.begin(ssid, password);
+//   while (WiFi.status() != WL_CONNECTED)
+//   {
+//     vTaskDelay(pdMS_TO_TICKS(1000));
+//     Serial.print(".");
+//   }
 
-  Serial.println();
-  Serial.println("Wi-Fi connected.");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
+//   Serial.println();
+//   Serial.println("Wi-Fi connected.");
+//   Serial.print("IP address: ");
+//   Serial.println(WiFi.localIP());
 
-  // Dim LEDs
-  FastLED.setBrightness(14);
+//   // Dim LEDs
+//   FastLED.setBrightness(14);
 
-  // Task loop
-  for (;;)
-  {
-    if (WiFi.status() == WL_CONNECTED)
-    {
-      // Randy code
-      String outgoingvalue = "123";
+//   // Task loop
+//   for (;;)
+//   {
+//     if (WiFi.status() == WL_CONNECTED)
+//     {
+//       // Randy code
+//       String outgoingvalue = "123";
 
-      HTTPClient http;
-      http.begin("http://192.168.1.20:5000/getposition");
-      http.addHeader("Content-Type", "application/json");
+//       HTTPClient http;
+//       http.begin("http://192.168.1.20:5000/getposition");
+//       http.addHeader("Content-Type", "application/json");
 
-      StaticJsonDocument<200> doc;
-      doc["value1"] = encoder1.position;
-      doc["value2"] = encoder2.position;
+//       StaticJsonDocument<200> doc;
+//       doc["value1"] = encoder1.position;
+//       doc["value2"] = encoder2.position;
 
-      String requestBody;
-      serializeJson(doc, requestBody);
+//       String requestBody;
+//       serializeJson(doc, requestBody);
 
-      int httpResponseCode = http.POST(requestBody);
-      if (httpResponseCode > 0)
-      {
-        String response = http.getString();
-        Serial.println(response);
-      }
-      else
-      {
-        Serial.print("Error on sending POST: ");
-        Serial.println(httpResponseCode);
-      }
-      http.end();
-      // String code;
-      // serializeJson(doc, code);
-      // int httpResponseCode = http.POST(code);
+//       int httpResponseCode = http.POST(requestBody);
+//       if (httpResponseCode > 0)
+//       {
+//         String response = http.getString();
+//         Serial.println(response);
+//       }
+//       else
+//       {
+//         Serial.print("Error on sending POST: ");
+//         Serial.println(httpResponseCode);
+//       }
+//       http.end();
+//       // String code;
+//       // serializeJson(doc, code);
+//       // int httpResponseCode = http.POST(code);
 
-      // /*int code = encoder1.position;
-      // std::string strNum = std::to_string(code);
-      // const char* charArray = strNum.c_str();
-      // int httpResponseCode = http.POST(charArray);*/
+//       // /*int code = encoder1.position;
+//       // std::string strNum = std::to_string(code);
+//       // const char* charArray = strNum.c_str();
+//       // int httpResponseCode = http.POST(charArray);*/
 
-      // if (httpResponseCode > 0)
-      // {
-      //   String response = http.getString();
-      //   Serial.print("Ok");
-      //   delay(5000);
-      // }
-      // else{
-      //   Serial.print("Wrong");
-      //   delay(10000);
-      // }
-      // http.end();
+//       // if (httpResponseCode > 0)
+//       // {
+//       //   String response = http.getString();
+//       //   Serial.print("Ok");
+//       //   delay(5000);
+//       // }
+//       // else{
+//       //   Serial.print("Wrong");
+//       //   delay(10000);
+//       // }
+//       // http.end();
 
-      HTTPClient http2;
-      http2.begin("http://192.168.1.20:5000/status"); // Your server URL
-      int httpCode2 = http2.GET();
+//       HTTPClient http2;
+//       http2.begin("http://192.168.1.20:5000/status"); // Your server URL
+//       int httpCode2 = http2.GET();
 
-      if (httpCode2 > 0)
-      {
-        String payload = http2.getString();
-        LEDInit(); // Make sure this function is safe to call from this task
+//       if (httpCode2 > 0)
+//       {
+//         String payload = http2.getString();
+//         LEDInit(); // Make sure this function is safe to call from this task
 
-        if (payload == "purple")
-        {
-          for (int i = 0; i < LEDNum; i++)
-          {
-            LEDSet(i, LEDColorPurple);
-          }
-        }
-        else if (payload == "turquoise")
-        {
-          for (int i = 0; i < LEDNum; i++)
-          {
-            LEDSet(i, LEDColorTurquoise);
-          }
-        }
-        LEDShow();
-      }
-      else
-      {
-        Serial.print("HTTP GET failed, error code: ");
-        Serial.println(httpCode2);
-      }
-      http2.end(); // End the HTTP connection
-    }
-    else
-    {
-      // If not connected, attempt to reconnect
-      Serial.println("Reconnecting to Wi-Fi...");
-      WiFi.disconnect();
-      WiFi.reconnect();
-      LEDInit();
+//         if (payload == "purple")
+//         {
+//           for (int i = 0; i < LEDNum; i++)
+//           {
+//             LEDSet(i, LEDColorPurple);
+//           }
+//         }
+//         else if (payload == "turquoise")
+//         {
+//           for (int i = 0; i < LEDNum; i++)
+//           {
+//             LEDSet(i, LEDColorTurquoise);
+//           }
+//         }
+//         LEDShow();
+//       }
+//       else
+//       {
+//         Serial.print("HTTP GET failed, error code: ");
+//         Serial.println(httpCode2);
+//       }
+//       http2.end(); // End the HTTP connection
+//     }
+//     else
+//     {
+//       // If not connected, attempt to reconnect
+//       Serial.println("Reconnecting to Wi-Fi...");
+//       WiFi.disconnect();
+//       WiFi.reconnect();
+//       LEDInit();
 
-      for (int i = 0; i < LEDNum; i++)
-        LEDSet(i, LEDColorDisconnected);
+//       for (int i = 0; i < LEDNum; i++)
+//         LEDSet(i, LEDColorDisconnected);
 
-      LEDShow();
+//       LEDShow();
 
-      /// Wait a bit before next reconnection attempt
-      vTaskDelay(pdMS_TO_TICKS(200));
-    }
+//       /// Wait a bit before next reconnection attempt
+//       vTaskDelay(pdMS_TO_TICKS(200));
+//     }
 
-    // Delay to prevent flooding the network with requests
-    // vTaskDelay(pdMS_TO_TICKS(5000));
-  }
+//     // Delay to prevent flooding the network with requests
+//     // vTaskDelay(pdMS_TO_TICKS(5000));
+//   }
 
-  vTaskDelete(NULL); // Delete this task if it ever breaks out of the loop (which it shouldn't)
-}
+//   vTaskDelete(NULL); // Delete this task if it ever breaks out of the loop (which it shouldn't)
+// }
 
 void updateDisplayContent()
 {
