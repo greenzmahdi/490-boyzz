@@ -457,7 +457,7 @@ void updateAllZPins()
                                                      // Repeat for other Z pins and their corresponding A/B pins
 }
 
-const char *h_ssid = "COMP490_ESP32-AP";
+const char *h_ssid = "491-DRO-Boyyz";
 const char *h_password = "123456789";
 
 const int ledPin = 12;  // The GPIO pin connected to your LED strip
@@ -467,53 +467,105 @@ CRGB leds[numLeds];
 AsyncWebServer server(80);
 
 const char index_html[] PROGMEM = R"rawliteral(
-<!DOCTYPE HTML><html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <title>ESP32 Encoder Position</title>
-  <script>
-  function getPosition() {
-    fetch("/position")
-      .then(response => response.text())
-      .then(data => {
-        document.getElementById("position").innerHTML = data;
-      })
-      .catch(console.error);
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DRO Interface</title>
+<style>
+  h1 {
+    text-align: center;
   }
-
-  function getPosition2() {
-    fetch("/position2")
-      .then(response => response.text())
-      .then(data => {
-        document.getElementById("position2").innerHTML = data;
-      })
-      .catch(console.error);
+  body {
+    font-family: Arial, sans-serif;
+    background: #f0f0f0;
   }
-
-  function getPosition3() {
-    fetch("/position3")
-      .then(response => response.text())
-      .then(data => {
-        document.getElementById("position3").innerHTML = data;
-      })
-      .catch(console.error);
+  .dro-container {
+    width: 600px;
+    margin: 0 auto;
+    background: #ddd;
+    padding: 20px;
+    border-radius: 10px;
   }
-
-
-  setInterval(getPosition, 10); // Update every 1000 milliseconds (modify as needed )
-  setInterval(getPosition2, 10); // Update every 1000 milliseconds (modify as needed )
-  setInterval(getPosition3, 10); // Update every 1000 milliseconds (modify as needed )
-  </script>
+  .readout {
+    font-family: 'Digital', sans-serif;
+    background: #000;
+    color: #00ff00;
+    padding: 10px;
+    margin-bottom: 5px;
+  }
+  .calculator-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .calculator-button {
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: center;
+    cursor: pointer;
+  }
+  .calculator-button:hover {
+    background: #e9e9e9;
+  }
+  /* More styles can be added as per requirement */
+</style>
 </head>
 <body>
-  <h1>Encoder Position</h1>
-  <p>X: <span id="position">0</span></p>
-  <p>Y: <span id="position2">0</span></p>
-  <p>Z: <span id="position3">0</span></p>
-  <button onclick="toggleColor('turquoise')">Turquoise</button>
-  <button onclick="toggleColor('purple')">Purple</button>
+<h1>491 ESP32 DRO Boyyz</h1>
+</hr>
+<div class="dro-container">
+  <div class="readout" id="x-readout">X: <span id="position"></span></div>
+  <div class="readout" id="y-readout">Y: <span id="position2"></span></div>
+  <div class="readout" id="z-readout">Z: <span id="position3"></span></div>
+
+  <div class="calculator-grid">
+    <!-- Calculator buttons here -->
+    <div class="calculator-button">7</div>
+    <div class="calculator-button">8</div>
+    <div class="calculator-button">9</div>
+    <div class="calculator-button">4</div>
+    <div class="calculator-button">5</div>
+    <div class="calculator-button">6</div>
+    <div class="calculator-button">1</div>
+    <div class="calculator-button">2</div>
+    <div class="calculator-button">3</div>
+    <div class="calculator-button">0</div>
+    <div class="calculator-button">ENTER</div>
+  </div>
+</div>
+
+<script>
+  function updatePositions() {
+    fetch("/position")
+      .then(response => response.text())
+      .then(data => document.getElementById("position").innerText = data)
+      .catch(console.error);
+
+    fetch("/position2")
+      .then(response => response.text())
+      .then(data => document.getElementById("position2").innerText = data)
+      .catch(console.error);
+
+    fetch("/position3")
+      .then(response => response.text())
+      .then(data => document.getElementById("position3").innerText = data)
+      .catch(console.error);
+  }
+
+  // Call updatePositions() every 1000ms (1 second)
+  setInterval(updatePositions, 10);
+  setInterval(updatePositions, 10);
+  setInterval(updatePositions, 10);
+</script>
 </body>
 </html>
 )rawliteral";
+
 
 void setup()
 {
@@ -566,13 +618,13 @@ void setup()
     snprintf(temp, 100, "%d", encoder1.position); // Assuming encoder1.position is an int
     request->send(200, "text/plain", temp); });
 
-    server.on("/position2", HTTP_GET, [](AsyncWebServerRequest *request)
+  server.on("/position2", HTTP_GET, [](AsyncWebServerRequest *request)
             {
     char temp[100];
     snprintf(temp, 100, "%d", encoder2.position); // Assuming encoder1.position is an int
     request->send(200, "text/plain", temp); });
 
-    server.on("/position3", HTTP_GET, [](AsyncWebServerRequest *request)
+  server.on("/position3", HTTP_GET, [](AsyncWebServerRequest *request)
             {
     char temp[100];
     snprintf(temp, 100, "%d", encoder3.position); // Assuming encoder1.position is an int
