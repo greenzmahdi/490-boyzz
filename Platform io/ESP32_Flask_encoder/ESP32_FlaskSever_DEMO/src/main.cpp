@@ -1,5 +1,9 @@
 #include <WiFi.h>
+#include <ESPAsyncWebServer.h>
+#include <AsyncTCP.h>
 #include <HTTPClient.h>
+#include <SPIFFS.h>
+
 #include <FastLED.h>
 // #include <Wire.h>
 #include <iostream>
@@ -453,6 +457,37 @@ void updateAllZPins()
                                                      // Repeat for other Z pins and their corresponding A/B pins
 }
 
+const char* h_ssid = "COMP490_ESP32-AP";
+const char* h_password = "123456789";
+
+const int ledPin = 12; // The GPIO pin connected to your LED strip
+const int numLeds = 12; // Number of LEDs in your strip
+
+CRGB leds[numLeds];
+AsyncWebServer server(80);
+
+const char index_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ESP32 LED Controller</title>
+    <script>
+        function toggleColor(color) {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/" + color, true);
+            xhr.send();
+        }
+    </script>
+</head>
+<body>
+    <h1>ESP32 LED Controller</h1>
+    <button onclick="toggleColor('turquoise')">Turquoise</button>
+    <button onclick="toggleColor('purple')">Purple</button>
+</body>
+</html>
+)rawliteral";
+
+
 void setup()
 {
   Serial.begin(115200);
@@ -467,12 +502,50 @@ void setup()
 
   LEDShow();
 
+  FastLED.setBrightness(50);
+
   // Init OLED
   Wire.setPins(PIN_I2C_SDA, PIN_I2C_SCL);
   Wire.begin();
   Wire.setClock(400000);
   LCDInit();
   LCDScreenClear();
+
+// Initialize LED strip
+    FastLED.addLeds<WS2812B, ledPin, GRB>(leds, numLeds);
+    FastLED.setBrightness(50);
+
+    // Initialize SPIFFS
+    if(!SPIFFS.begin(true)){
+        Serial.println("An Error has occurred while mounting SPIFFS");
+        return;
+    }
+
+    // Set up the ESP32 as an Access Point
+    WiFi.softAP(h_ssid, h_password);
+    Serial.println("Access Point Started");
+    Serial.print("IP Address: ");
+    Serial.println(WiFi.softAPIP());
+
+    // Route for root web page
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->send_P(200, "text/html", index_html);
+    });
+
+    // Routes to toggle LED colors
+    server.on("/turquoise", HTTP_GET, [](AsyncWebServerRequest *request){
+        for(int i = 0; i < numLeds; i++) leds[i] = CRGB::Turquoise;
+        FastLED.show();
+        request->send(200, "text/plain", "LEDs set to Turquoise");
+    });
+
+    server.on("/purple", HTTP_GET, [](AsyncWebServerRequest *request){
+        for(int i = 0; i < numLeds; i++) leds[i] = CRGB::Purple;
+        FastLED.show();
+        request->send(200, "text/plain", "LEDs set to Purple");
+    });
+
+    server.begin();
 
   // Monitor pin setup //
 
