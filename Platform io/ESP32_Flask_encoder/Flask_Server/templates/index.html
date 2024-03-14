@@ -16,13 +16,21 @@
     padding: 20px;
     border-radius: 10px;
   }
+ 
   .readout {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     font-family: 'Digital', sans-serif;
     background: #000;
     color: #00ff00;
     padding: 10px;
     margin-bottom: 5px;
   }
+  .readout span, .readout button {
+    margin: 0 5px;
+  }
+  
   .calculator-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -37,6 +45,17 @@
     text-align: center;
     cursor: pointer;
   }
+
+  .zeroout-button{
+    padding: 20px;
+    background:#00ff00;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: center;
+    cursor: pointer;
+  }
+
+
   .calculator-button:hover {
     background: #e9e9e9;
   }
@@ -46,7 +65,10 @@
 <body>
 <div class="dro-container">
   <div class="readout" id="x-readout">X: <span id="value1"></span>{{ something }}</div>
+  <button class='zeroout-button' type="submit">X0</button>
+
   <div class="readout" id="y-readout">Y: {{ something2 }}</div>
+  <button class='zeroout-button' type="submit">Y0</button>
   <!-- <div class="readout" id="milli3-readout">MILLI3</div> -->
 
   <div class="calculator-grid">

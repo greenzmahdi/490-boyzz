@@ -297,6 +297,7 @@ struct Encoder
   const uint8_t pinA;
   const uint8_t pinB;
   volatile int position;
+  volatile int positionInc;
   volatile int lastEncoded;
   volatile unsigned long lastInterruptTime;
   unsigned long pulseTimes[5]; // Array to store the last 5 pulse times for consistency calculation
@@ -409,12 +410,12 @@ void updateEncoder(Encoder *encoder)
   adjustDebounceDelay(encoder);
 }
 
-Encoder encoder1 = {PIN_A1, PIN_B1, 0, 0, 0, {0}, 1};
-Encoder encoder2 = {PIN_A2, PIN_B2, 0, 0, 0, {0}, 1};
-Encoder encoder3 = {PIN_A3, PIN_B3, 0, 0, 0, {0}, 1};
-Encoder encoder4 = {PIN_A4, PIN_B4, 0, 0, 0, {0}, 1};
-Encoder encoder5 = {PIN_A5, PIN_B5, 0, 0, 0, {0}, 1};
-Encoder encoder6 = {PIN_A6, PIN_B6, 0, 0, 0, {0}, 1};
+Encoder encoder1 = {PIN_A1, PIN_B1, 0, 0, 0, 0, {0}, 1};
+Encoder encoder2 = {PIN_A2, PIN_B2, 0, 0, 0, 0, {0}, 1};
+Encoder encoder3 = {PIN_A3, PIN_B3, 0, 0, 0, 0, {0}, 1};
+Encoder encoder4 = {PIN_A4, PIN_B4, 0, 0, 0, 0, {0}, 1};
+Encoder encoder5 = {PIN_A5, PIN_B5, 0, 0, 0, 0, {0}, 1};
+Encoder encoder6 = {PIN_A6, PIN_B6, 0, 0, 0, 0, {0}, 1};
 
 void IRAM_ATTR handleEncoder1Interrupt()
 {
@@ -519,24 +520,18 @@ const char index_html[] PROGMEM = R"rawliteral(
 <h1>491 ESP32 DRO Boyyz</h1>
 </hr>
 <div class="dro-container">
+<div class="readout" id="x-readout">ABS</div>
   <div class="readout" id="x-readout">X: <span id="position"></span></div>
   <div class="readout" id="y-readout">Y: <span id="position2"></span></div>
   <div class="readout" id="z-readout">Z: <span id="position3"></span></div>
 
-  <div class="calculator-grid">
-    <!-- Calculator buttons here -->
-    <div class="calculator-button">7</div>
-    <div class="calculator-button">8</div>
-    <div class="calculator-button">9</div>
-    <div class="calculator-button">4</div>
-    <div class="calculator-button">5</div>
-    <div class="calculator-button">6</div>
-    <div class="calculator-button">1</div>
-    <div class="calculator-button">2</div>
-    <div class="calculator-button">3</div>
-    <div class="calculator-button">0</div>
-    <div class="calculator-button">ENTER</div>
-  </div>
+  <button onclick="resetPosition('x')">Reset X</button>
+  <button onclick="resetPosition('xInc')">Abs X</button>
+  <button onclick="resetPosition('xAbs')"> Abs</button>
+  <button onclick="resetPosition('y')">Reset Y</button>
+  <button onclick="resetPosition('z')">Reset Z</button>
+
+  
 </div>
 
 <script>
@@ -557,13 +552,35 @@ const char index_html[] PROGMEM = R"rawliteral(
       .catch(console.error);
   }
 
+  function resetPosition(axis) {
+  fetch("/reset/" + axis)
+    .then(response => {
+      if (response.ok) {
+        console.log(axis.toUpperCase() + " position reset"); // print message 
+        updatePositions(); // Refresh the positions immediately
+      }
+    })
+    .catch(console.error);
+}
+
+//   function togglePosition(position) {
+//   fetch("/switch/" + position)
+//     .then(response => {
+//       if (response.ok) {
+//         console.log(axis.toUpperCase() + " position reset"); // print message 
+//         updatePositions(); // Refresh the positions immediately
+//       }
+//     })
+//     .catch(console.error);
+// }
+
+
   // Call updatePositions() every 1000ms (1 second)
   setInterval(updatePositions, 50);
 </script>
 </body>
 </html>
 )rawliteral";
-
 
 void setup()
 {
@@ -640,6 +657,64 @@ void setup()
         for(int i = 0; i < numLeds; i++) leds[i] = CRGB::Purple;
         FastLED.show();
         request->send(200, "text/plain", "LEDs set to Purple"); });
+
+  // Routes to reset Axis position
+  server.on("/reset/x", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
+  encoder1.positionInc = encoder1.position;
+  encoder1.position = 0; // Reset X position
+  request->send(200, "text/plain", "X position reset"); });
+
+  server.on("/reset/xInc", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
+  // encoder2.position = 0; // Reset Y position
+
+  encoder1.position += encoder1.positionInc;
+
+  request->send(200, "text/plain", "Y position reset"); });
+
+  server.on("/reset/xAbs", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
+  // encoder2.position = 0; // Reset Y position
+
+  encoder1.position += encoder1.positionInc;
+
+  request->send(200, "text/plain", "Y position reset"); });
+
+
+//
+
+  server.on("/reset/y", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
+  encoder2.position = 0; // Reset Y position
+
+
+  request->send(200, "text/plain", "Y position reset"); });
+
+//
+
+  server.on("/reset/z", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
+  encoder3.position = 0; // Assuming encoder3 is for Z, reset Z position
+  request->send(200, "text/plain", "Z position reset"); });
+
+
+
+
+  server.on("/switch/abs", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
+  char temp[100];
+  snprintf(temp, 100, "%d", encoder1.position); // Assuming encoder1.position is an int
+  request->send(200, "text/plain", temp); });
+
+
+
+  server.on("/switch/inc", HTTP_GET, [](AsyncWebServerRequest *request)
+          {
+  encoder1.positionInc = encoder1.position; // Assuming encoder3 is for Z, reset Z position
+  encoder1.position += encoder1.positionInc;
+
+  request->send(200, "text/plain", "Z position reset"); });
 
   server.begin();
 
