@@ -284,14 +284,7 @@ const int IdxZ4 = 2;
 const int IdxZ5 = 1;
 const int IdxZ6 = 0;
 
-// Encoder variables //
-// struct Encoder
-// {
-//   const uint8_t pinA;
-//   const uint8_t pinB;
-//   volatile int lastEncoded;
-//   volatile int position;
-// };
+// Setting Encoder attributes 
 struct Encoder
 {
   const uint8_t pinA;
@@ -304,39 +297,7 @@ struct Encoder
   unsigned long debounceDelay;
 };
 
-// volatile int encoderPos = 0; // Encoder position
-// volatile int lastEncoded = 0; // Last encoded state
-
-// void updateEncoder()
-// {
-//   int MSB = digitalRead(PIN_A1);          // Most significant bit (MSB) - pinA
-//   int LSB = digitalRead(PIN_B1);          // Least significant bit (LSB) - pinB
-//   int encoded = (MSB << 1) | LSB;         // Converting the 2 pin value to single number
-//   int sum = (lastEncoded << 2) | encoded; // Adding it to the previous encoded value
-
-//   if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011)
-//     encoderPos++;
-//   if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000)
-//     encoderPos--;
-
-//   lastEncoded = encoded; // Store this value for next time
-// }
-
-// void updateEncoderPos(Encoder *encoder)
-// {
-//   int MSB = digitalRead(encoder->pinA);            // Most significant bit (MSB) - pinA
-//   int LSB = digitalRead(encoder->pinB);            // Least significant bit (LSB) - pinB
-//   int encoded = (MSB << 1) | LSB;                  // Converting the 2 pin value to single number
-//   int sum = (encoder->lastEncoded << 2) | encoded; // Adding it to the previous encoded value
-
-//   if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011)
-//     encoder->position++;
-//   if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000)
-//     encoder->position--;
-
-//   encoder->lastEncoded = encoded; // Store this value for next time
-// }
-
+// Fuctions that help find SD to adjust debouncing // 
 unsigned long average(unsigned long arr[], int numElements)
 {
   unsigned long sum = 0;
@@ -384,6 +345,7 @@ void adjustDebounceDelay(Encoder *encoder)
   encoder->debounceDelay = constrain(encoder->debounceDelay, 0, 5);
 }
 
+// Functions to update the encoder position // 
 void updateEncoder(Encoder *encoder)
 {
   unsigned long currentTime = micros();
@@ -410,6 +372,7 @@ void updateEncoder(Encoder *encoder)
   adjustDebounceDelay(encoder);
 }
 
+// Initializing encoders attributes and setting their start (refer to encoder struct to see all parameters)
 Encoder encoder1 = {PIN_A1, PIN_B1, 0, 0, 0, 0, {0}, 1};
 Encoder encoder2 = {PIN_A2, PIN_B2, 0, 0, 0, 0, {0}, 1};
 Encoder encoder3 = {PIN_A3, PIN_B3, 0, 0, 0, 0, {0}, 1};
@@ -527,7 +490,7 @@ const char index_html[] PROGMEM = R"rawliteral(
 
   <button onclick="resetPosition('x')">Reset X</button>
   <button onclick="resetPosition('xInc')">Abs X</button>
-  <button onclick="resetPosition('xAbs')"> Abs</button>
+  <button onclick="resetPosition('xAbs')"> Inc</button>
   <button onclick="resetPosition('y')">Reset Y</button>
   <button onclick="resetPosition('z')">Reset Z</button>
 
@@ -616,12 +579,13 @@ void setup()
     return;
   }
 
-  // Set up the ESP32 as an Access Point
+  // Setting up the ESP32 as an Access Point //
   WiFi.softAP(h_ssid, h_password);
   Serial.println("Access Point Started");
   Serial.print("IP Address: ");
   Serial.println(WiFi.softAPIP());
 
+  // Setting up Routes
   // Route for root web page
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
             { request->send_P(200, "text/html", index_html); });
@@ -681,8 +645,7 @@ void setup()
 
   request->send(200, "text/plain", "Y position reset"); });
 
-
-//
+  //
 
   server.on("/reset/y", HTTP_GET, [](AsyncWebServerRequest *request)
             {
@@ -691,15 +654,12 @@ void setup()
 
   request->send(200, "text/plain", "Y position reset"); });
 
-//
+  //
 
   server.on("/reset/z", HTTP_GET, [](AsyncWebServerRequest *request)
             {
   encoder3.position = 0; // Assuming encoder3 is for Z, reset Z position
   request->send(200, "text/plain", "Z position reset"); });
-
-
-
 
   server.on("/switch/abs", HTTP_GET, [](AsyncWebServerRequest *request)
             {
@@ -707,10 +667,8 @@ void setup()
   snprintf(temp, 100, "%d", encoder1.position); // Assuming encoder1.position is an int
   request->send(200, "text/plain", temp); });
 
-
-
   server.on("/switch/inc", HTTP_GET, [](AsyncWebServerRequest *request)
-          {
+            {
   encoder1.positionInc = encoder1.position; // Assuming encoder3 is for Z, reset Z position
   encoder1.position += encoder1.positionInc;
 
@@ -719,25 +677,6 @@ void setup()
   server.begin();
 
   // Monitor pin setup //
-
-  // attachInterrupt(digitalPinToInterrupt(encoder1.pinA), handleEncoder1Interrupt, CHANGE);
-  // attachInterrupt(digitalPinToInterrupt(encoder1.pinB), handleEncoder1Interrupt, CHANGE);
-
-  // attachInterrupt(digitalPinToInterrupt(encoder2.pinA), handleEncoder2Interrupt, CHANGE);
-  // attachInterrupt(digitalPinToInterrupt(encoder2.pinB), handleEncoder2Interrupt, CHANGE);
-
-  // attachInterrupt(digitalPinToInterrupt(encoder3.pinA), handleEncoder3Interrupt, CHANGE);
-  // attachInterrupt(digitalPinToInterrupt(encoder3.pinB), handleEncoder3Interrupt, CHANGE);
-
-  // attachInterrupt(digitalPinToInterrupt(encoder4.pinA), handleEncoder4Interrupt, CHANGE);
-  // attachInterrupt(digitalPinToInterrupt(encoder4.pinB), handleEncoder4Interrupt, CHANGE);
-
-  // attachInterrupt(digitalPinToInterrupt(encoder5.pinA), handleEncoder5Interrupt, CHANGE);
-  // attachInterrupt(digitalPinToInterrupt(encoder5.pinB), handleEncoder5Interrupt, CHANGE);
-
-  // attachInterrupt(digitalPinToInterrupt(encoder6.pinA), handleEncoder6Interrupt, CHANGE);
-  // attachInterrupt(digitalPinToInterrupt(encoder6.pinB), handleEncoder6Interrupt, CHANGE);
-
   attachInterrupt(
       digitalPinToInterrupt(encoder1.pinA), []()
       { updateEncoder(&encoder1); },
@@ -795,18 +734,6 @@ void setup()
   // Dim LEDs
   FastLED.setBrightness(24);
 
-  // Handle display updates here
-  // LCDTextDraw(12, 6, "-COMP491 ESP32 DRO-", 1, 1, 0);
-
-  // Serial.println('\n');
-  // xTaskCreate(
-  //     TaskNetwork,   // Task function
-  //     "NetworkTask", // Name of the task
-  //     10000,         // Stack size of task
-  //     NULL,          // Parameter of the task
-  //     2,             // Priority of the task
-  //     NULL);         // Task handle
-
   xTaskCreate(
       TaskUpdateDisplay, // Task function
       "DisplayTask",     // Name of the task
@@ -819,135 +746,6 @@ void setup()
 }
 
 void loop() {} // might not need this
-
-// void TaskNetwork(void *pvParameters)
-// {
-//   // Initial connection attempt
-//   Serial.print("Connecting to Wi-Fi: ");
-//   Serial.println(ssid);
-
-//   WiFi.begin(ssid, password);
-//   while (WiFi.status() != WL_CONNECTED)
-//   {
-//     vTaskDelay(pdMS_TO_TICKS(1000));
-//     Serial.print(".");
-//   }
-
-//   Serial.println();
-//   Serial.println("Wi-Fi connected.");
-//   Serial.print("IP address: ");
-//   Serial.println(WiFi.localIP());
-
-//   // Dim LEDs
-//   FastLED.setBrightness(14);
-
-//   // Task loop
-//   for (;;)
-//   {
-//     if (WiFi.status() == WL_CONNECTED)
-//     {
-//       // Randy code
-//       String outgoingvalue = "123";
-
-//       HTTPClient http;
-//       http.begin("http://192.168.1.20:5000/getposition");
-//       http.addHeader("Content-Type", "application/json");
-
-//       StaticJsonDocument<200> doc;
-//       doc["value1"] = encoder1.position;
-//       doc["value2"] = encoder2.position;
-
-//       String requestBody;
-//       serializeJson(doc, requestBody);
-
-//       int httpResponseCode = http.POST(requestBody);
-//       if (httpResponseCode > 0)
-//       {
-//         String response = http.getString();
-//         Serial.println(response);
-//       }
-//       else
-//       {
-//         Serial.print("Error on sending POST: ");
-//         Serial.println(httpResponseCode);
-//       }
-//       http.end();
-//       // String code;
-//       // serializeJson(doc, code);
-//       // int httpResponseCode = http.POST(code);
-
-//       // /*int code = encoder1.position;
-//       // std::string strNum = std::to_string(code);
-//       // const char* charArray = strNum.c_str();
-//       // int httpResponseCode = http.POST(charArray);*/
-
-//       // if (httpResponseCode > 0)
-//       // {
-//       //   String response = http.getString();
-//       //   Serial.print("Ok");
-//       //   delay(5000);
-//       // }
-//       // else{
-//       //   Serial.print("Wrong");
-//       //   delay(10000);
-//       // }
-//       // http.end();
-
-//       HTTPClient http2;
-//       http2.begin("http://192.168.1.20:5000/status"); // Your server URL
-//       int httpCode2 = http2.GET();
-
-//       if (httpCode2 > 0)
-//       {
-//         String payload = http2.getString();
-//         LEDInit(); // Make sure this function is safe to call from this task
-
-//         if (payload == "purple")
-//         {
-//           for (int i = 0; i < LEDNum; i++)
-//           {
-//             LEDSet(i, LEDColorPurple);
-//           }
-//         }
-//         else if (payload == "turquoise")
-//         {
-//           for (int i = 0; i < LEDNum; i++)
-//           {
-//             LEDSet(i, LEDColorTurquoise);
-//           }
-//         }
-//         LEDShow();
-//       }
-//       else
-//       {
-//         Serial.print("HTTP GET failed, error code: ");
-//         Serial.println(httpCode2);
-//       }
-//       http2.end(); // End the HTTP connection
-//     }
-//     else
-//     {
-//       // If not connected, attempt to reconnect
-//       Serial.println("Reconnecting to Wi-Fi...");
-//       WiFi.disconnect();
-//       WiFi.reconnect();
-//       LEDInit();
-
-//       for (int i = 0; i < LEDNum; i++)
-//         LEDSet(i, LEDColorDisconnected);
-
-//       LEDShow();
-
-//       /// Wait a bit before next reconnection attempt
-//       vTaskDelay(pdMS_TO_TICKS(200));
-//     }
-
-//     // Delay to prevent flooding the network with requests
-//     // vTaskDelay(pdMS_TO_TICKS(5000));
-//   }
-
-//   vTaskDelete(NULL); // Delete this task if it ever breaks out of the loop (which it shouldn't)
-// }
 
 void updateDisplayContent()
 {
