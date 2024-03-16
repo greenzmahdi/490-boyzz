@@ -12,6 +12,7 @@
 #include <ArduinoJson.h>
 
 // file imports
+#include "I2C.h"
 #include "pin.h"
 #include "led.h"
 #include "oled.h"
@@ -50,116 +51,76 @@ volatile int menuItemIndex = 0; // Index of the selected menu item
 void TaskNetwork(void *pvParameters);
 void TaskUpdateDisplay(void *pvParameters);
 
-// I2C FUNCTIONS //
-byte I2CReadRegs(int address, int size)
-{
-  Wire.beginTransmission(address);
-  Wire.write(0x00);
-  Wire.endTransmission();
 
-  Wire.requestFrom(address, size);
 
-  return Wire.read();
-}
+// // monitor z pin state //
+// bool ZPinState(int idx)
+// {
+//   // PIN Z1 = 9
+//   // PIN Z2 = 10
+//   // PIN Z3 = 11
+//   // PIN Z4 = 12
+//   // PIN Z5 = 13
 
-bool I2CReadReg(int address, int size, int idx)
-{
-  byte regs = I2CReadRegs(address, size);
+//   if ((idx < 9) || (idx > 14))
+//     return false;
 
-  return bitRead(regs, idx);
-}
+//   return !I2CReadReg(0x20, 1, idx);
+// }
 
-void I2CWriteReg(int address, int pin, bool state)
-{
-  // This function should write 'state' to 'pin' at 'address' on your I2C expander
-  // The implementation details will vary depending on your specific I2C expander chip
+// bool pinZ1State()
+// {
+//   return ZPinState(9);
+// }
 
-  byte dataToWrite;
+// bool pinZ2State()
+// {
+//   return ZPinState(10);
+// }
 
-  // Example: If you need to write a single bit, you'll likely first read the current state
-  // of all pins, modify the bit for 'pin' to 'state', and then write back.
-  Wire.beginTransmission(address);
-  Wire.write(0x00); // Assuming the register you're writing to, often the GPIO register
-  if (state)
-  {
-    dataToWrite |= (1 << pin); // Set the bit for the pin
-  }
-  else
-  {
-    dataToWrite &= ~(1 << pin); // Clear the bit for the pin
-  }
-  Wire.write(dataToWrite);
-  Wire.endTransmission();
-}
+// bool pinZ3State()
+// {
+//   return ZPinState(11);
+// }
 
-// monitor z pin state //
-bool ZPinState(int idx)
-{
-  // PIN Z1 = 9
-  // PIN Z2 = 10
-  // PIN Z3 = 11
-  // PIN Z4 = 12
-  // PIN Z5 = 13
+// bool pinZ4State()
+// {
+//   return ZPinState(12);
+// }
 
-  if ((idx < 9) || (idx > 14))
-    return false;
+// bool pinZ5State()
+// {
+//   return ZPinState(13);
+// }
 
-  return !I2CReadReg(0x20, 1, idx);
-}
+// bool PinStatePrev[] = {false, true, false, false, false};
 
-bool pinZ1State()
-{
-  return ZPinState(9);
-}
+// bool PinStateZ1 = pinZ1State();
+// bool PinStateZ2 = pinZ2State();
+// bool PinStateZ3 = pinZ3State();
+// bool PinStateZ4 = pinZ4State();
+// bool PinStateZ5 = pinZ5State();
 
-bool pinZ2State()
-{
-  return ZPinState(10);
-}
+// void updateAllPinZ()
+// {
+//   PinStatePrev[0] = pinZ1State();
+//   PinStatePrev[1] = pinZ2State();
+//   PinStatePrev[2] = pinZ3State();
+//   PinStatePrev[3] = pinZ4State();
+//   PinStatePrev[4] = pinZ5State();
+// }
 
-bool pinZ3State()
-{
-  return ZPinState(11);
-}
+// bool updateZPinState(int pinAIdx, int pinBIdx, int pinZIdx)
+// {
+//   bool stateA = I2CReadReg(0x20, 1, pinAIdx); // Read state of pin A
+//   bool stateB = I2CReadReg(0x20, 1, pinBIdx); // Read state of pin B
 
-bool pinZ4State()
-{
-  return ZPinState(12);
-}
+//   bool zState = stateA && stateB; // Z is HIGH if both A and B are HIGH
 
-bool pinZ5State()
-{
-  return ZPinState(13);
-}
+//   I2CWriteReg(0x20, pinZIdx, zState); // Update Z pin state
 
-bool PinStatePrev[] = {false, true, false, false, false};
-
-bool PinStateZ1 = pinZ1State();
-bool PinStateZ2 = pinZ2State();
-bool PinStateZ3 = pinZ3State();
-bool PinStateZ4 = pinZ4State();
-bool PinStateZ5 = pinZ5State();
-
-void updateAllPinZ()
-{
-  PinStatePrev[0] = pinZ1State();
-  PinStatePrev[1] = pinZ2State();
-  PinStatePrev[2] = pinZ3State();
-  PinStatePrev[3] = pinZ4State();
-  PinStatePrev[4] = pinZ5State();
-}
-
-bool updateZPinState(int pinAIdx, int pinBIdx, int pinZIdx)
-{
-  bool stateA = I2CReadReg(0x20, 1, pinAIdx); // Read state of pin A
-  bool stateB = I2CReadReg(0x20, 1, pinBIdx); // Read state of pin B
-
-  bool zState = stateA && stateB; // Z is HIGH if both A and B are HIGH
-
-  I2CWriteReg(0x20, pinZIdx, zState); // Update Z pin state
-
-  return zState;
-}
+//   return zState;
+// }
 
 // BUTTON FUNCTIONS //
 
@@ -323,17 +284,17 @@ void IRAM_ATTR handleEncoder6Interrupt()
   updateEncoder(&encoder6);
 }
 
-void updateAllZPins()
-{
-  // Example calls, assuming pinA1Index and pinB1Index are the indexes for A1 and B1 on the expander
-  updateZPinState(encoder1.pinA, encoder1.pinB, 9);  // For Z1
-  updateZPinState(encoder2.pinA, encoder2.pinB, 10); // For Z2
-  updateZPinState(encoder3.pinA, encoder3.pinB, 11); // For Z3
-  updateZPinState(encoder4.pinA, encoder4.pinB, 12); // For Z4
-  updateZPinState(encoder5.pinA, encoder5.pinB, 13); // For Z5
-  updateZPinState(encoder6.pinA, encoder6.pinB, 14); // For Z6
-                                                     // Repeat for other Z pins and their corresponding A/B pins
-}
+// void updateAllZPins()
+// {
+//   // Example calls, assuming pinA1Index and pinB1Index are the indexes for A1 and B1 on the expander
+//   updateZPinState(encoder1.pinA, encoder1.pinB, 9);  // For Z1
+//   updateZPinState(encoder2.pinA, encoder2.pinB, 10); // For Z2
+//   updateZPinState(encoder3.pinA, encoder3.pinB, 11); // For Z3
+//   updateZPinState(encoder4.pinA, encoder4.pinB, 12); // For Z4
+//   updateZPinState(encoder5.pinA, encoder5.pinB, 13); // For Z5
+//   updateZPinState(encoder6.pinA, encoder6.pinB, 14); // For Z6
+//                                                      // Repeat for other Z pins and their corresponding A/B pins
+// }
 
 const char *h_ssid = "491-DRO-Boyyz";
 const char *h_password = "123456789";
@@ -711,7 +672,7 @@ void TaskUpdateDisplay(void *pvParameters)
 {
   for (;;)
   {
-    updateAllZPins();
+    // updateAllZPins();
     handleMenuNavigation();
     updateDisplayContent();
     // vTaskDelay(pdMS_TO_TICKS(100));
