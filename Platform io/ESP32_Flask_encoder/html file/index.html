@@ -1,0 +1,114 @@
+const char index_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DRO Interface</title>
+<style>
+  h1 {
+    text-align: center;
+  }
+  body {
+    font-family: Arial, sans-serif;
+    background: #f0f0f0;
+  }
+  .dro-container {
+    width: 600px;
+    margin: 0 auto;
+    background: #ddd;
+    padding: 20px;
+    border-radius: 10px;
+  }
+  .readout {
+    font-family: 'Digital', sans-serif;
+    background: #000;
+    color: #00ff00;
+    padding: 10px;
+    margin-bottom: 5px;
+  }
+  .calculator-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .calculator-button {
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: center;
+    cursor: pointer;
+  }
+  .calculator-button:hover {
+    background: #e9e9e9;
+  }
+  /* More styles can be added as per requirement */
+</style>
+</head>
+<body>
+<h1>491 ESP32 DRO Boyyz</h1>
+</hr>
+<div class="dro-container">
+<div class="readout" id="x-readout">ABS</div>
+  <div class="readout" id="x-readout">X: <span id="position"></span></div>
+  <div class="readout" id="y-readout">Y: <span id="position2"></span></div>
+  <div class="readout" id="z-readout">Z: <span id="position3"></span></div>
+
+  <button onclick="resetPosition('x')">Reset X</button>
+  <button onclick="resetPosition('xInc')">Abs X</button>
+  <button onclick="resetPosition('xAbs')"> Inc</button>
+  <button onclick="resetPosition('y')">Reset Y</button>
+  <button onclick="resetPosition('z')">Reset Z</button>
+
+  
+</div>
+
+<script>
+  function updatePositions() {
+    fetch("/position")
+      .then(response => response.text())
+      .then(data => document.getElementById("position").innerText = data)
+      .catch(console.error);
+
+    fetch("/position2")
+      .then(response => response.text())
+      .then(data => document.getElementById("position2").innerText = data)
+      .catch(console.error);
+
+    fetch("/position3")
+      .then(response => response.text())
+      .then(data => document.getElementById("position3").innerText = data)
+      .catch(console.error);
+  }
+
+  function resetPosition(axis) {
+  fetch("/reset/" + axis)
+    .then(response => {
+      if (response.ok) {
+        console.log(axis.toUpperCase() + " position reset"); // print message 
+        updatePositions(); // Refresh the positions immediately
+      }
+    })
+    .catch(console.error);
+}
+
+//   function togglePosition(position) {
+//   fetch("/switch/" + position)
+//     .then(response => {
+//       if (response.ok) {
+//         console.log(axis.toUpperCase() + " position reset"); // print message 
+//         updatePositions(); // Refresh the positions immediately
+//       }
+//     })
+//     .catch(console.error);
+// }
+
+
+  // Call updatePositions() every 1000ms (1 second)
+  setInterval(updatePositions, 50);
+</script>
+</body>
+</html>
+)rawliteral";
