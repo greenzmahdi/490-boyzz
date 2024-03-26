@@ -18,10 +18,6 @@
 #include "oled.h"
 #include "encoder.h"
 
-// Wifi credentials
-const char *ssid = "ssid";
-const char *password = "pw";
-
 // Define LED colors as global constants
 const int LEDColorDisconnected[3] = {0, 0, 0};
 const int LEDColorPurple[3] = {128, 0, 128};
@@ -50,77 +46,6 @@ volatile int menuItemIndex = 0; // Index of the selected menu item
 // Forward declarations
 void TaskNetwork(void *pvParameters);
 void TaskUpdateDisplay(void *pvParameters);
-
-
-
-// // monitor z pin state //
-// bool ZPinState(int idx)
-// {
-//   // PIN Z1 = 9
-//   // PIN Z2 = 10
-//   // PIN Z3 = 11
-//   // PIN Z4 = 12
-//   // PIN Z5 = 13
-
-//   if ((idx < 9) || (idx > 14))
-//     return false;
-
-//   return !I2CReadReg(0x20, 1, idx);
-// }
-
-// bool pinZ1State()
-// {
-//   return ZPinState(9);
-// }
-
-// bool pinZ2State()
-// {
-//   return ZPinState(10);
-// }
-
-// bool pinZ3State()
-// {
-//   return ZPinState(11);
-// }
-
-// bool pinZ4State()
-// {
-//   return ZPinState(12);
-// }
-
-// bool pinZ5State()
-// {
-//   return ZPinState(13);
-// }
-
-// bool PinStatePrev[] = {false, true, false, false, false};
-
-// bool PinStateZ1 = pinZ1State();
-// bool PinStateZ2 = pinZ2State();
-// bool PinStateZ3 = pinZ3State();
-// bool PinStateZ4 = pinZ4State();
-// bool PinStateZ5 = pinZ5State();
-
-// void updateAllPinZ()
-// {
-//   PinStatePrev[0] = pinZ1State();
-//   PinStatePrev[1] = pinZ2State();
-//   PinStatePrev[2] = pinZ3State();
-//   PinStatePrev[3] = pinZ4State();
-//   PinStatePrev[4] = pinZ5State();
-// }
-
-// bool updateZPinState(int pinAIdx, int pinBIdx, int pinZIdx)
-// {
-//   bool stateA = I2CReadReg(0x20, 1, pinAIdx); // Read state of pin A
-//   bool stateB = I2CReadReg(0x20, 1, pinBIdx); // Read state of pin B
-
-//   bool zState = stateA && stateB; // Z is HIGH if both A and B are HIGH
-
-//   I2CWriteReg(0x20, pinZIdx, zState); // Update Z pin state
-
-//   return zState;
-// }
 
 // BUTTON FUNCTIONS //
 
@@ -246,7 +171,6 @@ const int IdxZ4 = 2;
 const int IdxZ5 = 1;
 const int IdxZ6 = 0;
 
-
 // Initializing encoders attributes and setting their start (refer to encoder struct to see all parameters)
 Encoder encoder1 = {PIN_A1, PIN_B1, 0, 0, 0, 0, {0}, 1};
 Encoder encoder2 = {PIN_A2, PIN_B2, 0, 0, 0, 0, {0}, 1};
@@ -255,34 +179,12 @@ Encoder encoder4 = {PIN_A4, PIN_B4, 0, 0, 0, 0, {0}, 1};
 Encoder encoder5 = {PIN_A5, PIN_B5, 0, 0, 0, 0, {0}, 1};
 Encoder encoder6 = {PIN_A6, PIN_B6, 0, 0, 0, 0, {0}, 1};
 
-void IRAM_ATTR handleEncoder1Interrupt()
-{
-  updateEncoder(&encoder1);
-}
-void IRAM_ATTR handleEncoder2Interrupt()
-{
-  updateEncoder(&encoder2);
-}
-
-void IRAM_ATTR handleEncoder3Interrupt()
-{ // might not need this one
-  updateEncoder(&encoder3);
-}
-
-void IRAM_ATTR handleEncoder4Interrupt()
-{
-  updateEncoder(&encoder4);
-}
-
-void IRAM_ATTR handleEncoder5Interrupt()
-{
-  updateEncoder(&encoder5);
-}
-
-void IRAM_ATTR handleEncoder6Interrupt()
-{
-  updateEncoder(&encoder6);
-}
+void IRAM_ATTR handleEncoder1Interrupt() { updateEncoder(&encoder1);}
+void IRAM_ATTR handleEncoder2Interrupt(){updateEncoder(&encoder2);}
+void IRAM_ATTR handleEncoder3Interrupt(){ updateEncoder(&encoder3);}
+void IRAM_ATTR handleEncoder4Interrupt(){updateEncoder(&encoder4);}
+void IRAM_ATTR handleEncoder5Interrupt(){updateEncoder(&encoder5);}
+void IRAM_ATTR handleEncoder6Interrupt(){updateEncoder(&encoder6);}
 
 // void updateAllZPins()
 // {
@@ -552,59 +454,54 @@ void setup()
   server.begin();
 
   // Monitor pin setup //
-  attachInterrupt(
-      digitalPinToInterrupt(encoder1.pinA), []()
-      { updateEncoder(&encoder1); },
-      CHANGE);
-  attachInterrupt(
-      digitalPinToInterrupt(encoder1.pinB), []()
-      { updateEncoder(&encoder1); },
-      CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(encoder1.pinA), [](){ updateEncoder(&encoder1); },CHANGE); // I need to remove the lambda and include the w/ name of interrupt to ensure we are using the correct one 
 
-  attachInterrupt(
-      digitalPinToInterrupt(encoder2.pinA), []()
-      { updateEncoder(&encoder2); },
-      CHANGE);
-  attachInterrupt(
-      digitalPinToInterrupt(encoder2.pinB), []()
-      { updateEncoder(&encoder2); },
-      CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(encoder1.pinB), [](){ updateEncoder(&encoder1); },CHANGE);
 
-  attachInterrupt(
-      digitalPinToInterrupt(encoder3.pinA), []()
-      { updateEncoder(&encoder3); },
-      CHANGE);
-  attachInterrupt(
-      digitalPinToInterrupt(encoder3.pinB), []()
-      { updateEncoder(&encoder3); },
-      CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(encoder2.pinA), [](){ updateEncoder(&encoder2); },CHANGE);
 
-  attachInterrupt(
-      digitalPinToInterrupt(encoder4.pinA), []()
-      { updateEncoder(&encoder4); },
-      CHANGE);
-  attachInterrupt(
-      digitalPinToInterrupt(encoder4.pinB), []()
-      { updateEncoder(&encoder4); },
-      CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(encoder2.pinB), [](){ updateEncoder(&encoder2); },CHANGE);
 
-  attachInterrupt(
-      digitalPinToInterrupt(encoder5.pinA), []()
-      { updateEncoder(&encoder5); },
-      CHANGE);
-  attachInterrupt(
-      digitalPinToInterrupt(encoder5.pinB), []()
-      { updateEncoder(&encoder5); },
-      CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(encoder3.pinA), [](){ updateEncoder(&encoder3); },CHANGE);
 
-  attachInterrupt(
-      digitalPinToInterrupt(encoder6.pinA), []()
-      { updateEncoder(&encoder6); },
-      CHANGE);
-  attachInterrupt(
-      digitalPinToInterrupt(encoder6.pinB), []()
-      { updateEncoder(&encoder6); },
-      CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(encoder3.pinB), [](){ updateEncoder(&encoder3); },CHANGE);
+
+  // attachInterrupt(digitalPinToInterrupt(encoder4.pinA), [](){ updateEncoder(&encoder4); },CHANGE);
+
+  // attachInterrupt(digitalPinToInterrupt(encoder4.pinB), [](){ updateEncoder(&encoder4); },CHANGE);
+
+  // attachInterrupt(digitalPinToInterrupt(encoder5.pinA), [](){ updateEncoder(&encoder5); },CHANGE);
+
+  // attachInterrupt( digitalPinToInterrupt(encoder5.pinB), [](){ updateEncoder(&encoder5); },CHANGE);
+
+  // attachInterrupt( digitalPinToInterrupt(encoder6.pinA), [](){ updateEncoder(&encoder6); },CHANGE);
+
+  // attachInterrupt(digitalPinToInterrupt(encoder6.pinB), [](){ updateEncoder(&encoder6); },CHANGE);
+
+
+  attachInterrupt(digitalPinToInterrupt(encoder1.pinA), handleEncoder1Interrupt,CHANGE); // I need to remove the lambda and include the w/ name of interrupt to ensure we are using the correct one 
+
+  attachInterrupt(digitalPinToInterrupt(encoder1.pinB), handleEncoder1Interrupt,CHANGE);
+
+  attachInterrupt(digitalPinToInterrupt(encoder2.pinA), handleEncoder2Interrupt,CHANGE);
+
+  attachInterrupt(digitalPinToInterrupt(encoder2.pinB), handleEncoder2Interrupt,CHANGE);
+
+  attachInterrupt(digitalPinToInterrupt(encoder3.pinA), handleEncoder3Interrupt,CHANGE);
+
+  attachInterrupt(digitalPinToInterrupt(encoder3.pinB), handleEncoder3Interrupt,CHANGE);
+
+  attachInterrupt(digitalPinToInterrupt(encoder4.pinA), handleEncoder4Interrupt,CHANGE);
+
+ attachInterrupt(digitalPinToInterrupt(encoder4.pinB), handleEncoder4Interrupt,CHANGE);
+
+  attachInterrupt(digitalPinToInterrupt(encoder5.pinA), handleEncoder5Interrupt,CHANGE);
+
+  attachInterrupt( digitalPinToInterrupt(encoder5.pinB), handleEncoder5Interrupt,CHANGE);
+
+  attachInterrupt( digitalPinToInterrupt(encoder6.pinA), handleEncoder6Interrupt,CHANGE);
+
+  attachInterrupt(digitalPinToInterrupt(encoder6.pinB), handleEncoder6Interrupt,CHANGE);
 
   // Dim LEDs
   FastLED.setBrightness(24);

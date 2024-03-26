@@ -1,7 +1,13 @@
 #ifndef ENCODER_SETUP_H
 #define ENCODER_SETUP_H
 #include <WiFi.h>
-struct Encoder
+
+#define ENCODER_HISTORY_SIZE 4
+#define SPEED_THRESHOLD 0.01 // Example threshold, adjust based on your application
+#define POSITION_CHANGE_HIGH_SPEED 2 // needs to be tuned
+#define POSITION_CHANGE_LOW_SPEED 1 // needs to be tuned 
+
+  struct Encoder
 {
   const uint8_t pinA;
   const uint8_t pinB;
@@ -9,8 +15,10 @@ struct Encoder
   volatile int positionInc;
   volatile int lastEncoded;
   volatile unsigned long lastInterruptTime;
-  unsigned long pulseTimes[5]; // Array to store the last 5 pulse times for consistency calculation
+  unsigned long pulseTimes[ENCODER_HISTORY_SIZE]; 
   unsigned long debounceDelay;
+  float speed;
+  int direction;
 };
 
 unsigned long average(unsigned long arr[], int numElements);
