@@ -386,22 +386,22 @@ void setup()
     snprintf(temp, 100, "%d", encoder3.position); // Assuming encoder1.position is an int
     request->send(200, "text/plain", temp); });
 
-//Millimeter request
-  server.on("/milli", HTTP_GET, [](AsyncWebServerRequest *request) {
-    //what is the multiplicative factor?
-    float position_mm = encoder1.position * factor;
+// //Millimeter request
+//   server.on("/milli", HTTP_GET, [](AsyncWebServerRequest *request) {
+//     //what is the multiplicative factor?
+//     float position_mm = encoder1.position * factor;
 
-    char temp[100];
-    snprintf(temp, sizeof(temp), "%.2f", position_mm);
-    request->send(200, "text/plain", temp); });  
+//     char temp[100];
+//     snprintf(temp, sizeof(temp), "%.2f", position_mm);
+//     request->send(200, "text/plain", temp); });  
 
-//Mid-point calculation
-server.on("/half", HTTP_GET, [](AsyncWebServerRequest *request) {
-  char temp[100];
-  float position_half = encoder1.position/2;
-  snprintf(temp, sizeof(temp), "%.2f",)
-  request->send(200, "text/plain", temp);
-});
+// //Mid-point calculation
+// server.on("/half", HTTP_GET, [](AsyncWebServerRequest *request) {
+//   char temp[100];
+//   float position_half = encoder1.position/2;
+//   snprintf(temp, sizeof(temp), "%.2f",)
+//   request->send(200, "text/plain", temp);
+// });
 
   // Routes to toggle LED colors
   server.on("/turquoise", HTTP_GET, [](AsyncWebServerRequest *request)
