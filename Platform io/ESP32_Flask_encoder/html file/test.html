@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DRO Interface Replica</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+  }
+  .dro {
+    width: 400px;
+    margin: 20px auto;
+    padding: 10px;
+    background-color: #fff;
+    border: 1px solid #000;
+  }
+  .display {
+    background-color: #000;
+    color: #fff;
+    padding: 10px;
+    margin-bottom: 20px;
+  }
+  .buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-gap: 10px;
+  }
+  button {
+    padding: 10px;
+    margin: 5px;
+    border: none;
+    background-color: #ddd;
+    cursor: pointer;
+  }
+  button:active {
+    background-color: #ccc;
+  }
+  .status-bar {
+    margin-top: 20px;
+    background-color: #222;
+    color: #fff;
+    padding: 10px;
+  }
+</style>
+</head>
+<body>
+<div class="dro">
+  <div class="display">
+    <!-- Display areas -->
+    <div>X: 0.000</div>
+    <div>Y: 0.000</div>
+    <div>Z: 0.000</div>
+  </div>
+
+  <div class="buttons">
+    <!-- Number buttons -->
+    <button class="number">9</button>
+    <button class="number">8</button>
+    <button class="number">7</button>
+    <button class="number">6</button>
+    <button class="number">5</button>
+    <button class="number">4</button>
+    <button class="number">3</button>
+    <button class="number">2</button>
+    <button class="number">1</button>
+    <button class="number">0</button>
+    <!-- ... Other number buttons ... -->
+    <!-- Function buttons -->
+    <button class="function">ABS/INC</button>
+    <!-- ... Other function buttons ... -->
+  </div>
+
+  <div class="status-bar">
+    <!-- Status indicators -->
+    <div>ABS</div>
+    <div>INC</div>
+    <!-- ... Other status indicators ... -->
+  </div>
+</div>
+</body>
+</html>
