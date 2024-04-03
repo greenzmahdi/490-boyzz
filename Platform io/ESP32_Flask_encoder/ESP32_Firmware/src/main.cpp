@@ -179,12 +179,12 @@ Encoder encoder4 = {PIN_A4, PIN_B4, 0, 0, 0, 0, {0}, 1};
 Encoder encoder5 = {PIN_A5, PIN_B5, 0, 0, 0, 0, {0}, 1};
 Encoder encoder6 = {PIN_A6, PIN_B6, 0, 0, 0, 0, {0}, 1};
 
-void IRAM_ATTR handleEncoder1Interrupt() { updateEncoder(&encoder1);}
-void IRAM_ATTR handleEncoder2Interrupt(){updateEncoder(&encoder2);}
-void IRAM_ATTR handleEncoder3Interrupt(){ updateEncoder(&encoder3);}
-void IRAM_ATTR handleEncoder4Interrupt(){updateEncoder(&encoder4);}
-void IRAM_ATTR handleEncoder5Interrupt(){updateEncoder(&encoder5);}
-void IRAM_ATTR handleEncoder6Interrupt(){updateEncoder(&encoder6);}
+void IRAM_ATTR handleEncoder1Interrupt() { updateEncoder(&encoder1); }
+void IRAM_ATTR handleEncoder2Interrupt() { updateEncoder(&encoder2); }
+void IRAM_ATTR handleEncoder3Interrupt() { updateEncoder(&encoder3); }
+void IRAM_ATTR handleEncoder4Interrupt() { updateEncoder(&encoder4); }
+void IRAM_ATTR handleEncoder5Interrupt() { updateEncoder(&encoder5); }
+void IRAM_ATTR handleEncoder6Interrupt() { updateEncoder(&encoder6); }
 
 // void updateAllZPins()
 // {
@@ -260,19 +260,86 @@ const char index_html[] PROGMEM = R"rawliteral(
 <h1>491 ESP32 DRO Boyyz</h1>
 </hr>
 <div class="dro-container">
-<div class="readout" id="x-readout">ABS</div>
+  <div class="readout" id="x-readout">MODE: ABS</div>
   <div class="readout" id="x-readout">X: <span id="position"></span></div>
   <div class="readout" id="y-readout">Y: <span id="position2"></span></div>
   <div class="readout" id="z-readout">Z: <span id="position3"></span></div>
+</div>
 
-  <button onclick="resetPosition('x')">Reset X</button>
+<div class="dro-container">
+  <!-- This is for selecting an Axis and for Zeroing out an axis -->
+  <p>Zero out / Select Buttons</p>
+  <button onclick="resetPosition('x')">Xo</button>
+  <button onclick="resetPosition('y')">Yo</button>
+  <button onclick="resetPosition('z')">Zo</button>
+  <button onclick="resetPosition('select_x')">Select X</button>
+  <button onclick="resetPosition('select_y')">Select Y</button>
+  <button onclick="resetPosition('select_z')">Select Z</button>
+</div>
+
+
+<!-- NOTE Mahdi this is how I made the grid, note how I used class ="calculator-grid", I set the grid style -->
+<div class="dro-container">
+  <p>Calculator Buttons</p>
+  <div class ="calculator-grid"> 
+    <button>1/2</button>
+    <button>INCH/MM</button>
+    <button>Calculator</button> 
+    <button>9</button>
+    <button>8</button>
+    <button>7</button>
+    <button>6</button>
+    <button>5</button>
+    <button>4</button>
+    <button>3</button>
+    <button>2</button>
+    <button>1</button>
+    <button>.</button>
+    <button>0</button>
+    <button>+/-</button>
+  </div>
+</div>
+
+<div class="dro-container">
+  <!-- These need to be Implemented still, Randy I created the button dor ABS/INC juyt join the logic using the 2 buttons I already made or whatever is easier for you!-->
+  <p>Zero all out / ABS/INC mode / Calculate / Enter Buttons</p>
+  <button>ABS/INC</button>
+  <button>XYZo</button>
+  <button>CA</button>
+  <button>ENT</button>
   <button onclick="resetPosition('xInc')">Abs X</button>
   <button onclick="resetPosition('xAbs')"> Inc</button>
-  <button onclick="resetPosition('y')">Reset Y</button>
-  <button onclick="resetPosition('z')">Reset Z</button>
-
-  
 </div>
+
+<div class="dro-container">
+  <!-- This is for our function key layout-->
+  <p>Function Buttons</p>
+  <button>F1</button>
+  <button>F2</button>
+  <button>F3</button>
+  <button>F4</button>
+  <button>F5</button>
+  <button>F6</button>
+</div>
+
+<div class="dro-container">
+  <!-- This is for the GRID buttons-->
+  <p>Grid Buttons</p>
+  <button>option1</button>
+  <button>option2</button>
+  <button>option3</buton>
+  <button>option4</button>
+</div>
+
+<div class="dro-container">
+  <!-- Arrow Keys-->
+  <p>Arrow Buttons</p>
+  <button>↑</button>
+  <button>→</button>
+  <button>↓</buton>
+  <button>←</button>
+</div>
+
 
 <script>
   function updatePositions() {
@@ -315,11 +382,12 @@ const char index_html[] PROGMEM = R"rawliteral(
 // }
 
 
-  // Call updatePositions() every 1000ms (1 second)
-  setInterval(updatePositions, 50);
+
+  setInterval(updatePositions, 50);   // Call updatePositions() every 1000ms (1 second) but right now it is 50ms so stupid fast 
 </script>
 </body>
 </html>
+
 )rawliteral";
 
 void setup()
@@ -364,161 +432,122 @@ void setup()
 
   // Setting up Routes
   // Route for root web page
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-            { request->send_P(200, "text/html", index_html); });
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){ 
+    request->send_P(200, "text/html", index_html); });
 
   // New route to get the current position of encoder1
-  server.on("/position", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
+  server.on("/position", HTTP_GET, [](AsyncWebServerRequest *request){
     char temp[100];
     snprintf(temp, 100, "%d", encoder1.position); // Assuming encoder1.position is an int
     request->send(200, "text/plain", temp); });
 
-  server.on("/position2", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
+  server.on("/position2", HTTP_GET, [](AsyncWebServerRequest *request){
     char temp[100];
     snprintf(temp, 100, "%d", encoder2.position); // Assuming encoder1.position is an int
     request->send(200, "text/plain", temp); });
 
-  server.on("/position3", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
+  server.on("/position3", HTTP_GET, [](AsyncWebServerRequest *request){
     char temp[100];
     snprintf(temp, 100, "%d", encoder3.position); // Assuming encoder1.position is an int
     request->send(200, "text/plain", temp); });
 
-// //Millimeter request
-//   server.on("/milli", HTTP_GET, [](AsyncWebServerRequest *request) {
-//     //what is the multiplicative factor?
-//     float position_mm = encoder1.position * factor;
+  // //Millimeter request
+  //   server.on("/milli", HTTP_GET, [](AsyncWebServerRequest *request) {
+  //     //what is the multiplicative factor?
+  //     float position_mm = encoder1.position * factor;
 
-//     char temp[100];
-//     snprintf(temp, sizeof(temp), "%.2f", position_mm);
-//     request->send(200, "text/plain", temp); });  
+  //     char temp[100];
+  //     snprintf(temp, sizeof(temp), "%.2f", position_mm);
+  //     request->send(200, "text/plain", temp); });
 
-// //Mid-point calculation
-// server.on("/half", HTTP_GET, [](AsyncWebServerRequest *request) {
-//   char temp[100];
-//   float position_half = encoder1.position/2;
-//   snprintf(temp, sizeof(temp), "%.2f",)
-//   request->send(200, "text/plain", temp);
-// });
+  // //Mid-point calculation
+  // server.on("/half", HTTP_GET, [](AsyncWebServerRequest *request) {
+  //   char temp[100];
+  //   float position_half = encoder1.position/2;
+  //   snprintf(temp, sizeof(temp), "%.2f",)
+  //   request->send(200, "text/plain", temp);
+  // });
 
   // Routes to toggle LED colors
-  server.on("/turquoise", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
-        for(int i = 0; i < numLeds; i++) leds[i] = CRGB::Turquoise;
-        FastLED.show();
-        request->send(200, "text/plain", "LEDs set to Turquoise"); });
+  server.on("/turquoise", HTTP_GET, [](AsyncWebServerRequest *request){
+    for(int i = 0; i < numLeds; i++) leds[i] = CRGB::Turquoise;
+      FastLED.show();
+      request->send(200, "text/plain", "LEDs set to Turquoise"); });
 
-  server.on("/purple", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
-        for(int i = 0; i < numLeds; i++) leds[i] = CRGB::Purple;
-        FastLED.show();
-        request->send(200, "text/plain", "LEDs set to Purple"); });
+  server.on("/purple", HTTP_GET, [](AsyncWebServerRequest *request){
+    for(int i = 0; i < numLeds; i++) leds[i] = CRGB::Purple;
+      FastLED.show();
+      request->send(200, "text/plain", "LEDs set to Purple"); });
 
   // Routes to reset Axis position
-  server.on("/reset/x", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
+  server.on("/reset/x", HTTP_GET, [](AsyncWebServerRequest *request){
   encoder1.positionInc = encoder1.position;
   encoder1.position = 0; // Reset X position
   request->send(200, "text/plain", "X position reset"); });
 
-  server.on("/reset/xInc", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
+  server.on("/reset/xInc", HTTP_GET, [](AsyncWebServerRequest *request){
   // encoder2.position = 0; // Reset Y position
 
   encoder1.position += encoder1.positionInc;
 
   request->send(200, "text/plain", "Y position reset"); });
 
-  server.on("/reset/xAbs", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
+  server.on("/reset/xAbs", HTTP_GET, [](AsyncWebServerRequest *request){
   // encoder2.position = 0; // Reset Y position
-
   encoder1.position += encoder1.positionInc;
-
   request->send(200, "text/plain", "Y position reset"); });
 
   //
 
-  server.on("/reset/y", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
+  server.on("/reset/y", HTTP_GET, [](AsyncWebServerRequest *request){
   encoder2.position = 0; // Reset Y position
-
-
   request->send(200, "text/plain", "Y position reset"); });
 
   //
 
-  server.on("/reset/z", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
+  server.on("/reset/z", HTTP_GET, [](AsyncWebServerRequest *request){
   encoder3.position = 0; // Assuming encoder3 is for Z, reset Z position
   request->send(200, "text/plain", "Z position reset"); });
 
-  server.on("/switch/abs", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
+  server.on("/switch/abs", HTTP_GET, [](AsyncWebServerRequest *request){
   char temp[100];
   snprintf(temp, 100, "%d", encoder1.position); // Assuming encoder1.position is an int
   request->send(200, "text/plain", temp); });
 
-  server.on("/switch/inc", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
+  server.on("/switch/inc", HTTP_GET, [](AsyncWebServerRequest *request){
   encoder1.positionInc = encoder1.position; // Assuming encoder3 is for Z, reset Z position
   encoder1.position += encoder1.positionInc;
-
   request->send(200, "text/plain", "Z position reset"); });
+
+  // Axis Selector buttons 
+
 
   server.begin();
 
   // Monitor pin setup //
-  // attachInterrupt(digitalPinToInterrupt(encoder1.pinA), [](){ updateEncoder(&encoder1); },CHANGE); // I need to remove the lambda and include the w/ name of interrupt to ensure we are using the correct one 
+  attachInterrupt(digitalPinToInterrupt(encoder1.pinA), handleEncoder1Interrupt, CHANGE); // I need to remove the lambda and include the w/ name of interrupt to ensure we are using the correct one
 
-  // attachInterrupt(digitalPinToInterrupt(encoder1.pinB), [](){ updateEncoder(&encoder1); },CHANGE);
+  attachInterrupt(digitalPinToInterrupt(encoder1.pinB), handleEncoder1Interrupt, CHANGE);
 
-  // attachInterrupt(digitalPinToInterrupt(encoder2.pinA), [](){ updateEncoder(&encoder2); },CHANGE);
+  attachInterrupt(digitalPinToInterrupt(encoder2.pinA), handleEncoder2Interrupt, CHANGE);
 
-  // attachInterrupt(digitalPinToInterrupt(encoder2.pinB), [](){ updateEncoder(&encoder2); },CHANGE);
+  attachInterrupt(digitalPinToInterrupt(encoder2.pinB), handleEncoder2Interrupt, CHANGE);
 
-  // attachInterrupt(digitalPinToInterrupt(encoder3.pinA), [](){ updateEncoder(&encoder3); },CHANGE);
+  attachInterrupt(digitalPinToInterrupt(encoder3.pinA), handleEncoder3Interrupt, CHANGE);
 
-  // attachInterrupt(digitalPinToInterrupt(encoder3.pinB), [](){ updateEncoder(&encoder3); },CHANGE);
+  attachInterrupt(digitalPinToInterrupt(encoder3.pinB), handleEncoder3Interrupt, CHANGE);
 
-  // attachInterrupt(digitalPinToInterrupt(encoder4.pinA), [](){ updateEncoder(&encoder4); },CHANGE);
+  attachInterrupt(digitalPinToInterrupt(encoder4.pinA), handleEncoder4Interrupt, CHANGE);
 
-  // attachInterrupt(digitalPinToInterrupt(encoder4.pinB), [](){ updateEncoder(&encoder4); },CHANGE);
+  attachInterrupt(digitalPinToInterrupt(encoder4.pinB), handleEncoder4Interrupt, CHANGE);
 
-  // attachInterrupt(digitalPinToInterrupt(encoder5.pinA), [](){ updateEncoder(&encoder5); },CHANGE);
+  attachInterrupt(digitalPinToInterrupt(encoder5.pinA), handleEncoder5Interrupt, CHANGE);
 
-  // attachInterrupt( digitalPinToInterrupt(encoder5.pinB), [](){ updateEncoder(&encoder5); },CHANGE);
+  attachInterrupt(digitalPinToInterrupt(encoder5.pinB), handleEncoder5Interrupt, CHANGE);
 
-  // attachInterrupt( digitalPinToInterrupt(encoder6.pinA), [](){ updateEncoder(&encoder6); },CHANGE);
+  attachInterrupt(digitalPinToInterrupt(encoder6.pinA), handleEncoder6Interrupt, CHANGE);
 
-  // attachInterrupt(digitalPinToInterrupt(encoder6.pinB), [](){ updateEncoder(&encoder6); },CHANGE);
-
-
-  attachInterrupt(digitalPinToInterrupt(encoder1.pinA), handleEncoder1Interrupt,CHANGE); // I need to remove the lambda and include the w/ name of interrupt to ensure we are using the correct one 
-
-  attachInterrupt(digitalPinToInterrupt(encoder1.pinB), handleEncoder1Interrupt,CHANGE);
-
-  attachInterrupt(digitalPinToInterrupt(encoder2.pinA), handleEncoder2Interrupt,CHANGE);
-
-  attachInterrupt(digitalPinToInterrupt(encoder2.pinB), handleEncoder2Interrupt,CHANGE);
-
-  attachInterrupt(digitalPinToInterrupt(encoder3.pinA), handleEncoder3Interrupt,CHANGE);
-
-  attachInterrupt(digitalPinToInterrupt(encoder3.pinB), handleEncoder3Interrupt,CHANGE);
-
-  attachInterrupt(digitalPinToInterrupt(encoder4.pinA), handleEncoder4Interrupt,CHANGE);
-
- attachInterrupt(digitalPinToInterrupt(encoder4.pinB), handleEncoder4Interrupt,CHANGE);
-
-  attachInterrupt(digitalPinToInterrupt(encoder5.pinA), handleEncoder5Interrupt,CHANGE);
-
-  attachInterrupt( digitalPinToInterrupt(encoder5.pinB), handleEncoder5Interrupt,CHANGE);
-
-  attachInterrupt( digitalPinToInterrupt(encoder6.pinA), handleEncoder6Interrupt,CHANGE);
-
-  attachInterrupt(digitalPinToInterrupt(encoder6.pinB), handleEncoder6Interrupt,CHANGE);
+  attachInterrupt(digitalPinToInterrupt(encoder6.pinB), handleEncoder6Interrupt, CHANGE);
 
   // Dim LEDs
   FastLED.setBrightness(24);

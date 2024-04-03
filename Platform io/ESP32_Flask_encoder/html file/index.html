@@ -50,19 +50,86 @@
 <h1>491 ESP32 DRO Boyyz</h1>
 </hr>
 <div class="dro-container">
-<div class="readout" id="x-readout">ABS</div>
+  <div class="readout" id="x-readout">MODE: ABS</div>
   <div class="readout" id="x-readout">X: <span id="position"></span></div>
   <div class="readout" id="y-readout">Y: <span id="position2"></span></div>
   <div class="readout" id="z-readout">Z: <span id="position3"></span></div>
+</div>
 
-  <button onclick="resetPosition('x')">Reset X</button>
+<div class="dro-container">
+  <!-- This is for selecting an Axis and for Zeroing out an axis -->
+  <p>Zero out / Select Buttons</p>
+  <button onclick="resetPosition('x')">Xo</button>
+  <button onclick="resetPosition('y')">Yo</button>
+  <button onclick="resetPosition('z')">Zo</button>
+  <button onclick="resetPosition('select_x')">Select X</button>
+  <button onclick="resetPosition('select_y')">Select Y</button>
+  <button onclick="resetPosition('select_z')">Select Z</button>
+</div>
+
+
+<!-- NOTE Mahdi this is how I made the grid, note how I used class ="calculator-grid", I set the grid style -->
+<div class="dro-container">
+  <p>Calculator Buttons</p>
+  <div class ="calculator-grid"> 
+    <button>1/2</button>
+    <button>INCH/MM</button>
+    <button>Calculator</button> 
+    <button>9</button>
+    <button>8</button>
+    <button>7</button>
+    <button>6</button>
+    <button>5</button>
+    <button>4</button>
+    <button>3</button>
+    <button>2</button>
+    <button>1</button>
+    <button>.</button>
+    <button>0</button>
+    <button>+/-</button>
+  </div>
+</div>
+
+<div class="dro-container">
+  <!-- These need to be Implemented still, Randy I created the button dor ABS/INC juyt join the logic using the 2 buttons I already made or whatever is easier for you!-->
+  <p>Zero all out / ABS/INC mode / Calculate / Enter Buttons</p>
+  <button>ABS/INC</button>
+  <button>XYZo</button>
+  <button>CA</button>
+  <button>ENT</button>
   <button onclick="resetPosition('xInc')">Abs X</button>
   <button onclick="resetPosition('xAbs')"> Inc</button>
-  <button onclick="resetPosition('y')">Reset Y</button>
-  <button onclick="resetPosition('z')">Reset Z</button>
-
-  
 </div>
+
+<div class="dro-container">
+  <!-- This is for our function key layout-->
+  <p>Function Buttons</p>
+  <button>F1</button>
+  <button>F2</button>
+  <button>F3</button>
+  <button>F4</button>
+  <button>F5</button>
+  <button>F6</button>
+</div>
+
+<div class="dro-container">
+  <!-- This is for the GRID buttons-->
+  <p>Grid Buttons</p>
+  <button>option1</button>
+  <button>option2</button>
+  <button>option3</buton>
+  <button>option4</button>
+</div>
+
+<div class="dro-container">
+  <!-- Arrow Keys-->
+  <p>Arrow Buttons</p>
+  <button>↑</button>
+  <button>→</button>
+  <button>↓</buton>
+  <button>←</button>
+</div>
+
 
 <script>
   function updatePositions() {
@@ -105,8 +172,8 @@
 // }
 
 
-  // Call updatePositions() every 1000ms (1 second)
-  setInterval(updatePositions, 50);
+
+  setInterval(updatePositions, 50);   // Call updatePositions() every 1000ms (1 second) but right now it is 50ms so stupid fast 
 </script>
 </body>
 </html>
