@@ -18,6 +18,9 @@
 #include "oled.h"
 #include "encoder.h"
 
+//Mode selector variable
+bool isInchMode = true;
+
 // Define LED colors as global constants
 const int LEDColorDisconnected[3] = {0, 0, 0};
 const int LEDColorPurple[3] = {128, 0, 128};
@@ -451,6 +454,13 @@ void setup()
     snprintf(temp, 100, "%d", encoder3.position); // Assuming encoder1.position is an int
     request->send(200, "text/plain", temp); });
 
+  server.on("/poss", HTTP_GET, []AsyncWebServerRequest *request) {
+    float position = encoder1.position * (isInchMode ? factor_inch : factor_MM)
+    char response[100];
+    snprintf(response, sizeof(response), "%.2f", position)
+    request->send(200, "text/plain", response)
+
+  }
   // //Millimeter request
   //   server.on("/milli", HTTP_GET, [](AsyncWebServerRequest *request) {
   //     //what is the multiplicative factor?
