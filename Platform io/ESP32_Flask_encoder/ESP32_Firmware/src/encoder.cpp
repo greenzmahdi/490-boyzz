@@ -2,71 +2,87 @@
 
 #include "encoder.h"
 
-// Fuctions that help find SD to adjust debouncing //
-unsigned long average(unsigned long arr[], int numElements)
-{
-  unsigned long sum = 0;
-  for (int i = 0; i < numElements; i++)
-  {
-    sum += arr[i];
-  }
-  return sum / numElements;
+// Constants for the encoder
+const int effectivePPR = 24 * 4; // 24 pulses per detent, quadrature mode effectively doubles this
+float degreesPerPulse = 360.0 / effectivePPR;
+
+// Function to convert pulses to degrees
+float pulsesToDegrees(long pulses) {
+  return pulses * degreesPerPulse;
 }
 
-unsigned long standardDeviation(unsigned long arr[], int numElements, unsigned long mean)
-{
-  unsigned long variance = 0;
-  for (int i = 0; i < numElements; i++)
-  {
-    variance += (arr[i] - mean) * (arr[i] - mean);
-  }
-  variance /= numElements;
-  return sqrt(variance);
+const float distancePerPulseInches = 0.515; // Pre-calculated distance per pulse in inches
+
+// Function to convert pulses to distance in inches
+float pulsesToDistanceInches(long pulses) {
+  return pulses * distancePerPulseInches;
 }
 
-// void updatePulseTimes(Encoder *encoder, unsigned long pulseTime)
+// // Fuctions that help find SD to adjust debouncing //
+// unsigned long average(unsigned long arr[], int numElements)
 // {
-//   // Shift previous times down and add the new time at the end
-//   for (int i = 0; i < 4; i++)
+//   unsigned long sum = 0;
+//   for (int i = 0; i < numElements; i++)
 //   {
-//     encoder->pulseTimes[i] = encoder->pulseTimes[i + 1];
+//     sum += arr[i];
 //   }
-//   encoder->pulseTimes[4] = pulseTime;
+//   return sum / numElements;
 // }
 
-void updatePulseTimes(Encoder *encoder, unsigned long currentTime)
-{
-  unsigned long newPulseTime = currentTime - encoder->lastInterruptTime;
-  // Shift previous times down and add the new time at the end
-  for (int i = ENCODER_HISTORY_SIZE - 2; i >= 0; i--)
-  {
-    encoder->pulseTimes[i + 1] = encoder->pulseTimes[i];
-  }
-  encoder->pulseTimes[0] = newPulseTime;
+// unsigned long standardDeviation(unsigned long arr[], int numElements, unsigned long mean)
+// {
+//   unsigned long variance = 0;
+//   for (int i = 0; i < numElements; i++)
+//   {
+//     variance += (arr[i] - mean) * (arr[i] - mean);
+//   }
+//   variance /= numElements;
+//   return sqrt(variance);
+// }
 
-  // Update lastInterruptTime for the next pulse
-  encoder->lastInterruptTime = currentTime;
+// // void updatePulseTimes(Encoder *encoder, unsigned long pulseTime)
+// // {
+// //   // Shift previous times down and add the new time at the end
+// //   for (int i = 0; i < 4; i++)
+// //   {
+// //     encoder->pulseTimes[i] = encoder->pulseTimes[i + 1];
+// //   }
+// //   encoder->pulseTimes[4] = pulseTime;
+// // }
 
-  // Optional: Calculate speed based on newPulseTime
-  // Assuming encoder resolution and physical parameters are factored in elsewhere
-  encoder->speed = 1.0 / newPulseTime; // Simplified; consider actual calculation based on your setup
-}
+// void updatePulseTimes(Encoder *encoder, unsigned long currentTime)
+// {
+//   unsigned long newPulseTime = currentTime - encoder->lastInterruptTime;
+//   // Shift previous times down and add the new time at the end
+//   for (int i = ENCODER_HISTORY_SIZE - 2; i >= 0; i--)
+//   {
+//     encoder->pulseTimes[i + 1] = encoder->pulseTimes[i];
+//   }
+//   encoder->pulseTimes[0] = newPulseTime;
 
-void adjustDebounceDelay(Encoder *encoder)
-{
-  // Calculate the average and standard deviation of the encoder's pulse times
-  unsigned long avg = average(encoder->pulseTimes, 5);
-  unsigned long stdDev = standardDeviation(encoder->pulseTimes, 5, avg);
+//   // Update lastInterruptTime for the next pulse
+//   encoder->lastInterruptTime = currentTime;
 
-  // Adjust encoder->debounceDelay based on the speed (average pulse time)
-  encoder->debounceDelay = map(avg, 0, 1000, 0, 5);
+//   // Optional: Calculate speed based on newPulseTime
+//   // Assuming encoder resolution and physical parameters are factored in elsewhere
+//   encoder->speed = 1.0 / newPulseTime; // Simplified; consider actual calculation based on your setup
+// }
 
-  // Further adjust encoder->debounceDelay based on consistency (standard deviation)
-  encoder->debounceDelay += map(stdDev, 0, 500, 0, 5);
+// void adjustDebounceDelay(Encoder *encoder)
+// {
+//   // Calculate the average and standard deviation of the encoder's pulse times
+//   unsigned long avg = average(encoder->pulseTimes, 5);
+//   unsigned long stdDev = standardDeviation(encoder->pulseTimes, 5, avg);
 
-  // Ensure encoder->debounceDelay stays within the desired range of 0-5
-  encoder->debounceDelay = constrain(encoder->debounceDelay, 0, 5);
-}
+//   // Adjust encoder->debounceDelay based on the speed (average pulse time)
+//   encoder->debounceDelay = map(avg, 0, 1000, 0, 5);
+
+//   // Further adjust encoder->debounceDelay based on consistency (standard deviation)
+//   encoder->debounceDelay += map(stdDev, 0, 500, 0, 5);
+
+//   // Ensure encoder->debounceDelay stays within the desired range of 0-5
+//   encoder->debounceDelay = constrain(encoder->debounceDelay, 0, 5);
+// }
 
 // // Functions to update the encoder position //
 // void updateEncoder(Encoder *encoder)
@@ -95,49 +111,67 @@ void adjustDebounceDelay(Encoder *encoder)
 //   adjustDebounceDelay(encoder);
 // }
 
-// Functions to update the encoder position //
-void updateEncoder(Encoder *encoder)
-{
+// // Functions to update the encoder position //
+// void updateEncoder(Encoder *encoder)
+// {
+//   unsigned long currentTime = micros();
+//   if (currentTime - encoder->lastInterruptTime < encoder->debounceDelay * 1000)
+//   {
+//     return; // Too soon, ignore this movement
+//   }
+
+//   int MSB = digitalRead(encoder->pinA);
+//   int LSB = digitalRead(encoder->pinB);
+//   int encoded = (MSB << 1) | LSB;
+//   int sum = (encoder->lastEncoded << 2) | encoded;
+
+//   if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011)
+//     encoder->position--;
+//   if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000)
+//     encoder->position++;
+
+//   encoder->lastEncoded = encoded;
+//   encoder->lastInterruptTime = currentTime;
+
+//   // Update pulse times and adjust debounceDelay
+//   updatePulseTimes(encoder, currentTime);
+
+//   int movement = (encoder->lastEncoded << 2) | encoded;
+//   if (movement == 0b1101 || movement == 0b0100 || movement == 0b0010 || movement == 0b1011)
+//   {
+//     encoder->direction = -1; // Assume -1 for counterclockwise
+//     encoder->position--;
+//   }
+//   else if (movement == 0b1110 || movement == 0b0111 || movement == 0b0001 || movement == 0b1000)
+//   {
+//     encoder->direction = 1; // Assume 1 for clockwise
+//     encoder->position++;
+//   }
+
+//   if (encoder->speed > SPEED_THRESHOLD)
+//   {
+//     encoder->position += (encoder->direction * POSITION_CHANGE_HIGH_SPEED);
+//   }
+//   else
+//   {
+//     encoder->position += (encoder->direction * POSITION_CHANGE_LOW_SPEED);
+//   }
+// }
+
+void updateEncoderPosition(Encoder *encoder, int newState) {
+  int sum = (encoder->lastEncoded << 2) | newState;
+
+  if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011) encoder->position--;
+  if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) encoder->position++;
+  encoder->lastEncoded = newState;
+}
+
+// ISR to handle encoder changes, optimized for minimal processing
+void IRAM_ATTR handleEncoderInterrupt(Encoder *encoder) {
   unsigned long currentTime = micros();
-  if (currentTime - encoder->lastInterruptTime < encoder->debounceDelay * 1000)
-  {
-    return; // Too soon, ignore this movement
-  }
-
-  int MSB = digitalRead(encoder->pinA);
-  int LSB = digitalRead(encoder->pinB);
-  int encoded = (MSB << 1) | LSB;
-  int sum = (encoder->lastEncoded << 2) | encoded;
-
-  if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011)
-    encoder->position--;
-  if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000)
-    encoder->position++;
-
-  encoder->lastEncoded = encoded;
-  encoder->lastInterruptTime = currentTime;
-
-  // Update pulse times and adjust debounceDelay
-  updatePulseTimes(encoder, currentTime);
-
-  int movement = (encoder->lastEncoded << 2) | encoded;
-  if (movement == 0b1101 || movement == 0b0100 || movement == 0b0010 || movement == 0b1011)
-  {
-    encoder->direction = -1; // Assume -1 for counterclockwise
-    encoder->position--;
-  }
-  else if (movement == 0b1110 || movement == 0b0111 || movement == 0b0001 || movement == 0b1000)
-  {
-    encoder->direction = 1; // Assume 1 for clockwise
-    encoder->position++;
-  }
-
-  if (encoder->speed > SPEED_THRESHOLD)
-  {
-    encoder->position += (encoder->direction * POSITION_CHANGE_HIGH_SPEED);
-  }
-  else
-  {
-    encoder->position += (encoder->direction * POSITION_CHANGE_LOW_SPEED);
+  if (currentTime - encoder->lastInterruptTime > encoder->debounceDelay) {
+    int newState = (digitalRead(encoder->pinA) << 1) | digitalRead(encoder->pinB);
+    updateEncoderPosition(encoder, newState);
+    encoder->lastInterruptTime = currentTime;
   }
 }

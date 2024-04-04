@@ -3,59 +3,59 @@
 #include <AsyncTCP.h>
 #include <HTTPClient.h>
 #include <SPIFFS.h>
- 
+
 #include <FastLED.h>
 // #include <Wire.h>
 #include <iostream>
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_GFX.h>
 #include <ArduinoJson.h>
- 
+
 // file imports
 #include "I2C.h"
 #include "pin.h"
 #include "led.h"
 #include "oled.h"
 #include "encoder.h"
- 
-//Mode selector variable
+
+// Mode selector variable
 bool isInchMode = true;
- 
-//Inch and milimeter factors
+
+// Inch and milimeter factors
 int factor_inch = 2;
 float factor_mm = 0.5;
- 
+
 // Define LED colors as global constants
 const int LEDColorDisconnected[3] = {0, 0, 0};
 const int LEDColorPurple[3] = {128, 0, 128};
 const int LEDColorTurquoise[3] = {83, 195, 189};
 const int LEDColorPink[3] = {255, 292, 203};
- 
+
 // OLED var const
 // const int RefreshDelay = 1; // original 5
- 
+
 // Menu Options
 const char *MenuOptions[] = {"Connect Online", "Connect Offline"}; // might not need this, depends on design
 const char *MenuDroItems[] = {"Sino", "ToAuto"};
 const char *SinoAxis[] = {"X: ", "Y: "};
 const char *ToAutoAxis[] = {"X: ", "Y: ", "Z: "};
- 
+
 enum MenuState
 {
   MAIN_MENU,
   TWO_AXIS,
   THREE_AXIS
 };
- 
+
 volatile MenuState currentMenuState = MAIN_MENU;
 volatile int menuItemIndex = 0; // Index of the selected menu item
- 
+
 // Forward declarations
 void TaskNetwork(void *pvParameters);
 void TaskUpdateDisplay(void *pvParameters);
- 
+
 // BUTTON FUNCTIONS //
- 
+
 bool ButtonRead(int idx)
 {
   // 0 - left
@@ -63,46 +63,46 @@ bool ButtonRead(int idx)
   // 2 - up
   // 3 - down
   // 4 - right
- 
+
   if ((idx < 0) || (idx > 4))
     return false;
- 
+
   return !I2CReadReg(0x20, 1, idx);
 }
- 
+
 bool ButtonLeftPressed()
 {
   return ButtonRead(0);
 }
- 
+
 bool ButtonCenterPressed()
 {
   return ButtonRead(1);
 }
- 
+
 bool ButtonUpPressed()
 {
   return ButtonRead(2);
 }
- 
+
 bool ButtonDownPressed()
 {
   return ButtonRead(3);
 }
- 
+
 bool ButtonRightPressed()
 {
   return ButtonRead(4);
 }
- 
+
 bool ButtonStatesPrev[] = {false, false, false, false, false};
- 
+
 bool stateButtonCenter = ButtonCenterPressed();
 bool stateButtonUp = ButtonUpPressed();
 bool stateButtonDown = ButtonDownPressed();
 bool stateButtonLeft = ButtonLeftPressed();
 bool stateButtonRight = ButtonRightPressed();
- 
+
 void updateButtonStates()
 {
   ButtonStatesPrev[0] = ButtonLeftPressed();
@@ -111,7 +111,7 @@ void updateButtonStates()
   ButtonStatesPrev[3] = ButtonDownPressed();
   ButtonStatesPrev[4] = ButtonRightPressed();
 }
- 
+
 void handleMenuNavigation()
 {
   // check if button being pressed is diff from its last prev state aka (true != false)
@@ -163,13 +163,13 @@ void handleMenuNavigation()
   ButtonStatesPrev[2] = stateButtonDown;
   ButtonStatesPrev[3] = stateButtonLeft;
   ButtonStatesPrev[4] = stateButtonRight;
- 
+
   // updateAllPinZ(); // update all
 }
 // Menu setup
 int MotorChannelSelected = 0;
 int MotorChannelWatched = -1;
- 
+
 // NOT BEING USED ATM //
 const int IdxZ1 = 5;
 const int IdxZ2 = 4;
@@ -177,22 +177,40 @@ const int IdxZ3 = 3;
 const int IdxZ4 = 2;
 const int IdxZ5 = 1;
 const int IdxZ6 = 0;
- 
+
 // Initializing encoders attributes and setting their start (refer to encoder struct to see all parameters)
 Encoder encoder1 = {PIN_A1, PIN_B1, 0, 0, 0, 0, {0}, 1};
 Encoder encoder2 = {PIN_A2, PIN_B2, 0, 0, 0, 0, {0}, 1};
 Encoder encoder3 = {PIN_A3, PIN_B3, 0, 0, 0, 0, {0}, 1};
-Encoder encoder4 = {PIN_A4, PIN_B4, 0, 0, 0, 0, {0}, 1};
-Encoder encoder5 = {PIN_A5, PIN_B5, 0, 0, 0, 0, {0}, 1};
-Encoder encoder6 = {PIN_A6, PIN_B6, 0, 0, 0, 0, {0}, 1};
- 
-void IRAM_ATTR handleEncoder1Interrupt() { updateEncoder(&encoder1); }
-void IRAM_ATTR handleEncoder2Interrupt() { updateEncoder(&encoder2); }
-void IRAM_ATTR handleEncoder3Interrupt() { updateEncoder(&encoder3); }
-void IRAM_ATTR handleEncoder4Interrupt() { updateEncoder(&encoder4); }
-void IRAM_ATTR handleEncoder5Interrupt() { updateEncoder(&encoder5); }
-void IRAM_ATTR handleEncoder6Interrupt() { updateEncoder(&encoder6); }
- 
+// Encoder encoder4 = {PIN_A4, PIN_B4, 0, 0, 0, 0, {0}, 1};
+// Encoder encoder5 = {PIN_A5, PIN_B5, 0, 0, 0, 0, {0}, 1};
+// Encoder encoder6 = {PIN_A6, PIN_B6, 0, 0, 0, 0, {0}, 1};
+
+// void IRAM_ATTR handleEncoder1Interrupt() { updateEncoder(&encoder1); }
+// void IRAM_ATTR handleEncoder2Interrupt() { updateEncoder(&encoder2); }
+// void IRAM_ATTR handleEncoder3Interrupt() { updateEncoder(&encoder3); }
+// void IRAM_ATTR handleEncoder4Interrupt() { updateEncoder(&encoder4); }
+// void IRAM_ATTR handleEncoder5Interrupt() { updateEncoder(&encoder5); }
+// void IRAM_ATTR handleEncoder6Interrupt() { updateEncoder(&encoder6); }
+
+// Separate ISRs for each encoder
+void IRAM_ATTR handleEncoder1Interrupt()
+{
+  handleEncoderInterrupt(&encoder1); // Assume encoder1 is an instance of Encoder
+}
+
+// Separate ISRs for each encoder
+void IRAM_ATTR handleEncoder2Interrupt()
+{
+  handleEncoderInterrupt(&encoder2); // Assume encoder1 is an instance of Encoder
+}
+
+// Separate ISRs for each encoder
+void IRAM_ATTR handleEncoder3Interrupt()
+{
+  handleEncoderInterrupt(&encoder3); // Assume encoder1 is an instance of Encoder
+}
+
 // void updateAllZPins()
 // {
 //   // Example calls, assuming pinA1Index and pinB1Index are the indexes for A1 and B1 on the expander
@@ -204,16 +222,16 @@ void IRAM_ATTR handleEncoder6Interrupt() { updateEncoder(&encoder6); }
 //   updateZPinState(encoder6.pinA, encoder6.pinB, 14); // For Z6
 //                                                      // Repeat for other Z pins and their corresponding A/B pins
 // }
- 
+
 const char *h_ssid = "491-DRO-Boyyz";
 const char *h_password = "123456789";
- 
+
 const int ledPin = 12;  // The GPIO pin connected to your LED strip
 const int numLeds = 12; // Number of LEDs in your strip
- 
+
 CRGB leds[numLeds];
 AsyncWebServer server(80);
- 
+
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html lang="en">
@@ -421,89 +439,91 @@ const char index_html[] PROGMEM = R"rawliteral(
 </body>
 </html>
 )rawliteral";
- 
+
 void setup()
 {
   Serial.begin(115200);
   delay(10);
   // PIN SETUP
   setUpPins();
- 
+
   LEDInit();
- 
+
   for (int i = 0; i < LEDNum; i++)
     LEDSet(i, LEDColorDisconnected);
- 
+
   LEDShow();
- 
+
   FastLED.setBrightness(50);
- 
+
   // Init OLED
   Wire.setPins(PIN_I2C_SDA, PIN_I2C_SCL);
   Wire.begin();
   Wire.setClock(400000);
   LCDInit();
   LCDScreenClear();
- 
+
   // Initialize LED strip
   FastLED.addLeds<WS2812B, ledPin, GRB>(leds, numLeds);
   FastLED.setBrightness(50);
- 
+
   // Initialize SPIFFS
   if (!SPIFFS.begin(true))
   {
     Serial.println("An Error has occurred while mounting SPIFFS");
     return;
   }
- 
+
   // Setting up the ESP32 as an Access Point //
   WiFi.softAP(h_ssid, h_password);
   Serial.println("Access Point Started");
   Serial.print("IP Address: ");
   Serial.println(WiFi.softAPIP());
- 
+
   // Setting up Routes
   // Route for root web page
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){ 
-    request->send_P(200, "text/html", index_html); });
- 
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+            { request->send_P(200, "text/html", index_html); });
+
   // New route to get the current position of encoder1
-  server.on("/position", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/position", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
     char temp[100];
     snprintf(temp, 100, "%d", encoder1.position); // Assuming encoder1.position is an int
     request->send(200, "text/plain", temp); });
- 
-  server.on("/position2", HTTP_GET, [](AsyncWebServerRequest *request){
+
+  server.on("/position2", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
     char temp[100];
     snprintf(temp, 100, "%d", encoder2.position); // Assuming encoder1.position is an int
     request->send(200, "text/plain", temp); });
- 
-  server.on("/position3", HTTP_GET, [](AsyncWebServerRequest *request){
+
+  server.on("/position3", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
     char temp[100];
     snprintf(temp, 100, "%d", encoder3.position); // Assuming encoder1.position is an int
     request->send(200, "text/plain", temp); });
- 
-  server.on("/poss", HTTP_GET, [](AsyncWebServerRequest *request) {
-    float position = encoder1.position * (isInchMode ? factor_inch : factor_mm);
-    char response[100];
-    snprintf(response, 100, "%.2f", position);
-    request->send(200, "text/plain", response);
- 
-  });
-  server.on("/toggle-mode", HTTP_GET, [](AsyncWebServerRequest *request){
+
+  server.on("/poss", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
+              float position = encoder1.position * (isInchMode ? factor_inch : factor_mm);
+              char response[100];
+              snprintf(response, 100, "%.2f", position);
+              request->send(200, "text/plain", response); });
+  server.on("/toggle-mode", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
     isInchMode = !isInchMode;
-    request->send(200, "text/plain", isInchMode ? "INCH" : "MM");
-  });
- 
+    request->send(200, "text/plain", isInchMode ? "INCH" : "MM"); });
+
   // //Millimeter request
   //   server.on("/milli", HTTP_GET, [](AsyncWebServerRequest *request) {
   //     //what is the multiplicative factor?
   //     float position_mm = encoder1.position * factor;
- 
+
   //     char temp[100];
   //     snprintf(temp, sizeof(temp), "%.2f", position_mm);
   //     request->send(200, "text/plain", temp); });
- 
+
   // //Mid-point calculation
   // server.on("/half", HTTP_GET, [](AsyncWebServerRequest *request) {
   //   char temp[100];
@@ -511,91 +531,99 @@ void setup()
   //   snprintf(temp, sizeof(temp), "%.2f",)
   //   request->send(200, "text/plain", temp);
   // });
- 
+
   // Routes to toggle LED colors
-  server.on("/turquoise", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/turquoise", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
     for(int i = 0; i < numLeds; i++) leds[i] = CRGB::Turquoise;
       FastLED.show();
       request->send(200, "text/plain", "LEDs set to Turquoise"); });
- 
-  server.on("/purple", HTTP_GET, [](AsyncWebServerRequest *request){
+
+  server.on("/purple", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
     for(int i = 0; i < numLeds; i++) leds[i] = CRGB::Purple;
       FastLED.show();
       request->send(200, "text/plain", "LEDs set to Purple"); });
- 
+
   // Routes to reset Axis position
-  server.on("/reset/x", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/reset/x", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
   encoder1.positionInc = encoder1.position;
   encoder1.position = 0; // Reset X position
   request->send(200, "text/plain", "X position reset"); });
- 
-  server.on("/reset/xInc", HTTP_GET, [](AsyncWebServerRequest *request){
+
+  server.on("/reset/xInc", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
   // encoder2.position = 0; // Reset Y position
  
   encoder1.position += encoder1.positionInc;
  
   request->send(200, "text/plain", "Y position reset"); });
- 
-  server.on("/reset/xAbs", HTTP_GET, [](AsyncWebServerRequest *request){
+
+  server.on("/reset/xAbs", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
   // encoder2.position = 0; // Reset Y position
   encoder1.position += encoder1.positionInc;
   request->send(200, "text/plain", "Y position reset"); });
- 
+
   //
- 
-  server.on("/reset/y", HTTP_GET, [](AsyncWebServerRequest *request){
+
+  server.on("/reset/y", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
   encoder2.position = 0; // Reset Y position
   request->send(200, "text/plain", "Y position reset"); });
- 
+
   //
- 
-  server.on("/reset/z", HTTP_GET, [](AsyncWebServerRequest *request){
+
+  server.on("/reset/z", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
   encoder3.position = 0; // Assuming encoder3 is for Z, reset Z position
   request->send(200, "text/plain", "Z position reset"); });
- 
-  server.on("/switch/abs", HTTP_GET, [](AsyncWebServerRequest *request){
+
+  server.on("/switch/abs", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
   char temp[100];
   snprintf(temp, 100, "%d", encoder1.position); // Assuming encoder1.position is an int
   request->send(200, "text/plain", temp); });
- 
-  server.on("/switch/inc", HTTP_GET, [](AsyncWebServerRequest *request){
+
+  server.on("/switch/inc", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
   encoder1.positionInc = encoder1.position; // Assuming encoder3 is for Z, reset Z position
   encoder1.position += encoder1.positionInc;
   request->send(200, "text/plain", "Z position reset"); });
- 
-  // Axis Selector buttons 
- 
- 
+
+  // Axis Selector buttons
+
   server.begin();
- 
+
   // Monitor pin setup //
   attachInterrupt(digitalPinToInterrupt(encoder1.pinA), handleEncoder1Interrupt, CHANGE); // I need to remove the lambda and include the w/ name of interrupt to ensure we are using the correct one
- 
+
   attachInterrupt(digitalPinToInterrupt(encoder1.pinB), handleEncoder1Interrupt, CHANGE);
- 
+
   attachInterrupt(digitalPinToInterrupt(encoder2.pinA), handleEncoder2Interrupt, CHANGE);
- 
+
   attachInterrupt(digitalPinToInterrupt(encoder2.pinB), handleEncoder2Interrupt, CHANGE);
- 
+
   attachInterrupt(digitalPinToInterrupt(encoder3.pinA), handleEncoder3Interrupt, CHANGE);
- 
+
   attachInterrupt(digitalPinToInterrupt(encoder3.pinB), handleEncoder3Interrupt, CHANGE);
- 
-  attachInterrupt(digitalPinToInterrupt(encoder4.pinA), handleEncoder4Interrupt, CHANGE);
- 
-  attachInterrupt(digitalPinToInterrupt(encoder4.pinB), handleEncoder4Interrupt, CHANGE);
- 
-  attachInterrupt(digitalPinToInterrupt(encoder5.pinA), handleEncoder5Interrupt, CHANGE);
- 
-  attachInterrupt(digitalPinToInterrupt(encoder5.pinB), handleEncoder5Interrupt, CHANGE);
- 
-  attachInterrupt(digitalPinToInterrupt(encoder6.pinA), handleEncoder6Interrupt, CHANGE);
- 
-  attachInterrupt(digitalPinToInterrupt(encoder6.pinB), handleEncoder6Interrupt, CHANGE);
- 
+
+  // attachInterrupt(digitalPinToInterrupt(encoder4.pinA), handleEncoder4Interrupt, CHANGE);
+
+  // attachInterrupt(digitalPinToInterrupt(encoder4.pinB), handleEncoder4Interrupt, CHANGE);
+
+  // attachInterrupt(digitalPinToInterrupt(encoder5.pinA), handleEncoder5Interrupt, CHANGE);
+
+  // attachInterrupt(digitalPinToInterrupt(encoder5.pinB), handleEncoder5Interrupt, CHANGE);
+
+  // attachInterrupt(digitalPinToInterrupt(encoder6.pinA), handleEncoder6Interrupt, CHANGE);
+
+  // attachInterrupt(digitalPinToInterrupt(encoder6.pinB), handleEncoder6Interrupt, CHANGE);
+
   // Dim LEDs
   FastLED.setBrightness(24);
- 
+
   xTaskCreate(
       TaskUpdateDisplay, // Task function
       "DisplayTask",     // Name of the task
@@ -603,16 +631,16 @@ void setup()
       NULL,              // Parameter of the task
       1,                 // Priority of the task
       NULL);             // Task handle
- 
+
   // // delay(3000);
 }
- 
+
 void loop() {} // might not need this
- 
+
 void updateDisplayContent()
 {
   char buffer[10];
- 
+
   switch (currentMenuState)
   {
   case MAIN_MENU:
@@ -628,38 +656,79 @@ void updateDisplayContent()
     // sprintf(buffer, "X: %d", encoderPos); // original implementation
     sprintf(buffer, "X: %d", encoder1.position);
     LCDTextDraw(0, 0, buffer, 1, WHITE, BLACK);
- 
+
     LCDRectFill(0, 16, 50, 10, BLACK);
     sprintf(buffer, "Y: %d", encoder2.position);
     LCDTextDraw(0, 16, buffer, 1, WHITE, BLACK);
- 
+
+    LCDRectFill(0, 32, 50, 10, BLACK);
+    sprintf(buffer, "Z: %d", encoder3.position);
+    LCDTextDraw(0, 32, buffer, 1, WHITE, BLACK);
+
     LCDRectFill(0, 50, 50, 10, BLACK);
     LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK); // menu option to return
     break;
   case THREE_AXIS:
-    LCDRectFill(0, 0, 50, 10, BLACK);
-    sprintf(buffer, "X: %d", encoder4.position);
-    LCDTextDraw(0, 0, buffer, 1, WHITE, BLACK);
- 
-    LCDRectFill(0, 16, 50, 10, BLACK);
-    sprintf(buffer, "Y: %d", encoder5.position);
-    LCDTextDraw(0, 16, buffer, 1, WHITE, BLACK);
- 
-    LCDRectFill(0, 32, 50, 10, BLACK);
-    sprintf(buffer, "Z: %d", encoder6.position);
-    LCDTextDraw(0, 32, buffer, 1, WHITE, BLACK);
- 
+    // LCDRectFill(0, 0, 50, 10, BLACK);
+    // sprintf(buffer, "X: %d", encoder4.position);
+    // LCDTextDraw(0, 0, buffer, 1, WHITE, BLACK);
+
+    // LCDRectFill(0, 16, 50, 10, BLACK);
+    // sprintf(buffer, "Y: %d", encoder5.position);
+    // LCDTextDraw(0, 16, buffer, 1, WHITE, BLACK);
+
+    // LCDRectFill(0, 32, 50, 10, BLACK);
+    // sprintf(buffer, "Z: %d", encoder6.position);
+    // LCDTextDraw(0, 32, buffer, 1, WHITE, BLACK);
+
     LCDRectFill(0, 50, 50, 10, BLACK);
     LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK); // menu option to return
     break;
   }
 }
- 
+
 void TaskUpdateDisplay(void *pvParameters)
 {
   for (;;)
   {
-    // updateAllZPins();
+    // Shows us the angle of current encoder pos for encoders [1,2,3]
+    long currentPulses1 = encoder1.position; // This should be the net count considering direction
+    float angleTurned1 = pulsesToDegrees(currentPulses1);
+
+    long currentPulses2 = encoder2.position; // This should be the net count considering direction
+    float angleTurned2 = pulsesToDegrees(currentPulses2);
+
+    long currentPulses3 = encoder3.position; // This should be the net count considering direction
+    float angleTurned3 = pulsesToDegrees(currentPulses3);
+
+    Serial.print("Encoder1 Angle Turned: ");
+    Serial.println(angleTurned1);
+
+    Serial.print("Encoder2 Angle Turned: ");
+    Serial.println(angleTurned2);
+
+    Serial.print("Encoder3 Angle Turned: ");
+    Serial.println(angleTurned3);
+
+    Serial.println("----------------------");
+
+    // Shows us the INCH of current encoder pos for encoders [1,2,3]
+    float distanceMovedInches1 = pulsesToDistanceInches(currentPulses1);
+    float distanceMovedInches2 = pulsesToDistanceInches(currentPulses2);
+    float distanceMovedInches3 = pulsesToDistanceInches(currentPulses3);
+
+    Serial.print("Encoder1 Distance Moved: ");
+    Serial.print(distanceMovedInches1);
+    Serial.println(" inches");
+
+    Serial.print("Encoder2 Distance Moved: ");
+    Serial.print(distanceMovedInches2);
+    Serial.println(" inches");
+
+    Serial.print("Encoder3 Distance Moved: ");
+    Serial.print(distanceMovedInches3);
+    Serial.println(" inches");
+
     handleMenuNavigation();
     updateDisplayContent();
     // vTaskDelay(pdMS_TO_TICKS(100));

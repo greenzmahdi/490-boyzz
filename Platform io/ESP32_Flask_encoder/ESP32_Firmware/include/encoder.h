@@ -26,4 +26,11 @@ unsigned long standardDeviation(unsigned long arr[], int numElements, unsigned l
 void updatePulseTimes(Encoder *encoder, unsigned long pulseTime);
 void adjustDebounceDelay(Encoder *encoder);
 void updateEncoder(Encoder *encoder);
+void updateEncoderPosition(Encoder *encoder, int newState);
+// ISR to handle encoder changes, optimized for minimal processing
+void IRAM_ATTR handleEncoderInterrupt(Encoder *encoder);
+// Function to convert pulses to degrees
+float pulsesToDegrees(long pulses);
+float pulsesToDistanceInches(long pulses);
+
 #endif
