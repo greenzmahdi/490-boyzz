@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DRO Interface</title>
 <style>
+  #indicator {
+    font-size: 12px;
+    margin-left: 10px;
+  }
+  
   h1 {
     text-align: center;
   }
@@ -73,8 +78,8 @@
   <p>Calculator Buttons</p>
   <div class ="calculator-grid"> 
     <button>1/2</button>
-    <button>INCH/MM</button>
-    <button>Calculator</button> 
+    <button id="toggleButton" onclick="toggleUnits()">INCH/MM</button>
+    <span id="indicator">(INCH)</span>
     <button>9</button>
     <button>8</button>
     <button>7</button>
@@ -132,6 +137,27 @@
 
 
 <script>
+    var isInchMode= true;
+
+  function toggleUnits() {
+    var button = document.getElementById("toggleButton");
+    var indicator = document.getElementById("indicator");
+    //measurement
+
+    if (isInchMode) {
+      button.innerHTML = "MM";
+      indicator.innerHTML = "(MM)";
+      //measurement
+      isInchMode = false;
+    }
+    else {
+      button.innerHTML = "INCH";
+      indicator.innerHTML = "(INCH)";
+      //measurement.innerHTML = "0 inches";
+      isInchMode = true;
+    }
+  } 
+
   function updatePositions() {
     fetch("/position")
       .then(response => response.text())
