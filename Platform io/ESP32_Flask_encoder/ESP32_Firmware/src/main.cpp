@@ -298,8 +298,12 @@ const char index_html[] PROGMEM = R"rawliteral(
  
   function updatePosition() {
     fetch("/poss")
-    .then(response => response.text())
-    .then(data => document.getElementById("poss").innerText = data)
+    .then(response => response.json())
+    .then(data => {
+      document.getElementById("position").innerText = data.position1;
+      document.getElementById("position2").innerText = data.position2;
+      document.getElementById("position3").innerText = data.position3;
+    })
     .catch(console.error);
   }
 </script>
@@ -391,7 +395,7 @@ const char index_html[] PROGMEM = R"rawliteral(
  
  
 <script> 
-  updatePosition();
+  setInterval(updatePosition, 50);
   
   function updatePositions() {
     fetch("/position")
@@ -431,10 +435,7 @@ const char index_html[] PROGMEM = R"rawliteral(
 //     })
 //     .catch(console.error);
 // }
- 
- 
- 
-  setInterval(updatePositions, 50);   // Call updatePositions() every 1000ms (1 second) but right now it is 50ms so stupid fast 
+  
 </script>
 </body>
 </html>
@@ -506,10 +507,27 @@ void setup()
 
   server.on("/poss", HTTP_GET, [](AsyncWebServerRequest *request)
             {
-              float position = encoder1.position * (isInchMode ? factor_inch : factor_mm);
-              char response[100];
-              snprintf(response, 100, "%.2f", position);
-              request->send(200, "text/plain", response); });
+              float position1 = encoder1.position * (isInchMode ? factor_inch : factor_mm);
+              float position2 = encoder2.position * (isInchMode ? factor_inch : factor_mm);
+              float position3 = encoder3.position * (isInchMode ? factor_inch : factor_mm);
+
+              StaticJsonDocument<200> jsonDoc;
+              jsonDoc["position1"] = position1;
+              jsonDoc["position2"] = position2;
+              jsonDoc["position3"] = position3;
+
+              String jsonString;
+              serializeJson(jsonDoc, jsonString);
+
+
+              //char response[100];
+              //snprintf(response, 100, "%.2f", position);
+              request->send(200, "application/json", jsonString); });
+  
+  
+  
+  
+  
   server.on("/toggle-mode", HTTP_GET, [](AsyncWebServerRequest *request)
             {
     isInchMode = !isInchMode;
