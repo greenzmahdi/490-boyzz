@@ -240,61 +240,217 @@ const char index_html[] PROGMEM = R"rawliteral(
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DRO Interface</title>
 <style>
-  #indicator {
-    font-size: 12px;
-    margin-left: 10px;
-  }
- 
-  h1 {
-    text-align: center;
-  }
   body {
     font-family: Arial, sans-serif;
     background: #f0f0f0;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    height: 100vh;
+    align-items: center;
   }
+
+  .flex-container {
+    display: flex;
+    width: 90%;
+    height: 90%;
+    align-items: stretch;
+  }
+
+  .left-column,
+  .right-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .left-column {
+    flex: 3;
+  }
+
+  .right-column {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
   .dro-container {
-    width: 600px;
-    margin: 0 auto;
     background: #ddd;
-    padding: 20px;
-    border-radius: 10px;
-  }
-  .readout {
-    font-family: 'Digital', sans-serif;
-    background: #000;
-    color: #00ff00;
     padding: 10px;
+    border-radius: 5px;
     margin-bottom: 5px;
   }
-  .calculator-grid {
+
+  .readout {
+  font-family: 'Digital', sans-serif;
+  background: #000;
+  color: #00ff00;
+  padding: 15px; /* Increased padding */
+  font-size: 1.2em; /* Larger font size */
+  margin-bottom: 10px; /* Adjusted margin */
+  border: 1px solid #333; /* Subtle border */
+}
+
+  .calculator-grid{
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
-    margin-top: 20px;
   }
-  .calculator-button {
-    padding: 20px;
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    text-align: center;
-    cursor: pointer;
+
+  .zeroSelect-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: px;
   }
-  .calculator-button:hover {
-    background: #e9e9e9;
+
+  button {
+  padding: 15px;
+  background: #f5f5f5; /* Lighter background */
+  border: 1px solid #bbb; /* Softer border color */
+  border-radius: 5px;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.3s; /* Smooth transition for hover effect */
+}
+
+button:hover {
+  background: #e0e0e0; /* Subtle hover effect */
+}
+
+  .wide {
+    grid-column: span 3;
   }
-  /* More styles can be added as per requirement */
 </style>
+</head>
+<body>
+
+<div class="flex-container">
+  <div class="left-column">
+    <!-- Container 1: Readout displays (X, Y, Z) -->
+    <div class="flex-container">
+      <div class="left-column">
+        <div class="dro-container">
+          <div class="readout" id="modeIndicator">ABS</div>
+
+          <div class="readout modeDisplay" id="mode-readout">
+            <span id="modeMeasureIndicator">INCH</span>
+          </div>
+          
+          <div class="readout" id="x-readout">X: <span id="position"></span></div>
+          <div class="readout" id="y-readout">Y: <span id="position2"></span></div>
+          <div class="readout" id="z-readout">Z: <span id="position3"></span></div>
+        </div>
+      </div>
+
+      <div class="right-column">
+        <div class="dro-container">
+          <div class="zeroSelect-grid">
+            <button onclick="resetPosition('x')">Xo</button>
+            <button onclick="resetPosition('select_x')">Select X</button>
+            <button onclick="resetPosition('y')">Yo</button>
+            <button onclick="resetPosition('select_y')">Select Y</button>
+            <button onclick="resetPosition('z')">Zo</button>        
+            <button onclick="resetPosition('select_z')">Select Z</button>
+          </div>
+        </div>
+
+      </div>
+  
+
+    </div>
+    <!-- Container 5: Function keys -->
+    <div class="dro-container">
+      <button>F1</button>
+      <button>F2</button>
+      <button>F3</button>
+      <button>F4</button>
+      <button>F5</button>
+      <button>F6</button>
+    </div>
+
+    <div class="dro-container">
+      <button>Process Holes Circle </button>
+      <button>Process Holes Line</button>
+      <button>R Cut</button>
+      <button>Process Slope</button>
+    
+    </div>
+
+    <!-- Container 6: Arrow keys -->
+    <div class="dro-container">
+      <button>↑</button>
+      <button>→</button>
+      <button>↓</button>
+      <button>←</button>
+    </div>
+  </div>
+
+  <div class="right-column">
+    <!-- Container 2: Axis selection and zeroing -->
+    
+    <!-- Container 3: Calculator grid -->
+    <div class="dro-container wide">
+      <div class="calculator-grid">
+        <button>1/2</button>
+        <button id="toggleButton" onclick="toggleMeasureMode()">INCH/MM</button>
+        <!-- <span id="modeMeasureIndicator">INCH</span> -->
+        <!-- <p>Position: <span id="poss">0</span></p> -->
+
+        <button>🖩</button>
+        <button>9</button>
+        <button>8</button>
+        <button>7</button>
+        <button>6</button>
+        <button>5</button>
+        <button>4</button>
+        <button>3</button>
+        <button>2</button>
+        <button>1</button>
+        <button>.</button>
+        <button>0</button>
+        <button>+/-</button>
+      </div>
+    </div>
+
+    <!-- Container 4: Additional control buttons -->
+    <div class="dro-container wide">
+      <div class="zeroSelect-grid">
+        <button onclick="toggleMode()">Toggle ABS/INC</button>
+        <button>XYZo</button>
+        <button>CA</button>
+        <button>ENT</button>
+        <button onclick="resetPosition('xInc')">Abs X</button>
+        <button onclick="resetPosition('xAbs')">Inc</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
-  function toggleMode() {
-    fetch("toggle-mode")
-    .then(response=> response.text())
-    .then(data => {
-      document.getElementById("modeIndicator").innerText = data;
-      updatePosition();
-    })
-    .catch(console.error);
-  }
+function toggleMode() {
+  fetch("/toggle-mode")
+  .then(response => response.text())
+  .then(data => {
+    // Now using 'modeIndicator' as the ID for the mode display element
+    document.getElementById("modeIndicator").innerText = "Mode: " + data;
+    updatePositions(); // Update positions if needed, otherwise you can remove this line
+  })
+  .catch(console.error);
+}
+
+function toggleMeasureMode() {
+  fetch("/toggle-measure-mode")
+  .then(response => response.text())
+  .then(data => {
+    // Now using 'modeIndicator' as the ID for the mode display element
+    document.getElementById("modeMeasureIndicator").innerText = data;
+    // updatePositions(); // Update positions if needed, otherwise you can remove this line
+  })
+  .catch(console.error);
+}
+
  
   function updatePosition() {
     fetch("/poss")
@@ -306,118 +462,8 @@ const char index_html[] PROGMEM = R"rawliteral(
     })
     .catch(console.error);
   }
-
-  let isHalf = true;
-  function toggleFetch() {
-    isHalf = !isHalf; // Toggle the state between true and false
-    if (isHalf) {
-      document.getElementById("halfButton").innerText = "1/2"; // Change button text
-    } 
-    else {
-      document.getElementById("halfButton").innerText = "Undo 1/2"; // Change button text
-    }
-  }
-
-  function halfInc() {
-    let route = isHalf ? "/half" : "/undohalf";
-    fetch(route)
-    .then(response => response.text())
-    .then(data => document.getElementById("poss").innerText = data)
-    .catch(console.error);
-    toggleFetch()
-  }
-</script>
-</head>
-<body>
-<h1>491 ESP32 DRO Boyyz</h1>
-</hr>
-<div class="dro-container">
-  <div class="readout" id="x-readout">MODE: ABS</div>
-  <div class="readout" id="x-readout">X: <span id="position"></span></div>
-  <div class="readout" id="y-readout">Y: <span id="position2"></span></div>
-  <div class="readout" id="z-readout">Z: <span id="position3"></span></div>
-</div>
- 
-<div class="dro-container">
-  <!-- This is for selecting an Axis and for Zeroing out an axis -->
-  <p>Zero out / Select Buttons</p>
-  <button onclick="resetPosition('x')">Xo</button>
-  <button onclick="resetPosition('y')">Yo</button>
-  <button onclick="resetPosition('z')">Zo</button>
-  <button onclick="resetPosition('select_x')">Select X</button>
-  <button onclick="resetPosition('select_y')">Select Y</button>
-  <button onclick="resetPosition('select_z')">Select Z</button>
-</div>
- 
- 
-<!-- NOTE Mahdi this is how I made the grid, note how I used class ="calculator-grid", I set the grid style -->
-<div class="dro-container">
-  <p>Calculator Buttons</p>
-  <div class ="calculator-grid"> 
-    <button id="halfButton" onclick="halfInc()">1/2</button>
-    <button id="toggleButton" onclick="toggleMode()">INCH/MM</button>
-    <span id="modeIndicator">INCH</span>
-    <p>Position: <span id="poss">0</span></p>
-    <button>9</button>
-    <button>8</button>
-    <button>7</button>
-    <button>6</button>
-    <button>5</button>
-    <button>4</button>
-    <button>3</button>
-    <button>2</button>
-    <button>1</button>
-    <button>.</button>
-    <button>0</button>
-    <button>+/-</button>
-  </div>
-</div>
- 
-<div class="dro-container">
-  <!-- These need to be Implemented still, Randy I created the button dor ABS/INC juyt join the logic using the 2 buttons I already made or whatever is easier for you!-->
-  <p>Zero all out / ABS/INC mode / Calculate / Enter Buttons</p>
-  <button>ABS/INC</button>
-  <button>XYZo</button>
-  <button>CA</button>
-  <button>ENT</button>
-  <button onclick="resetPosition('xInc')">Abs X</button>
-  <button onclick="resetPosition('xAbs')"> Inc</button>
-</div>
- 
-<div class="dro-container">
-  <!-- This is for our function key layout-->
-  <p>Function Buttons</p>
-  <button>F1</button>
-  <button>F2</button>
-  <button>F3</button>
-  <button>F4</button>
-  <button>F5</button>
-  <button>F6</button>
-</div>
- 
-<div class="dro-container">
-  <!-- This is for the GRID buttons-->
-  <p>Grid Buttons</p>
-  <button>option1</button>
-  <button>option2</button>
-  <button>option3</buton>
-  <button>option4</button>
-</div>
- 
-<div class="dro-container">
-  <!-- Arrow Keys-->
-  <p>Arrow Buttons</p>
-  <button>↑</button>
-  <button>→</button>
-  <button>↓</buton>
-  <button>←</button>
-</div>
- 
- 
-<script> 
-  setInterval(updatePosition, 50);
   
-  function updatePositions() {
+    function updatePositions() {
     fetch("/position")
       .then(response => response.text())
       .then(data => document.getElementById("position").innerText = data)
@@ -455,11 +501,60 @@ const char index_html[] PROGMEM = R"rawliteral(
 //     })
 //     .catch(console.error);
 // }
-  
+
+// function toggleMode() {
+//   fetch('/toggle-mode')
+//     .then(response => response.text())
+//     .then(mode => document.getElementById('modeDisplay').innerText = 'Mode: ' + mode)
+//     .catch(error => console.error('Error:', error));
+// }
+
+// function toggleMode() {
+//   fetch('/toggle-mode')
+//     .then(response => response.text())
+//     .then(mode => {
+//       // Assuming 'modeDisplay' is a class name
+//       const elements = document.getElementsByClassName('modeDisplay');
+//       for (const element of elements) {
+//         element.innerText = mode;
+//       }
+//     })
+//     .catch(error => console.error('Error:', error));
+// }
+
+ 
+
+ 
+  setInterval(updatePosition, 50);   // Call updatePositions() every 1000ms (1 second) but right now it is 50ms so stupid fast 
 </script>
 </body>
 </html>
+
 )rawliteral";
+
+bool isABSMode = true; // Start in ABS mode
+int encoderValueABS[3] = {0, 0, 0};
+int encoderValueINC[3] = {0, 0, 0};
+
+void toggleMode()
+{
+  isABSMode = !isABSMode;
+  // Log the change or take additional actions as needed
+}
+
+void resetEncoderValue(int encoderIndex)
+{
+  // Placeholder for resetting encoder value. You'll need to adjust based on your application logic.
+  if (isABSMode)
+  {
+    encoderValueABS[encoderIndex] = 0;
+  }
+  else
+  {
+    encoderValueINC[encoderIndex] = 0;
+  }
+  // Consider adding logic to update the display or take other actions.
+}
 
 void setup()
 {
@@ -538,11 +633,14 @@ void setup()
 
               String jsonString;
               serializeJson(jsonDoc, jsonString);
+
+
               //char response[100];
               //snprintf(response, 100, "%.2f", position);
               request->send(200, "application/json", jsonString); });
-  
-  server.on("/toggle-mode", HTTP_GET, [](AsyncWebServerRequest *request)
+
+
+  server.on("/toggle-measure-mode", HTTP_GET, [](AsyncWebServerRequest *request)
             {
     isInchMode = !isInchMode;
     request->send(200, "text/plain", isInchMode ? "INCH" : "MM"); });
@@ -556,31 +654,26 @@ void setup()
   //     snprintf(temp, sizeof(temp), "%.2f", position_mm);
   //     request->send(200, "text/plain", temp); });
 
-  //Mid-point calculation
-  server.on("/half", HTTP_GET, [](AsyncWebServerRequest *request) {
-    char temp[100];
-    encoder1.position = encoder1.position/2;
-    snprintf(temp, sizeof(temp), "%.2f",encoder1.position);
-    request->send(200, "text/plain", temp);});
-
-  server.on("/undohalf", HTTP_GET, [](AsyncWebServerRequest *request) {
-    char temp[100];
-    encoder1.position = encoder1.position*2;
-    snprintf(temp, sizeof(temp), "%.2f",encoder1.position);
-    request->send(200, "text/plain", temp);});
+  // //Mid-point calculation
+  // server.on("/half", HTTP_GET, [](AsyncWebServerRequest *request) {
+  //   char temp[100];
+  //   float position_half = encoder1.position/2;
+  //   snprintf(temp, sizeof(temp), "%.2f",)
+  //   request->send(200, "text/plain", temp);
+  // });
 
   // Routes to toggle LED colors
-  server.on("/turquoise", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
-    for(int i = 0; i < numLeds; i++) leds[i] = CRGB::Turquoise;
-      FastLED.show();
-      request->send(200, "text/plain", "LEDs set to Turquoise"); });
+  // server.on("/turquoise", HTTP_GET, [](AsyncWebServerRequest *request)
+  //           {
+  //   for(int i = 0; i < numLeds; i++) leds[i] = CRGB::Turquoise;
+  //     FastLED.show();
+  //     request->send(200, "text/plain", "LEDs set to Turquoise"); });
 
-  server.on("/purple", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
-    for(int i = 0; i < numLeds; i++) leds[i] = CRGB::Purple;
-      FastLED.show();
-      request->send(200, "text/plain", "LEDs set to Purple"); });
+  // server.on("/purple", HTTP_GET, [](AsyncWebServerRequest *request)
+  //           {
+  //   for(int i = 0; i < numLeds; i++) leds[i] = CRGB::Purple;
+  //     FastLED.show();
+  //     request->send(200, "text/plain", "LEDs set to Purple"); });
 
   // Routes to reset Axis position
   server.on("/reset/x", HTTP_GET, [](AsyncWebServerRequest *request)
@@ -628,6 +721,23 @@ void setup()
   encoder1.positionInc = encoder1.position; // Assuming encoder3 is for Z, reset Z position
   encoder1.position += encoder1.positionInc;
   request->send(200, "text/plain", "Z position reset"); });
+
+  server.on("/toggle-mode", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
+              toggleMode();
+              request->send(200, "text/plain", isABSMode ? "ABS" : "INC"); // Send the new mode back to the client
+            });
+
+  server.on("/reset-encoder", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
+  if (request->hasParam("encoder")) {
+    auto* param = request->getParam("encoder");
+    int encoderIndex = param->value().toInt();
+    resetEncoderValue(encoderIndex);
+    request->send(200, "text/plain", "Reset done");
+  } else {
+    request->send(400, "text/plain", "Missing encoder parameter");
+  } });
 
   // Axis Selector buttons
 
@@ -728,43 +838,43 @@ void TaskUpdateDisplay(void *pvParameters)
 {
   for (;;)
   {
-    // Shows us the angle of current encoder pos for encoders [1,2,3]
-    long currentPulses1 = encoder1.position; // This should be the net count considering direction
-    float angleTurned1 = pulsesToDegrees(currentPulses1);
+    // // Shows us the angle of current encoder pos for encoders [1,2,3]
+    // long currentPulses1 = encoder1.position; // This should be the net count considering direction
+    // float angleTurned1 = pulsesToDegrees(currentPulses1);
 
-    long currentPulses2 = encoder2.position; // This should be the net count considering direction
-    float angleTurned2 = pulsesToDegrees(currentPulses2);
+    // long currentPulses2 = encoder2.position; // This should be the net count considering direction
+    // float angleTurned2 = pulsesToDegrees(currentPulses2);
 
-    long currentPulses3 = encoder3.position; // This should be the net count considering direction
-    float angleTurned3 = pulsesToDegrees(currentPulses3);
+    // long currentPulses3 = encoder3.position; // This should be the net count considering direction
+    // float angleTurned3 = pulsesToDegrees(currentPulses3);
 
-    Serial.print("Encoder1 Angle Turned: ");
-    Serial.println(angleTurned1);
+    // Serial.print("Encoder1 Angle Turned: ");
+    // Serial.println(angleTurned1);
 
-    Serial.print("Encoder2 Angle Turned: ");
-    Serial.println(angleTurned2);
+    // Serial.print("Encoder2 Angle Turned: ");
+    // Serial.println(angleTurned2);
 
-    Serial.print("Encoder3 Angle Turned: ");
-    Serial.println(angleTurned3);
+    // Serial.print("Encoder3 Angle Turned: ");
+    // Serial.println(angleTurned3);
 
-    Serial.println("----------------------");
+    // Serial.println("----------------------");
 
-    // Shows us the INCH of current encoder pos for encoders [1,2,3]
-    float distanceMovedInches1 = pulsesToDistanceInches(currentPulses1);
-    float distanceMovedInches2 = pulsesToDistanceInches(currentPulses2);
-    float distanceMovedInches3 = pulsesToDistanceInches(currentPulses3);
+    // // Shows us the INCH of current encoder pos for encoders [1,2,3]
+    // float distanceMovedInches1 = pulsesToDistanceInches(currentPulses1);
+    // float distanceMovedInches2 = pulsesToDistanceInches(currentPulses2);
+    // float distanceMovedInches3 = pulsesToDistanceInches(currentPulses3);
 
-    Serial.print("Encoder1 Distance Moved: ");
-    Serial.print(distanceMovedInches1);
-    Serial.println(" inches");
+    // Serial.print("Encoder1 Distance Moved: ");
+    // Serial.print(distanceMovedInches1);
+    // Serial.println(" inches");
 
-    Serial.print("Encoder2 Distance Moved: ");
-    Serial.print(distanceMovedInches2);
-    Serial.println(" inches");
+    // Serial.print("Encoder2 Distance Moved: ");
+    // Serial.print(distanceMovedInches2);
+    // Serial.println(" inches");
 
-    Serial.print("Encoder3 Distance Moved: ");
-    Serial.print(distanceMovedInches3);
-    Serial.println(" inches");
+    // Serial.print("Encoder3 Distance Moved: ");
+    // Serial.print(distanceMovedInches3);
+    // Serial.println(" inches");
 
     handleMenuNavigation();
     updateDisplayContent();
