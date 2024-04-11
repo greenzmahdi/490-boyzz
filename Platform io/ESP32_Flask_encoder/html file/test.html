@@ -3,81 +3,294 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DRO Interface Replica</title>
+<title>DRO Interface</title>
 <style>
   body {
     font-family: Arial, sans-serif;
-    background-color: #f0f0f0;
+    background: #f0f0f0;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    height: 100vh;
+    align-items: center;
   }
-  .dro {
-    width: 400px;
-    margin: 20px auto;
+
+  .flex-container {
+    display: flex;
+    width: 90%;
+    height: 90%;
+    align-items: stretch;
+  }
+
+  .left-column,
+  .right-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .left-column {
+    flex: 3;
+  }
+
+  .right-column {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .dro-container {
+    background: #ddd;
     padding: 10px;
-    background-color: #fff;
-    border: 1px solid #000;
+    border-radius: 5px;
+    margin-bottom: 5px;
   }
-  .display {
-    background-color: #000;
-    color: #fff;
-    padding: 10px;
-    margin-bottom: 20px;
-  }
-  .buttons {
+
+  .readout {
+  font-family: 'Digital', sans-serif;
+  background: #000;
+  color: #00ff00;
+  padding: 15px; /* Increased padding */
+  font-size: 1.2em; /* Larger font size */
+  margin-bottom: 10px; /* Adjusted margin */
+  border: 1px solid #333; /* Subtle border */
+}
+
+  .calculator-grid{
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    grid-gap: 10px;
+    gap: 10px;
   }
+
+  .zeroSelect-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: px;
+  }
+
   button {
-    padding: 10px;
-    margin: 5px;
-    border: none;
-    background-color: #ddd;
-    cursor: pointer;
-  }
-  button:active {
-    background-color: #ccc;
-  }
-  .status-bar {
-    margin-top: 20px;
-    background-color: #222;
-    color: #fff;
-    padding: 10px;
+  padding: 15px;
+  background: #f5f5f5; /* Lighter background */
+  border: 1px solid #bbb; /* Softer border color */
+  border-radius: 5px;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.3s; /* Smooth transition for hover effect */
+}
+
+button:hover {
+  background: #e0e0e0; /* Subtle hover effect */
+}
+
+  .wide {
+    grid-column: span 3;
   }
 </style>
 </head>
 <body>
-<div class="dro">
-  <div class="display">
-    <!-- Display areas -->
-    <div>X: 0.000</div>
-    <div>Y: 0.000</div>
-    <div>Z: 0.000</div>
+
+<div class="flex-container">
+  <div class="left-column">
+    <!-- Container 1: Readout displays (X, Y, Z) -->
+    <div class="flex-container">
+      <div class="left-column">
+        <div class="dro-container">
+          <div class="readout" id="modeIndicator">ABS</div>
+
+          <div class="readout modeDisplay" id="mode-readout">
+            <span id="modeMeasureIndicator">INCH</span>
+          </div>
+          
+          <div class="readout" id="x-readout">X: <span id="position"></span></div>
+          <div class="readout" id="y-readout">Y: <span id="position2"></span></div>
+          <div class="readout" id="z-readout">Z: <span id="position3"></span></div>
+        </div>
+      </div>
+
+      <div class="right-column">
+        <div class="dro-container">
+          <div class="zeroSelect-grid">
+            <button onclick="resetPosition('x')">Xo</button>
+            <button onclick="resetPosition('select_x')">Select X</button>
+            <button onclick="resetPosition('y')">Yo</button>
+            <button onclick="resetPosition('select_y')">Select Y</button>
+            <button onclick="resetPosition('z')">Zo</button>        
+            <button onclick="resetPosition('select_z')">Select Z</button>
+          </div>
+        </div>
+
+      </div>
+  
+
+    </div>
+    <!-- Container 5: Function keys -->
+    <div class="dro-container">
+      <button>F1</button>
+      <button>F2</button>
+      <button>F3</button>
+      <button>F4</button>
+      <button>F5</button>
+      <button>F6</button>
+    </div>
+
+    <div class="dro-container">
+      <button>Process Holes Circle </button>
+      <button>Process Holes Line</button>
+      <button>R Cut</button>
+      <button>Process Slope</button>
+    
+    </div>
+
+    <!-- Container 6: Arrow keys -->
+    <div class="dro-container">
+      <button>↑</button>
+      <button>→</button>
+      <button>↓</button>
+      <button>←</button>
+    </div>
   </div>
 
-  <div class="buttons">
-    <!-- Number buttons -->
-    <button class="number">9</button>
-    <button class="number">8</button>
-    <button class="number">7</button>
-    <button class="number">6</button>
-    <button class="number">5</button>
-    <button class="number">4</button>
-    <button class="number">3</button>
-    <button class="number">2</button>
-    <button class="number">1</button>
-    <button class="number">0</button>
-    <!-- ... Other number buttons ... -->
-    <!-- Function buttons -->
-    <button class="function">ABS/INC</button>
-    <!-- ... Other function buttons ... -->
-  </div>
+  <div class="right-column">
+    <!-- Container 2: Axis selection and zeroing -->
+    
+    <!-- Container 3: Calculator grid -->
+    <div class="dro-container wide">
+      <div class="calculator-grid">
+        <button>1/2</button>
+        <button id="toggleButton" onclick="toggleMeasureMode()">INCH/MM</button>
+        <!-- <span id="modeMeasureIndicator">INCH</span> -->
+        <!-- <p>Position: <span id="poss">0</span></p> -->
 
-  <div class="status-bar">
-    <!-- Status indicators -->
-    <div>ABS</div>
-    <div>INC</div>
-    <!-- ... Other status indicators ... -->
+        <button>🖩</button>
+        <button>9</button>
+        <button>8</button>
+        <button>7</button>
+        <button>6</button>
+        <button>5</button>
+        <button>4</button>
+        <button>3</button>
+        <button>2</button>
+        <button>1</button>
+        <button>.</button>
+        <button>0</button>
+        <button>+/-</button>
+      </div>
+    </div>
+
+    <!-- Container 4: Additional control buttons -->
+    <div class="dro-container wide">
+      <div class="zeroSelect-grid">
+        <button onclick="toggleMode()">Toggle ABS/INC</button>
+        <button>XYZo</button>
+        <button>CA</button>
+        <button>ENT</button>
+        <button onclick="resetPosition('xInc')">Abs X</button>
+        <button onclick="resetPosition('xAbs')">Inc</button>
+      </div>
+    </div>
   </div>
 </div>
+
+<script>
+function toggleMode() {
+  fetch("/toggle-mode")
+  .then(response => response.text())
+  .then(data => {
+    // Now using 'modeIndicator' as the ID for the mode display element
+    document.getElementById("modeIndicator").innerText = "Mode: " + data;
+    updatePositions(); // Update positions if needed, otherwise you can remove this line
+  })
+  .catch(console.error);
+}
+
+function toggleMeasureMode() {
+  fetch("/toggle-measure-mode")
+  .then(response => response.text())
+  .then(data => {
+    // Now using 'modeIndicator' as the ID for the mode display element
+    document.getElementById("modeMeasureIndicator").innerText = data;
+    // updatePositions(); // Update positions if needed, otherwise you can remove this line
+  })
+  .catch(console.error);
+}
+
+ 
+  function updatePosition() {
+    fetch("/poss")
+    .then(response => response.json())
+    .then(data => {
+      document.getElementById("position").innerText = data.position1;
+      document.getElementById("position2").innerText = data.position2;
+      document.getElementById("position3").innerText = data.position3;
+    })
+    .catch(console.error);
+  }
+  
+    function updatePositions() {
+    fetch("/position")
+      .then(response => response.text())
+      .then(data => document.getElementById("position").innerText = data)
+      .catch(console.error);
+ 
+    fetch("/position2")
+      .then(response => response.text())
+      .then(data => document.getElementById("position2").innerText = data)
+      .catch(console.error);
+ 
+    fetch("/position3")
+      .then(response => response.text())
+      .then(data => document.getElementById("position3").innerText = data)
+      .catch(console.error);
+  }
+ 
+  function resetPosition(axis) {
+  fetch("/reset/" + axis)
+    .then(response => {
+      if (response.ok) {
+        console.log(axis.toUpperCase() + " position reset"); // print message 
+        updatePositions(); // Refresh the positions immediately
+      }
+    })
+    .catch(console.error);
+}
+ 
+//   function togglePosition(position) {
+//   fetch("/switch/" + position)
+//     .then(response => {
+//       if (response.ok) {
+//         console.log(axis.toUpperCase() + " position reset"); // print message 
+//         updatePositions(); // Refresh the positions immediately
+//       }
+//     })
+//     .catch(console.error);
+// }
+
+// function toggleMode() {
+//   fetch('/toggle-mode')
+//     .then(response => response.text())
+//     .then(mode => document.getElementById('modeDisplay').innerText = 'Mode: ' + mode)
+//     .catch(error => console.error('Error:', error));
+// }
+
+// function toggleMode() {
+//   fetch('/toggle-mode')
+//     .then(response => response.text())
+//     .then(mode => {
+//       // Assuming 'modeDisplay' is a class name
+//       const elements = document.getElementsByClassName('modeDisplay');
+//       for (const element of elements) {
+//         element.innerText = 'Mode: ' + mode;
+//       }
+//     })
+//     .catch(error => console.error('Error:', error));
+// }
+
+ 
+
+ 
+  setInterval(updatePositions, 50);   // Call updatePositions() every 1000ms (1 second) but right now it is 50ms so stupid fast 
+</script>
 </body>
 </html>
