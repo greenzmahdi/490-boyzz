@@ -306,6 +306,26 @@ const char index_html[] PROGMEM = R"rawliteral(
     })
     .catch(console.error);
   }
+
+  let isHalf = true;
+  function toggleFetch() {
+    isHalf = !isHalf; // Toggle the state between true and false
+    if (isHalf) {
+      document.getElementById("halfButton").innerText = "1/2"; // Change button text
+    } 
+    else {
+      document.getElementById("halfButton").innerText = "Undo 1/2"; // Change button text
+    }
+  }
+
+  function halfInc() {
+    let route = isHalf ? "/half" : "/undohalf";
+    fetch(route)
+    .then(response => response.text())
+    .then(data => document.getElementById("poss").innerText = data)
+    .catch(console.error);
+    toggleFetch()
+  }
 </script>
 </head>
 <body>
@@ -334,7 +354,7 @@ const char index_html[] PROGMEM = R"rawliteral(
 <div class="dro-container">
   <p>Calculator Buttons</p>
   <div class ="calculator-grid"> 
-    <button>1/2</button>
+    <button id="halfButton" onclick="halfInc()">1/2</button>
     <button id="toggleButton" onclick="toggleMode()">INCH/MM</button>
     <span id="modeIndicator">INCH</span>
     <p>Position: <span id="poss">0</span></p>
@@ -518,15 +538,9 @@ void setup()
 
               String jsonString;
               serializeJson(jsonDoc, jsonString);
-
-
               //char response[100];
               //snprintf(response, 100, "%.2f", position);
               request->send(200, "application/json", jsonString); });
-  
-  
-  
-  
   
   server.on("/toggle-mode", HTTP_GET, [](AsyncWebServerRequest *request)
             {
@@ -542,13 +556,18 @@ void setup()
   //     snprintf(temp, sizeof(temp), "%.2f", position_mm);
   //     request->send(200, "text/plain", temp); });
 
-  // //Mid-point calculation
-  // server.on("/half", HTTP_GET, [](AsyncWebServerRequest *request) {
-  //   char temp[100];
-  //   float position_half = encoder1.position/2;
-  //   snprintf(temp, sizeof(temp), "%.2f",)
-  //   request->send(200, "text/plain", temp);
-  // });
+  //Mid-point calculation
+  server.on("/half", HTTP_GET, [](AsyncWebServerRequest *request) {
+    char temp[100];
+    encoder1.position = encoder1.position/2;
+    snprintf(temp, sizeof(temp), "%.2f",encoder1.position);
+    request->send(200, "text/plain", temp);});
+
+  server.on("/undohalf", HTTP_GET, [](AsyncWebServerRequest *request) {
+    char temp[100];
+    encoder1.position = encoder1.position*2;
+    snprintf(temp, sizeof(temp), "%.2f",encoder1.position);
+    request->send(200, "text/plain", temp);});
 
   // Routes to toggle LED colors
   server.on("/turquoise", HTTP_GET, [](AsyncWebServerRequest *request)
