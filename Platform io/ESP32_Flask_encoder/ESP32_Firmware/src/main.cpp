@@ -10,6 +10,7 @@
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_GFX.h>
 #include <ArduinoJson.h>
+#include <cmath> // Include cmath for the round function
 
 // file imports
 #include "I2C.h"
@@ -22,8 +23,31 @@
 bool isInchMode = true;
 
 // Inch and milimeter factors
-int factor_inch = 2;
-float factor_mm = 0.5;
+const float factor_mm = 0.01;        // 0.01 mm per pulse
+const float factor_inch = 0.0003937; // Accurate conversion to maintain equivalence
+
+#define SCREEN_WIDTH 128 // OLED display width
+#define CHAR_WIDTH 6     // Width of each character in pixels
+
+// Function to format position to fixed decimal places
+String formatPosition(float pulses, bool isInchMode)
+{
+  float convertedValue;
+  char formattedOutput[20]; // Buffer to hold the formatted string
+
+  if (isInchMode)
+  {
+    convertedValue = pulses * factor_inch;
+    snprintf(formattedOutput, sizeof(formattedOutput), "%7.4f", convertedValue); // Ensures 4 decimal places
+  }
+  else
+  {
+    convertedValue = pulses * factor_mm;
+    snprintf(formattedOutput, sizeof(formattedOutput), "%6.3f", convertedValue); // Ensures 3 decimal places
+  }
+
+  return String(formattedOutput); // Convert buffer to Arduino String object for easy use
+}
 
 // Define LED colors as global constants
 const int LEDColorDisconnected[3] = {0, 0, 0};
@@ -36,7 +60,7 @@ const int LEDColorPink[3] = {255, 292, 203};
 
 // Menu Options
 const char *MenuOptions[] = {"Connect Online", "Connect Offline"}; // might not need this, depends on design
-const char *MenuDroItems[] = {"Sino", "ToAuto"};
+const char *MenuDroItems[] = {"2-Axis", "3-Axis"};
 const char *SinoAxis[] = {"X: ", "Y: "};
 const char *ToAutoAxis[] = {"X: ", "Y: ", "Z: "};
 
@@ -622,9 +646,9 @@ void setup()
 
   server.on("/poss", HTTP_GET, [](AsyncWebServerRequest *request)
             {
-              float position1 = encoder1.position * (isInchMode ? factor_inch : factor_mm);
-              float position2 = encoder2.position * (isInchMode ? factor_inch : factor_mm);
-              float position3 = encoder3.position * (isInchMode ? factor_inch : factor_mm);
+              String position1 = formatPosition(encoder1.position, isInchMode);
+              String position2 = formatPosition(encoder2.position, isInchMode);
+              String position3 = formatPosition(encoder3.position, isInchMode);
 
               StaticJsonDocument<200> jsonDoc;
               jsonDoc["position1"] = position1;
@@ -634,15 +658,13 @@ void setup()
               String jsonString;
               serializeJson(jsonDoc, jsonString);
 
-
-              //char response[100];
-              //snprintf(response, 100, "%.2f", position);
-              request->send(200, "application/json", jsonString); });
-
+              request->send(200, "application/json", jsonString); // Send JSON data
+            });
 
   server.on("/toggle-measure-mode", HTTP_GET, [](AsyncWebServerRequest *request)
             {
     isInchMode = !isInchMode;
+    LCDScreenClear();
     request->send(200, "text/plain", isInchMode ? "INCH" : "MM"); });
 
   // //Millimeter request
@@ -786,7 +808,8 @@ void loop() {} // might not need this
 
 void updateDisplayContent()
 {
-  char buffer[10];
+  char buffer[11];
+  int xOffset; // Horizontal offset to right-align text
 
   switch (currentMenuState)
   {
@@ -800,22 +823,36 @@ void updateDisplayContent()
     break;
   case TWO_AXIS:
     LCDRectFill(0, 0, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
-    // sprintf(buffer, "X: %d", encoderPos); // original implementation
-    sprintf(buffer, "X: %d", encoder1.position);
-    LCDTextDraw(0, 0, buffer, 1, WHITE, BLACK);
+                                      // Format and right-align "X" axis label and value
+    snprintf(buffer, sizeof(buffer), "X: %s", formatPosition(encoder1.position, isInchMode).c_str());
+    xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
+    LCDTextDraw(xOffset, 0, buffer, 1, WHITE, BLACK);
 
-    LCDRectFill(0, 16, 50, 10, BLACK);
-    sprintf(buffer, "Y: %d", encoder2.position);
-    LCDTextDraw(0, 16, buffer, 1, WHITE, BLACK);
-
-    LCDRectFill(0, 32, 50, 10, BLACK);
-    sprintf(buffer, "Z: %d", encoder3.position);
-    LCDTextDraw(0, 32, buffer, 1, WHITE, BLACK);
+    // Format and right-align "Y" axis label and value
+    snprintf(buffer, sizeof(buffer), "Y: %s", formatPosition(encoder2.position, isInchMode).c_str());
+    xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
+    LCDTextDraw(xOffset, 16, buffer, 1, WHITE, BLACK);
+    break;
 
     LCDRectFill(0, 50, 50, 10, BLACK);
     LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK); // menu option to return
     break;
   case THREE_AXIS:
+    // Format and right-align "X" axis label and value
+    snprintf(buffer, sizeof(buffer), "X: %s", formatPosition(encoder1.position, isInchMode).c_str());
+    xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
+    LCDTextDraw(xOffset, 0, buffer, 1, WHITE, BLACK);
+
+    // Format and right-align "Y" axis label and value
+    snprintf(buffer, sizeof(buffer), "Y: %s", formatPosition(encoder2.position, isInchMode).c_str());
+    xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
+    LCDTextDraw(xOffset, 16, buffer, 1, WHITE, BLACK);
+
+    // Format and right-align "Z" axis label and value
+    snprintf(buffer, sizeof(buffer), "Z: %s", formatPosition(encoder3.position, isInchMode).c_str());
+    xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
+    LCDTextDraw(xOffset, 32, buffer, 1, WHITE, BLACK);
+    break;
     // LCDRectFill(0, 0, 50, 10, BLACK);
     // sprintf(buffer, "X: %d", encoder4.position);
     // LCDTextDraw(0, 0, buffer, 1, WHITE, BLACK);
