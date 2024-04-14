@@ -458,8 +458,8 @@ function toggleMode() {
   .then(response => response.text())
   .then(data => {
     // Now using 'modeIndicator' as the ID for the mode display element
-    document.getElementById("modeIndicator").innerText = "Mode: " + data;
-    updatePositions(); // Update positions if needed, otherwise you can remove this line
+    document.getElementById("modeIndicator").innerText = data;
+    // updatePositions(); // Update positions if needed, otherwise you can remove this line         // off for atm
   })
   .catch(console.error);
 }
