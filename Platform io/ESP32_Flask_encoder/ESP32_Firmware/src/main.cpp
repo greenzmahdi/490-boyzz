@@ -874,6 +874,63 @@ void updateDisplayContent()
   }
 }
 
+// THIS UPDATE DISPLAY HANDLES MODE SWITCHING AND MEASURE MODE // 
+
+// void updateDisplayContent() {
+//     char buffer[32];  // Increased buffer size for larger strings
+//     int xOffset;      // Horizontal offset to right-align text
+
+//     switch (currentMenuState) {
+//         case MAIN_MENU:
+//             LCDTextDraw(7, 0, " COMP491 ESP32 DRO ", 1, WHITE, BLACK);
+//             for (int i = 0; i < 2; i++) {
+//                 sprintf(buffer, "%s %s", (i == menuItemIndex) ? ">" : " ", MenuDroItems[i]);
+//                 LCDTextDraw(0, 16 * (i + 1), buffer, 1, WHITE, BLACK);
+//             }
+//             break;
+
+//         case TWO_AXIS:
+//             // Clear the areas for fresh update
+//             LCDRectFill(0, 0, SCREEN_WIDTH, 32, BLACK); // Clear area for X and Y axis values
+
+//             // Display X Axis
+//             snprintf(buffer, sizeof(buffer), "X: %s", formatPosition(isABSMode ? encoder1.position - X_last_ABS : encoder1.position - X_last_INC, isInchMode).c_str());
+//             xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH);
+//             LCDTextDraw(xOffset, 0, buffer, 1, WHITE, BLACK);
+
+//             // Display Y Axis
+//             snprintf(buffer, sizeof(buffer), "Y: %s", formatPosition(isABSMode ? encoder2.position - Y_last_ABS : encoder2.position - Y_last_INC, isInchMode).c_str());
+//             xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH);
+//             LCDTextDraw(xOffset, 16, buffer, 1, WHITE, BLACK);
+
+//             LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK);
+//             break;
+
+//         case THREE_AXIS:
+//             // Clear the entire display area or just the areas being updated to manage flickering
+//             LCDRectFill(0, 0, SCREEN_WIDTH, 48, BLACK); // Clear area for X, Y, Z axis values
+
+//             // Display X Axis
+//             snprintf(buffer, sizeof(buffer), "X: %s", formatPosition(isABSMode ? encoder1.position - X_last_ABS : encoder1.position - X_last_INC, isInchMode).c_str());
+//             xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH);
+//             LCDTextDraw(xOffset, 0, buffer, 1, WHITE, BLACK);
+
+//             // Display Y Axis
+//             snprintf(buffer, sizeof(buffer), "Y: %s", formatPosition(isABSMode ? encoder2.position - Y_last_ABS : encoder2.position - Y_last_INC, isInchMode).c_str());
+//             xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH);
+//             LCDTextDraw(xOffset, 16, buffer, 1, WHITE, BLACK);
+
+//             // Display Z Axis
+//             snprintf(buffer, sizeof(buffer), "Z: %s", formatPosition(isABSMode ? encoder3.position - Z_last_ABS : encoder3.position - Z_last_INC, isInchMode).c_str());
+//             xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH);
+//             LCDTextDraw(xOffset, 32, buffer, 1, WHITE, BLACK);
+
+//             LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK);
+//             break;
+//     }
+// }
+
+
 void TaskUpdateDisplay(void *pvParameters)
 {
   for (;;)
