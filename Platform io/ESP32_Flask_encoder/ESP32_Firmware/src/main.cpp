@@ -10,7 +10,7 @@
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_GFX.h>
 #include <ArduinoJson.h>
-#include <cmath> // Include cmath for the round function
+#include <cmath> 
 
 // file imports
 #include "I2C.h"
@@ -206,6 +206,7 @@ const int IdxZ6 = 0;
 Encoder encoder1 = {PIN_A1, PIN_B1, 0, 0, 0, 0, {0}, 1};
 Encoder encoder2 = {PIN_A2, PIN_B2, 0, 0, 0, 0, {0}, 1};
 Encoder encoder3 = {PIN_A3, PIN_B3, 0, 0, 0, 0, {0}, 1};
+
 // Encoder encoder4 = {PIN_A4, PIN_B4, 0, 0, 0, 0, {0}, 1};
 // Encoder encoder5 = {PIN_A5, PIN_B5, 0, 0, 0, 0, {0}, 1};
 // Encoder encoder6 = {PIN_A6, PIN_B6, 0, 0, 0, 0, {0}, 1};
@@ -217,22 +218,96 @@ Encoder encoder3 = {PIN_A3, PIN_B3, 0, 0, 0, 0, {0}, 1};
 // void IRAM_ATTR handleEncoder5Interrupt() { updateEncoder(&encoder5); }
 // void IRAM_ATTR handleEncoder6Interrupt() { updateEncoder(&encoder6); }
 
+bool isABSMode = true; // Start in ABS mode
+
+int encoderValueABS[3] = {0, 0, 0};
+int encoderValueINC[3] = {0, 0, 0};
+
+int X_last_ABS = 0;
+int Y_last_ABS = 0;
+int Z_last_ABS = 0;
+
+int X_last_INC = 0;
+int Y_last_INC = 0;
+int Z_last_INC = 0;
+
+void toggleMode()
+{
+  isABSMode = !isABSMode;
+}
+void toggleMeasurementMode()
+{
+  isInchMode = !isInchMode;
+}
+
+void resetEncoderValue(int encoderIndex)
+{
+  // Placeholder for resetting encoder value.
+  // if we zero out a value we need to store the last position before zeroing out to calculate the difference of (encoder.position - lastValVisited)
+  if (isABSMode)
+  {
+    // reset value back to 0
+    encoderValueABS[encoderIndex] = 0;
+
+    // store last coordinate (value) listed
+    if (encoderIndex == 0)
+    {
+      X_last_ABS = encoder1.position;
+    }
+    else if (encoderIndex == 1)
+    {
+      Y_last_ABS = encoder2.position;
+    }
+    else if (encoderIndex == 2)
+    {
+      Z_last_ABS = encoder3.position;
+    }
+  }
+  else
+  {
+    // reset value back to 0
+    encoderValueINC[encoderIndex] = 0;
+
+    // store last coordinate (value) listed
+    if (encoderIndex == 0)
+    {
+      X_last_INC = encoder1.position;
+    }
+    else if (encoderIndex == 1)
+    {
+      Y_last_INC = encoder2.position;
+    }
+    else if (encoderIndex == 2)
+    {
+      Z_last_INC = encoder3.position;
+    }
+  }
+  // Consider adding logic to update the display or take other actions.
+}
+
 // Separate ISRs for each encoder
 void IRAM_ATTR handleEncoder1Interrupt()
 {
   handleEncoderInterrupt(&encoder1); // Assume encoder1 is an instance of Encoder
+  // for all axis on ABS Mode
+  encoderValueABS[0] = encoder1.position - X_last_ABS;
+  encoderValueINC[0] = encoder1.position - X_last_INC;
 }
 
 // Separate ISRs for each encoder
 void IRAM_ATTR handleEncoder2Interrupt()
 {
   handleEncoderInterrupt(&encoder2); // Assume encoder1 is an instance of Encoder
+  encoderValueABS[1] = encoder2.position - Y_last_ABS;
+  encoderValueINC[1] = encoder2.position - Y_last_INC;
 }
 
 // Separate ISRs for each encoder
 void IRAM_ATTR handleEncoder3Interrupt()
 {
   handleEncoderInterrupt(&encoder3); // Assume encoder1 is an instance of Encoder
+  encoderValueABS[2] = encoder3.position - Z_last_ABS;
+  encoderValueINC[2] = encoder3.position - Z_last_INC;
 }
 
 // void updateAllZPins()
@@ -470,22 +545,26 @@ function toggleMeasureMode() {
   .then(data => {
     // Now using 'modeIndicator' as the ID for the mode display element
     document.getElementById("modeMeasureIndicator").innerText = data;
-    // updatePositions(); // Update positions if needed, otherwise you can remove this line
+    // updatePosition(); // Update positions if needed, otherwise you can remove this line
   })
   .catch(console.error);
 }
 
  
-  function updatePosition() {
-    fetch("/poss")
-    .then(response => response.json())
-    .then(data => {
-      document.getElementById("position").innerText = data.position1;
-      document.getElementById("position2").innerText = data.position2;
-      document.getElementById("position3").innerText = data.position3;
-    })
-    .catch(console.error);
-  }
+function updatePosition() {
+  fetch("/get-positions")
+  .then(response => response.json())
+  .then(data => {
+    document.getElementById("position").innerText = data.positionX;
+    document.getElementById("position2").innerText = data.positionY;
+    document.getElementById("position3").innerText = data.positionZ;
+  })
+  .catch(console.error);
+}
+
+// Call updatePosition at an interval
+setInterval(updatePosition, 100);  // Update every second
+
   
     function updatePositions() {
     fetch("/position")
@@ -515,36 +594,7 @@ function toggleMeasureMode() {
     .catch(console.error);
 }
  
-//   function togglePosition(position) {
-//   fetch("/switch/" + position)
-//     .then(response => {
-//       if (response.ok) {
-//         console.log(axis.toUpperCase() + " position reset"); // print message 
-//         updatePositions(); // Refresh the positions immediately
-//       }
-//     })
-//     .catch(console.error);
-// }
 
-// function toggleMode() {
-//   fetch('/toggle-mode')
-//     .then(response => response.text())
-//     .then(mode => document.getElementById('modeDisplay').innerText = 'Mode: ' + mode)
-//     .catch(error => console.error('Error:', error));
-// }
-
-// function toggleMode() {
-//   fetch('/toggle-mode')
-//     .then(response => response.text())
-//     .then(mode => {
-//       // Assuming 'modeDisplay' is a class name
-//       const elements = document.getElementsByClassName('modeDisplay');
-//       for (const element of elements) {
-//         element.innerText = mode;
-//       }
-//     })
-//     .catch(error => console.error('Error:', error));
-// }
 
  
 
@@ -555,30 +605,6 @@ function toggleMeasureMode() {
 </html>
 
 )rawliteral";
-
-bool isABSMode = true; // Start in ABS mode
-int encoderValueABS[3] = {0, 0, 0};
-int encoderValueINC[3] = {0, 0, 0};
-
-void toggleMode()
-{
-  isABSMode = !isABSMode;
-  // Log the change or take additional actions as needed
-}
-
-void resetEncoderValue(int encoderIndex)
-{
-  // Placeholder for resetting encoder value. You'll need to adjust based on your application logic.
-  if (isABSMode)
-  {
-    encoderValueABS[encoderIndex] = 0;
-  }
-  else
-  {
-    encoderValueINC[encoderIndex] = 0;
-  }
-  // Consider adding logic to update the display or take other actions.
-}
 
 void setup()
 {
@@ -644,16 +670,55 @@ void setup()
     snprintf(temp, 100, "%d", encoder3.position); // Assuming encoder1.position is an int
     request->send(200, "text/plain", temp); });
 
-  server.on("/poss", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
-              String position1 = formatPosition(encoder1.position, isInchMode);
-              String position2 = formatPosition(encoder2.position, isInchMode);
-              String position3 = formatPosition(encoder3.position, isInchMode);
+  // server.on("/poss", HTTP_GET, [](AsyncWebServerRequest *request)
+  //           {
+  //             String position1;
+  //             String position2;
+  //             String position3;
 
+  //             if (isABSMode)
+  //             {
+  //               position1 = String(encoderValueABS[0]);
+  //               position2 = String(encoderValueABS[1]);
+  //               position3 = String(encoderValueABS[2]);
+  //             }
+  //             else
+  //             {
+  //               position1 = String(encoderValueINC[0]);
+  //               position2 = String(encoderValueINC[1]);
+  //               position3 = String(encoderValueINC[2]);
+  //             }
+
+  //             // This might be the issue since we are converting to measure mode when I think this is jsut in charge of switching from abs to inc
+  //             StaticJsonDocument<200> jsonDoc;
+  //             // jsonDoc["position1"] = formatPosition(position1.toFloat(), isABSMode);
+  //             // jsonDoc["position2"] = formatPosition(position2.toFloat(), isABSMode);
+  //             // jsonDoc["position3"] = formatPosition(position3.toFloat(), isABSMode);
+
+  //             jsonDoc["position1"] = position1;
+  //             jsonDoc["position2"] = position2;
+  //             jsonDoc["position3"] = position3;
+
+  //             String jsonString;
+  //             serializeJson(jsonDoc, jsonString);
+
+  //             request->send(200, "application/json", jsonString); // Send JSON data
+  //           });
+
+  server.on("/get-positions", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
+              char formattedX[20], formattedY[20], formattedZ[20];
+
+              // Assuming encoder1, encoder2, encoder3 are your encoder instances
+              String positionX = formatPosition(isABSMode ? encoder1.position - X_last_ABS : encoder1.position - X_last_INC, isInchMode);
+              String positionY = formatPosition(isABSMode ? encoder2.position - Y_last_ABS : encoder2.position - Y_last_INC, isInchMode);
+              String positionZ = formatPosition(isABSMode ? encoder3.position - Z_last_ABS : encoder3.position - Z_last_INC, isInchMode);
+
+              // Create a JSON object to send the formatted positions
               StaticJsonDocument<200> jsonDoc;
-              jsonDoc["position1"] = position1;
-              jsonDoc["position2"] = position2;
-              jsonDoc["position3"] = position3;
+              jsonDoc["positionX"] = positionX;
+              jsonDoc["positionY"] = positionY;
+              jsonDoc["positionZ"] = positionZ;
 
               String jsonString;
               serializeJson(jsonDoc, jsonString);
@@ -663,86 +728,24 @@ void setup()
 
   server.on("/toggle-measure-mode", HTTP_GET, [](AsyncWebServerRequest *request)
             {
-    isInchMode = !isInchMode;
-    LCDScreenClear();
+    toggleMeasurementMode();
     request->send(200, "text/plain", isInchMode ? "INCH" : "MM"); });
 
-  // //Millimeter request
-  //   server.on("/milli", HTTP_GET, [](AsyncWebServerRequest *request) {
-  //     //what is the multiplicative factor?
-  //     float position_mm = encoder1.position * factor;
-
-  //     char temp[100];
-  //     snprintf(temp, sizeof(temp), "%.2f", position_mm);
-  //     request->send(200, "text/plain", temp); });
-
-  // //Mid-point calculation
-  // server.on("/half", HTTP_GET, [](AsyncWebServerRequest *request) {
-  //   char temp[100];
-  //   float position_half = encoder1.position/2;
-  //   snprintf(temp, sizeof(temp), "%.2f",)
-  //   request->send(200, "text/plain", temp);
-  // });
-
-  // Routes to toggle LED colors
-  // server.on("/turquoise", HTTP_GET, [](AsyncWebServerRequest *request)
-  //           {
-  //   for(int i = 0; i < numLeds; i++) leds[i] = CRGB::Turquoise;
-  //     FastLED.show();
-  //     request->send(200, "text/plain", "LEDs set to Turquoise"); });
-
-  // server.on("/purple", HTTP_GET, [](AsyncWebServerRequest *request)
-  //           {
-  //   for(int i = 0; i < numLeds; i++) leds[i] = CRGB::Purple;
-  //     FastLED.show();
-  //     request->send(200, "text/plain", "LEDs set to Purple"); });
-
-  // Routes to reset Axis position
   server.on("/reset/x", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
-  encoder1.positionInc = encoder1.position;
-  encoder1.position = 0; // Reset X position
-  request->send(200, "text/plain", "X position reset"); });
+            {         
+            resetEncoderValue(0); // Reset encoder for X-axis
 
-  server.on("/reset/xInc", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
-  // encoder2.position = 0; // Reset Y position
- 
-  encoder1.position += encoder1.positionInc;
- 
-  request->send(200, "text/plain", "Y position reset"); });
-
-  server.on("/reset/xAbs", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
-  // encoder2.position = 0; // Reset Y position
-  encoder1.position += encoder1.positionInc;
-  request->send(200, "text/plain", "Y position reset"); });
-
-  //
+    request->send(200, "text/plain", "X position reset"); });
 
   server.on("/reset/y", HTTP_GET, [](AsyncWebServerRequest *request)
             {
-  encoder2.position = 0; // Reset Y position
-  request->send(200, "text/plain", "Y position reset"); });
-
-  //
+    resetEncoderValue(1); // Reset encoder for Y-axis
+    request->send(200, "text/plain", "Y position reset"); });
 
   server.on("/reset/z", HTTP_GET, [](AsyncWebServerRequest *request)
             {
-  encoder3.position = 0; // Assuming encoder3 is for Z, reset Z position
-  request->send(200, "text/plain", "Z position reset"); });
-
-  server.on("/switch/abs", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
-  char temp[100];
-  snprintf(temp, 100, "%d", encoder1.position); // Assuming encoder1.position is an int
-  request->send(200, "text/plain", temp); });
-
-  server.on("/switch/inc", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
-  encoder1.positionInc = encoder1.position; // Assuming encoder3 is for Z, reset Z position
-  encoder1.position += encoder1.positionInc;
-  request->send(200, "text/plain", "Z position reset"); });
+    resetEncoderValue(2); // Reset encoder for Z-axis
+    request->send(200, "text/plain", "Z position reset"); });
 
   server.on("/toggle-mode", HTTP_GET, [](AsyncWebServerRequest *request)
             {
