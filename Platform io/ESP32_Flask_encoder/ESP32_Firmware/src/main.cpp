@@ -440,6 +440,9 @@ button:hover {
           <div class="readout" id="x-readout">X: <span id="position"></span></div>
           <div class="readout" id="y-readout">Y: <span id="position2"></span></div>
           <div class="readout" id="z-readout">Z: <span id="position3"></span></div>
+          <span id="calctemp"></span>
+          <button onclick="addOperation('+')">PLUS</button>
+          <button onclick="calculate()">EQUAL</button>
         </div>
       </div>
 
@@ -498,17 +501,17 @@ button:hover {
         <!-- <p>Position: <span id="poss">0</span></p> -->
 
         <button>🖩</button>
-        <button>9</button>
-        <button>8</button>
-        <button>7</button>
-        <button>6</button>
-        <button>5</button>
-        <button>4</button>
-        <button>3</button>
-        <button>2</button>
-        <button>1</button>
+        <button onclick="addNumber(9)">9</button>
+        <button onclick="addNumber(8)">8</button>
+        <button onclick="addNumber(7)">7</button>
+        <button onclick="addNumber(6)">6</button>
+        <button onclick="addNumber(5)">5</button>
+        <button onclick="addNumber(4)">4</button>
+        <button onclick="addNumber(3)">3</button>
+        <button onclick="addNumber(2)">2</button>
+        <button onclick="addNumber(1)">1</button>
         <button>.</button>
-        <button>0</button>
+        <button onclick="addNumber(0)">0</button>
         <button>+/-</button>
       </div>
     </div>
@@ -528,6 +531,43 @@ button:hover {
 </div>
 
 <script>
+var currentOperation = null;
+var tempNumber = "";
+var currentValue = 0;
+
+function addOperation(operation) {
+    if (currentOperation === null) {
+        currentOperation = operation;
+        currentValue = parseFloat(document.getElementById("position").innerText);
+        tempNumber = "";
+    }
+}
+
+function addNumber(number) {
+    tempNumber += number.toString();
+    updateDisplay();
+}
+
+function calculate() {
+    if (currentOperation !== null && tempNumber !== "") {
+        switch (currentOperation) {
+            case '+':
+                currentValue += parseFloat(tempNumber);
+                break;
+            // Add more cases for other operations if needed
+        }
+        currentOperation = null;
+        tempNumber = "";
+        updateDisplay();
+    }
+}
+
+function updateDisplay() {
+    var positionElement = document.getElementById("calctemp");
+    positionElement.innerText = currentValue.toString();
+}
+
+
 function toggleMode() {
   fetch("/toggle-mode")
   .then(response => response.text())
