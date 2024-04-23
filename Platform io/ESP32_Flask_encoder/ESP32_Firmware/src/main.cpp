@@ -480,6 +480,24 @@ button:hover {
   .wide {
     grid-column: span 3;
   }
+#calculatorModeBtn {
+    /* Add default styles for the button */
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+}
+
+.calculator-mode-enabled {
+    /* Add styles for the button when calculator mode is enabled */
+    background-color: green;
+    color: white;
+}
+
+.calculator-mode-disabled {
+    /* Add styles for the button when calculator mode is disabled */
+    background-color: gray;
+    color: white;
+}
 </style>
 </head>
 <body>
@@ -500,8 +518,12 @@ button:hover {
           <div class="readout" id="y-readout">Y: <span id="position2"></span></div>
           <div class="readout" id="z-readout">Z: <span id="position3"></span></div>
           <span id="calctemp"></span>
-          <button onclick="addOperation('+')">PLUS</button>
+          <button id="plusBtn" class="operator" onclick="addOperation('+')">PLUS</button>
+          <button id="multiplyBtn" class="operator" onclick="addOperation('*')">MULTI</button>
+          <button id="subtractBtn" class="operator" onclick="addOperation('-')">SUB</button>
+          <button id="divideBtn" class="operator" onclick="addOperation('/')">DIV</button>
           <button onclick="calculate()">EQUAL</button>
+          
         </div>
       </div>
 
@@ -559,7 +581,7 @@ button:hover {
         <!-- <span id="modeMeasureIndicator">INCH</span> -->
         <!-- <p>Position: <span id="poss">0</span></p> -->
 
-        <button>🖩</button>
+        <button id="calculatorModeBtn" onclick="toggleCalculatorMode()">Calculator Mode</button>
         <button onclick="addNumber(9)">9</button>
         <button onclick="addNumber(8)">8</button>
         <button onclick="addNumber(7)">7</button>
@@ -569,7 +591,7 @@ button:hover {
         <button onclick="addNumber(3)">3</button>
         <button onclick="addNumber(2)">2</button>
         <button onclick="addNumber(1)">1</button>
-        <button>.</button>
+        <button onclick="addDecimal()">.</button>
         <button onclick="addNumber(0)">0</button>
         <button>+/-</button>
       </div>
@@ -593,13 +615,54 @@ button:hover {
 var currentOperation = null;
 var tempNumber = "";
 var currentValue = 0;
+var calculatorMode = false;
+
+function toggleCalculatorMode() {
+    calculatorMode = !calculatorMode;
+    updateCalculatorModeButton(); // Update button style
+    updateOperatorButtons(); // Update operator buttons based on the calculator mode 
+}
+
+function updateCalculatorModeButton() {
+    var calculatorModeBtn = document.getElementById("calculatorModeBtn");
+    if (calculatorMode) {
+        calculatorModeBtn.classList.add("calculator-mode-enabled");
+        calculatorModeBtn.classList.remove("calculator-mode-disabled");
+    } 
+    else {
+        calculatorModeBtn.classList.remove("calculator-mode-enabled");
+        calculatorModeBtn.classList.add("calculator-mode-disabled");
+    }
+}
+
+function updateOperatorButtons() {
+    var operatorButtons = document.getElementsByClassName("operator");
+    for (var i = 0; i < operatorButtons.length; i++) {
+        if (calculatorMode) {
+            operatorButtons[i].removeAttribute("disabled");
+        } 
+        else {
+            operatorButtons[i].setAttribute("disabled", "disabled");
+        }
+    }
+}
 
 function addOperation(operation) {
-    if (currentOperation === null) {
-        currentOperation = operation;
-        currentValue = parseFloat(document.getElementById("position").innerText);
-        tempNumber = "";
+  if(calculatorMode) {
+      if (currentOperation === null) {
+          currentOperation = operation;
+          currentValue = parseFloat(document.getElementById("position").innerText);
+          tempNumber = "";
+      }
+  }
+}
+
+function addDecimal() {
+    // Ensure tempNumber doesn't already contain a decimal point
+    if (!tempNumber.includes('.')) {
+        tempNumber += '.';
     }
+    updateDisplay();
 }
 
 function addNumber(number) {
@@ -613,7 +676,21 @@ function calculate() {
             case '+':
                 currentValue += parseFloat(tempNumber);
                 break;
-            // Add more cases for other operations if needed
+            case '*':
+                currentValue *= parseFloat(tempNumber);
+                break;
+            case '-':
+                currentValue -= parseFloat(tempNumber);
+                break;
+            case '/':
+                var divisor = parseFloat(tempNumber);
+                if (divisor !== 0) {
+                  currentValue /= divisor;
+                } 
+                else {
+                  alert("Nuclear threat detected");
+                }
+                break;
         }
         currentOperation = null;
         tempNumber = "";
