@@ -520,7 +520,7 @@ button:hover {
     <div class="dro-container wide">
       <div class="zeroSelect-grid">
         <button onclick="toggleMode()">Toggle ABS/INC</button>
-        <button>XYZo</button>
+        <button id="zeroAllButton" onclick="zeroAllAxis()">XYZo</button>
         <button>CA</button>
         <button>ENT</button>
         <button onclick="resetPosition('xInc')">Abs X</button>
@@ -565,6 +565,24 @@ function calculate() {
 function updateDisplay() {
     var positionElement = document.getElementById("calctemp");
     positionElement.innerText = currentValue.toString();
+}
+
+function zeroAllAxis() {
+    fetch("/zero-all-axis")
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.text();
+    })
+    .then(data => {
+        console.log(data); // Log the server response for debugging.
+        alert(data); // Alert the user or update the status on the page.
+    })
+    .catch(error => {
+        console.error('There was a problem with the fetch operation:', error);
+        alert("Failed to zero all axes: " + error.message); // Provide error feedback.
+    });
 }
 
 
@@ -691,24 +709,6 @@ void setup()
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
             { request->send_P(200, "text/html", index_html); });
 
-  // New route to get the current position of encoder1
-  server.on("/position", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
-    char temp[100];
-    snprintf(temp, 100, "%d", encoder1.position); // Assuming encoder1.position is an int
-    request->send(200, "text/plain", temp); });
-
-  server.on("/position2", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
-    char temp[100];
-    snprintf(temp, 100, "%d", encoder2.position); // Assuming encoder1.position is an int
-    request->send(200, "text/plain", temp); });
-
-  server.on("/position3", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
-    char temp[100];
-    snprintf(temp, 100, "%d", encoder3.position); // Assuming encoder1.position is an int
-    request->send(200, "text/plain", temp); });
 
   // server.on("/poss", HTTP_GET, [](AsyncWebServerRequest *request)
   //           {
@@ -792,17 +792,25 @@ void setup()
               toggleMode();
               request->send(200, "text/plain", isABSMode ? "ABS" : "INC"); // Send the new mode back to the client
             });
+    
+  server.on("/zero-all-axis", HTTP_GET, [](AsyncWebServerRequest *request)
+              {
+                resetEncoderValue(0);
+                resetEncoderValue(1);
+                resetEncoderValue(2);
+                request->send(200, "text/plain", "All positions reset"); 
+              });
 
-  server.on("/reset-encoder", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
-  if (request->hasParam("encoder")) {
-    auto* param = request->getParam("encoder");
-    int encoderIndex = param->value().toInt();
-    resetEncoderValue(encoderIndex);
-    request->send(200, "text/plain", "Reset done");
-  } else {
-    request->send(400, "text/plain", "Missing encoder parameter");
-  } });
+  // server.on("/reset-encoder", HTTP_GET, [](AsyncWebServerRequest *request)
+  //           {
+  // if (request->hasParam("encoder")) {
+  //   auto* param = request->getParam("encoder");
+  //   int encoderIndex = param->value().toInt();
+  //   resetEncoderValue(encoderIndex);
+  //   request->send(200, "text/plain", "Reset done");
+  // } else {
+  //   request->send(400, "text/plain", "Missing encoder parameter");
+  // } });
 
   // Axis Selector buttons
 
