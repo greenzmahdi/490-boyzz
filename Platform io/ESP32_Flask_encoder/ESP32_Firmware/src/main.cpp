@@ -220,8 +220,35 @@ Encoder encoder3 = {PIN_A3, PIN_B3, 0, 0, 0, 0, {0}, 1};
 
 bool isABSMode = true; // Start in ABS mode
 
-int encoderValueABS[3] = {0, 0, 0};
-int encoderValueINC[3] = {0, 0, 0};
+
+int setupEncoderValuesABs[] = {};
+
+struct CoordinatePlane {
+    int encoderValueABS[3]; // Store ABS values for X, Y, Z
+    int encoderValueINC[3]; // Store INC values for X, Y, Z
+};
+
+// store up to 12 planes
+CoordinatePlane planes[12];
+
+int currentPlaneIndex = 0; // Keep track of the current plane index
+
+void selectPlane(int index) {
+    if (index >= 0 && index < 12) {
+        currentPlaneIndex = index;
+        // Update display or other state changes needed when switching planes (needs to be implemented)
+        // updateDisplayContent();
+    }
+}
+
+void nextPlane() {
+    selectPlane((currentPlaneIndex + 1) % 12);
+}
+
+void previousPlane() {
+    selectPlane((currentPlaneIndex + 11) % 12);
+}
+
 
 int X_last_ABS = 0;
 int Y_last_ABS = 0;
@@ -231,6 +258,7 @@ int X_last_INC = 0;
 int Y_last_INC = 0;
 int Z_last_INC = 0;
 
+int currentSelecteAxis = 0;
 void toggleMode()
 {
   isABSMode = !isABSMode;
@@ -242,12 +270,17 @@ void toggleMeasurementMode()
 
 void resetEncoderValue(int encoderIndex)
 {
+  if (encoderIndex < 0 || encoderIndex >= 3) {
+        Serial.println("Error: Encoder index out of range");
+        return; // Add error handling or user feedback
+    }
   // Placeholder for resetting encoder value.
   // if we zero out a value we need to store the last position before zeroing out to calculate the difference of (encoder.position - lastValVisited)
   if (isABSMode)
   {
     // reset value back to 0
-    encoderValueABS[encoderIndex] = 0;
+    planes[currentPlaneIndex].encoderValueABS[encoderIndex] = 0;
+    
 
     // store last coordinate (value) listed
     if (encoderIndex == 0)
@@ -266,7 +299,7 @@ void resetEncoderValue(int encoderIndex)
   else
   {
     // reset value back to 0
-    encoderValueINC[encoderIndex] = 0;
+    planes[currentPlaneIndex].encoderValueINC[encoderIndex] = 0;
 
     // store last coordinate (value) listed
     if (encoderIndex == 0)
@@ -285,29 +318,55 @@ void resetEncoderValue(int encoderIndex)
   // Consider adding logic to update the display or take other actions.
 }
 
+// Helper function to format and display axis values based on current settings
+void displayAxisValues(int axis, int yPosition) {
+    char buffer[40];
+    int xOffset;
+    int position = isABSMode ? planes[currentPlaneIndex].encoderValueABS[axis] : planes[currentPlaneIndex].encoderValueINC[axis];
+    snprintf(buffer, sizeof(buffer), "%c: %s", 'X' + axis, formatPosition(position, isInchMode).c_str());
+    xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
+    LCDTextDraw(xOffset, yPosition, buffer, 1, WHITE, BLACK);
+}
+
+/*
+Right now I just am getting the current value of the given axis, but I still need to:
+  - link the button to get current value of coordinate posotion o ngiven axis (mayve have individual varibales for each value)
+     but that would depend on the manual whether it allows for multiple axis to be selected at once
+     
+  - We still need to add the path for each sever.on ...... 
+  - add css to highlight the selected axis and deselect if presses again */
+// void selectGivenAxis(int encoderIndex){
+//   if (isABSMode)
+//   {
+//     currentSelecteAxis = encoderValueABS[encoderIndex];
+//   } else {
+//     currentSelecteAxis = encoderValueINC[encoderIndex];
+//   }
+// }
+
 // Separate ISRs for each encoder
 void IRAM_ATTR handleEncoder1Interrupt()
 {
   handleEncoderInterrupt(&encoder1); // Assume encoder1 is an instance of Encoder
   // for all axis on ABS Mode
-  encoderValueABS[0] = encoder1.position - X_last_ABS;
-  encoderValueINC[0] = encoder1.position - X_last_INC;
+  planes[currentPlaneIndex].encoderValueABS[0] = encoder1.position - X_last_ABS;
+  planes[currentPlaneIndex].encoderValueINC[0] = encoder1.position - X_last_INC;
 }
 
 // Separate ISRs for each encoder
 void IRAM_ATTR handleEncoder2Interrupt()
 {
   handleEncoderInterrupt(&encoder2); // Assume encoder1 is an instance of Encoder
-  encoderValueABS[1] = encoder2.position - Y_last_ABS;
-  encoderValueINC[1] = encoder2.position - Y_last_INC;
+  planes[currentPlaneIndex].encoderValueABS[1] = encoder2.position - Y_last_ABS;
+  planes[currentPlaneIndex].encoderValueINC[1] = encoder2.position - X_last_INC;
 }
 
 // Separate ISRs for each encoder
 void IRAM_ATTR handleEncoder3Interrupt()
 {
   handleEncoderInterrupt(&encoder3); // Assume encoder1 is an instance of Encoder
-  encoderValueABS[2] = encoder3.position - Z_last_ABS;
-  encoderValueINC[2] = encoder3.position - Z_last_INC;
+  planes[currentPlaneIndex].encoderValueABS[2] = encoder3.position - Z_last_ABS;
+  planes[currentPlaneIndex].encoderValueINC[2] = encoder3.position - X_last_INC;
 }
 
 // void updateAllZPins()
@@ -859,68 +918,106 @@ void loop() {} // might not need this
 
 void updateDisplayContent()
 {
-  char buffer[11];
-  int xOffset; // Horizontal offset to right-align text
+    char buffer[128]; // Make sure the buffer is large enough to hold the string
+    int xOffset; // Horizontal offset to right-align text
 
-  switch (currentMenuState)
-  {
-  case MAIN_MENU:
-    LCDTextDraw(7, 0, " COMP491 ESP32 DRO ", 1, WHITE, BLACK);
-    for (int i = 0; i < 2; i++)
+    switch (currentMenuState)
     {
-      sprintf(buffer, "%s %s", (i == menuItemIndex) ? ">" : " ", MenuDroItems[i]);
-      LCDTextDraw(0, 16 * (i + 1), buffer, 1, WHITE, BLACK);
+    case MAIN_MENU:
+        LCDTextDraw(7, 0, " COMP491 ESP32 DRO ", 1, WHITE, BLACK);
+        for (int i = 0; i < 2; i++)
+        {
+            sprintf(buffer, "%s %s", (i == menuItemIndex) ? ">" : " ", MenuDroItems[i]);
+            LCDTextDraw(0, 16 * (i + 1), buffer, 1, WHITE, BLACK);
+        }
+        break;
+
+    case TWO_AXIS:
+        // Display the X and Y axes for the two-axis mode
+        displayAxisValues(0, 0); // X-axis
+        displayAxisValues(1, 16); // Y-axis
+        LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK); // Return option
+        break;
+
+    case THREE_AXIS:
+        // Display the X, Y, and Z axes for the three-axis mode including the plane index
+        snprintf(buffer, sizeof(buffer), "Plane %d - %s Mode", currentPlaneIndex + 1, isABSMode ? "ABS" : "INC");
+        LCDTextDraw(0, 0, buffer, 1, WHITE, BLACK); // Display the plane and mode at the top
+        displayAxisValues(0, 16); // X-axis
+        displayAxisValues(1, 32); // Y-axis
+        displayAxisValues(2, 48); // Z-axis
+        LCDTextDraw(0, 64, "> return ", 1, WHITE, BLACK); // Return option
+        break;
     }
-    break;
-  case TWO_AXIS:
-    LCDRectFill(0, 0, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
-                                      // Format and right-align "X" axis label and value
-    snprintf(buffer, sizeof(buffer), "X: %s", formatPosition(encoder1.position, isInchMode).c_str());
-    xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
-    LCDTextDraw(xOffset, 0, buffer, 1, WHITE, BLACK);
-
-    // Format and right-align "Y" axis label and value
-    snprintf(buffer, sizeof(buffer), "Y: %s", formatPosition(encoder2.position, isInchMode).c_str());
-    xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
-    LCDTextDraw(xOffset, 16, buffer, 1, WHITE, BLACK);
-    break;
-
-    LCDRectFill(0, 50, 50, 10, BLACK);
-    LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK); // menu option to return
-    break;
-  case THREE_AXIS:
-    // Format and right-align "X" axis label and value
-    snprintf(buffer, sizeof(buffer), "X: %s", formatPosition(encoder1.position, isInchMode).c_str());
-    xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
-    LCDTextDraw(xOffset, 0, buffer, 1, WHITE, BLACK);
-
-    // Format and right-align "Y" axis label and value
-    snprintf(buffer, sizeof(buffer), "Y: %s", formatPosition(encoder2.position, isInchMode).c_str());
-    xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
-    LCDTextDraw(xOffset, 16, buffer, 1, WHITE, BLACK);
-
-    // Format and right-align "Z" axis label and value
-    snprintf(buffer, sizeof(buffer), "Z: %s", formatPosition(encoder3.position, isInchMode).c_str());
-    xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
-    LCDTextDraw(xOffset, 32, buffer, 1, WHITE, BLACK);
-    break;
-    // LCDRectFill(0, 0, 50, 10, BLACK);
-    // sprintf(buffer, "X: %d", encoder4.position);
-    // LCDTextDraw(0, 0, buffer, 1, WHITE, BLACK);
-
-    // LCDRectFill(0, 16, 50, 10, BLACK);
-    // sprintf(buffer, "Y: %d", encoder5.position);
-    // LCDTextDraw(0, 16, buffer, 1, WHITE, BLACK);
-
-    // LCDRectFill(0, 32, 50, 10, BLACK);
-    // sprintf(buffer, "Z: %d", encoder6.position);
-    // LCDTextDraw(0, 32, buffer, 1, WHITE, BLACK);
-
-    LCDRectFill(0, 50, 50, 10, BLACK);
-    LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK); // menu option to return
-    break;
-  }
 }
+
+
+
+
+// void updateDisplayContent()
+// {
+//   char buffer[11];
+//   int xOffset; // Horizontal offset to right-align text
+
+//   switch (currentMenuState)
+//   {
+//   case MAIN_MENU:
+//     LCDTextDraw(7, 0, " COMP491 ESP32 DRO ", 1, WHITE, BLACK);
+//     for (int i = 0; i < 2; i++)
+//     {
+//       sprintf(buffer, "%s %s", (i == menuItemIndex) ? ">" : " ", MenuDroItems[i]);
+//       LCDTextDraw(0, 16 * (i + 1), buffer, 1, WHITE, BLACK);
+//     }
+//     break;
+//   case TWO_AXIS:
+//     LCDRectFill(0, 0, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
+//                                       // Format and right-align "X" axis label and value
+//     snprintf(buffer, sizeof(buffer), "X: %s", formatPosition(encoder1.position, isInchMode).c_str());
+//     xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
+//     LCDTextDraw(xOffset, 0, buffer, 1, WHITE, BLACK);
+
+//     // Format and right-align "Y" axis label and value
+//     snprintf(buffer, sizeof(buffer), "Y: %s", formatPosition(encoder2.position, isInchMode).c_str());
+//     xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
+//     LCDTextDraw(xOffset, 16, buffer, 1, WHITE, BLACK);
+//     break;
+
+//     LCDRectFill(0, 50, 50, 10, BLACK);
+//     LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK); // menu option to return
+//     break;
+//   case THREE_AXIS:
+//     // Format and right-align "X" axis label and value
+//     snprintf(buffer, sizeof(buffer), "X: %s", formatPosition(encoder1.position, isInchMode).c_str());
+//     xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
+//     LCDTextDraw(xOffset, 0, buffer, 1, WHITE, BLACK);
+
+//     // Format and right-align "Y" axis label and value
+//     snprintf(buffer, sizeof(buffer), "Y: %s", formatPosition(encoder2.position, isInchMode).c_str());
+//     xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
+//     LCDTextDraw(xOffset, 16, buffer, 1, WHITE, BLACK);
+
+//     // Format and right-align "Z" axis label and value
+//     snprintf(buffer, sizeof(buffer), "Z: %s", formatPosition(encoder3.position, isInchMode).c_str());
+//     xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
+//     LCDTextDraw(xOffset, 32, buffer, 1, WHITE, BLACK);
+//     break;
+//     // LCDRectFill(0, 0, 50, 10, BLACK);
+//     // sprintf(buffer, "X: %d", encoder4.position);
+//     // LCDTextDraw(0, 0, buffer, 1, WHITE, BLACK);
+
+//     // LCDRectFill(0, 16, 50, 10, BLACK);
+//     // sprintf(buffer, "Y: %d", encoder5.position);
+//     // LCDTextDraw(0, 16, buffer, 1, WHITE, BLACK);
+
+//     // LCDRectFill(0, 32, 50, 10, BLACK);
+//     // sprintf(buffer, "Z: %d", encoder6.position);
+//     // LCDTextDraw(0, 32, buffer, 1, WHITE, BLACK);
+
+//     LCDRectFill(0, 50, 50, 10, BLACK);
+//     LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK); // menu option to return
+//     break;
+//   }
+// }
 
 // THIS UPDATE DISPLAY HANDLES MODE SWITCHING AND MEASURE MODE // 
 
