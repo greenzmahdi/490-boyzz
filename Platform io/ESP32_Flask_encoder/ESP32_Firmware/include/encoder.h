@@ -1,6 +1,7 @@
 #ifndef ENCODER_SETUP_H
 #define ENCODER_SETUP_H
 #include <WiFi.h>
+#include <AccelStepper.h>
 
 #define ENCODER_HISTORY_SIZE 4
 #define SPEED_THRESHOLD 0.01 // Example threshold, adjust based on your application
