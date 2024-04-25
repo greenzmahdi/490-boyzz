@@ -11,6 +11,7 @@
 #include <Adafruit_GFX.h>
 #include <ArduinoJson.h>
 #include <cmath> 
+#include <vector> // Include the C++ standard vector library
 
 // file imports
 #include "I2C.h"
@@ -68,7 +69,8 @@ enum MenuState
 {
   MAIN_MENU,
   TWO_AXIS,
-  THREE_AXIS
+  THREE_AXIS,
+  SHAPE_CREATION
 };
 
 volatile MenuState currentMenuState = MAIN_MENU;
@@ -136,60 +138,66 @@ void updateButtonStates()
   ButtonStatesPrev[4] = ButtonRightPressed();
 }
 
-void handleMenuNavigation()
-{
-  // check if button being pressed is diff from its last prev state aka (true != false)
-  if (ButtonUpPressed() && !ButtonStatesPrev[2])
-  {
-    // ensures curr state is in MAIN_MENU, ensuring it does not go below 0
-    if (currentMenuState == MAIN_MENU)
-    {
-      menuItemIndex = max(0, menuItemIndex - 1);
-    }
-  }
-  // check if button being pressed is diff from its last prev state aka (true != false)
-  else if (ButtonDownPressed() && !ButtonStatesPrev[3])
-  {
-    if (currentMenuState == MAIN_MENU)
-    {
-      menuItemIndex = min(1, menuItemIndex + 1); // For now we just have two menu options
-      // menuItemIndex = min(2, menuItemIndex + 1); // Assuming we want to add 3 menu items (in the case we want to add another option)
-    }
-  }
-  // check if button being pressed is diff from its last prev state aka (true != false)
-  else if (ButtonCenterPressed() && !ButtonStatesPrev[1])
-  {
-    if (currentMenuState == MAIN_MENU)
-    {
-      // based on the state of our menu option, we update our screen with the correct screen
-      // we clear the screen and update display
-      switch (menuItemIndex)
-      {
-      case 0:
-        LCDScreenClear();
-        currentMenuState = TWO_AXIS;
-        break;
-      case 1:
-        LCDScreenClear();
-        currentMenuState = THREE_AXIS;
-        break;
-      }
-    }
-    else
-    {
-      currentMenuState = MAIN_MENU; // Allow going back to the main menu
-      LCDScreenClear();
-    }
-  }
-  // Update previous button states at the end of your button handling logic
-  ButtonStatesPrev[0] = stateButtonCenter;
-  ButtonStatesPrev[1] = stateButtonUp;
-  ButtonStatesPrev[2] = stateButtonDown;
-  ButtonStatesPrev[3] = stateButtonLeft;
-  ButtonStatesPrev[4] = stateButtonRight;
+// void handleMenuNavigation()
+// {
+//   // check if button being pressed is diff from its last prev state aka (true != false)
+//   if (ButtonUpPressed() && !ButtonStatesPrev[2])
+//   {
+//     // ensures curr state is in MAIN_MENU, ensuring it does not go below 0
+//     if (currentMenuState == MAIN_MENU)
+//     {
+//       menuItemIndex = max(0, menuItemIndex - 1);
+//     }
+//   }
+//   // check if button being pressed is diff from its last prev state aka (true != false)
+//   else if (ButtonDownPressed() && !ButtonStatesPrev[3])
+//   {
+//     if (currentMenuState == MAIN_MENU)
+//     {
+//       menuItemIndex = min(1, menuItemIndex + 1); // For now we just have two menu options
+//       // menuItemIndex = min(2, menuItemIndex + 1); // Assuming we want to add 3 menu items (in the case we want to add another option)
+//     }
+//   }
+//   // check if button being pressed is diff from its last prev state aka (true != false)
+//   else if (ButtonCenterPressed() && !ButtonStatesPrev[1])
+//   {
+//     if (currentMenuState == MAIN_MENU)
+//     {
+//       // based on the state of our menu option, we update our screen with the correct screen
+//       // we clear the screen and update display
+//       switch (menuItemIndex)
+//       {
+//       case 0:
+//         LCDScreenClear();
+//         currentMenuState = TWO_AXIS;
+//         break;
+//       case 1:
+//         LCDScreenClear();
+//         currentMenuState = THREE_AXIS;
+//         break;
+//       }
+//     }
+//     else
+//     {
+//       currentMenuState = MAIN_MENU; // Allow going back to the main menu
+//       LCDScreenClear();
+//     }
+//   }
+//   // Update previous button states at the end of your button handling logic
+//   ButtonStatesPrev[0] = stateButtonCenter;
+//   ButtonStatesPrev[1] = stateButtonUp;
+//   ButtonStatesPrev[2] = stateButtonDown;
+//   ButtonStatesPrev[3] = stateButtonLeft;
+//   ButtonStatesPrev[4] = stateButtonRight;
 
-  // updateAllPinZ(); // update all
-}
+//   // updateAllPinZ(); // update all
+// }
+
+
+
+
+
+
 // Menu setup
 int MotorChannelSelected = 0;
 int MotorChannelWatched = -1;
@@ -223,13 +231,21 @@ bool isABSMode = true; // Start in ABS mode
 
 int setupEncoderValuesABs[] = {};
 
-struct CoordinatePlane {
-    int encoderValueABS[3]; // Store ABS values for X, Y, Z
-    int encoderValueINC[3]; // Store INC values for X, Y, Z
+struct Point {
+    int x, y, z; // Include z if you plan to extend to 3D shapes
+
+    Point(int px, int py, int pz = 0) : x(px), y(py), z(pz) {} // Constructor for initialization
 };
 
-// store up to 12 planes
+struct CoordinatePlane {
+    std::vector<Point> shapePoints; // Store points for each shape in the plane
+    int encoderValueABS[3];    // Store ABS values for X, Y, Z
+    int encoderValueINC[3];    // Store INC values for X, Y, Z
+};
+
+// Store up to 12 coordinate planes 
 CoordinatePlane planes[12];
+
 
 int currentPlaneIndex = 0; // Keep track of the current plane index
 
@@ -243,11 +259,47 @@ void selectPlane(int index) {
 
 void nextPlane() {
     selectPlane((currentPlaneIndex + 1) % 12);
+    Serial.print("Next Plane: "); Serial.println(currentPlaneIndex + 1);
 }
 
 void previousPlane() {
     selectPlane((currentPlaneIndex + 11) % 12);
+    Serial.print("Previous Plane: "); Serial.println(currentPlaneIndex + 1);
 }
+
+
+void addPointToCurrentPlane(int planeIndex, int x, int y, int z = 0) {
+    if (planeIndex >= 0 && planeIndex < 12) {
+        planes[planeIndex].shapePoints.emplace_back(x, y, z);
+        // updateDisplayContent();  // Assuming you have a method to update display
+    }
+}
+
+void removeLastPointFromCurrentPlane(int planeIndex) {
+    if (planeIndex >= 0 && planeIndex < 12 && !planes[planeIndex].shapePoints.empty()) {
+        planes[planeIndex].shapePoints.pop_back();
+        // updateDisplayContent();
+    }
+}
+
+void displayCurrentPoints(int planeIndex) {
+    if (planeIndex >= 0 && planeIndex < 12) {
+        auto& points = planes[planeIndex].shapePoints;
+        for (size_t i = 0; i < points.size(); ++i) {
+            char buffer[50];
+            snprintf(buffer, sizeof(buffer), "Point %zu: (%d, %d, %d)", i + 1, points[i].x, points[i].y, points[i].z);
+            LCDTextDraw(0, i * 16, buffer, 1, WHITE, BLACK);  // Adjust positioning as needed
+        }
+    }
+}
+
+void clearPointsInPlane(int planeIndex) {
+    if (planeIndex >= 0 && planeIndex < 12) {
+        planes[planeIndex].shapePoints.clear();
+        // updateDisplayContent();
+    }
+}
+
 
 
 int X_last_ABS = 0;
@@ -328,6 +380,57 @@ void displayAxisValues(int axis, int yPosition) {
     LCDTextDraw(xOffset, yPosition, buffer, 1, WHITE, BLACK);
 }
 
+void handleMenuNavigation() {
+    // Navigate menu options in the main menu
+    if (currentMenuState == MAIN_MENU) {
+        if (ButtonUpPressed() && !ButtonStatesPrev[2]) {
+            menuItemIndex = max(0, menuItemIndex - 1);
+        } else if (ButtonDownPressed() && !ButtonStatesPrev[3]) {
+            menuItemIndex = min(1, menuItemIndex + 1);  // Only two options
+        } else if (ButtonCenterPressed() && !ButtonStatesPrev[1]) {
+            switch (menuItemIndex) {
+                case 0:
+                    LCDScreenClear();
+                    currentMenuState = TWO_AXIS;
+                    break;
+                case 1:
+                    LCDScreenClear();
+                    currentMenuState = THREE_AXIS;
+                    break;
+            }
+        }
+    }
+    // Handle plane navigation in the TWO_AXIS state
+    else if (currentMenuState == TWO_AXIS) {
+        if (ButtonLeftPressed() && !ButtonStatesPrev[0]) {
+            previousPlane();
+            // updateDisplayContent();  // Show updated plane information
+        } else if (ButtonRightPressed() && !ButtonStatesPrev[4]) {
+            nextPlane();
+            // updateDisplayContent();  // Show updated plane information
+        } else if (ButtonCenterPressed() && !ButtonStatesPrev[1]) {
+            currentMenuState = MAIN_MENU;  // Return to main menu on center button
+            LCDScreenClear();
+        }
+    }
+    // Handle plane navigation in the THREE_AXIS state
+    else if (currentMenuState == THREE_AXIS) {
+        if (ButtonLeftPressed() && !ButtonStatesPrev[0]) {
+            previousPlane();
+            // updateDisplayContent();  // Show updated plane information
+        } else if (ButtonRightPressed() && !ButtonStatesPrev[4]) {
+            nextPlane();
+            // updateDisplayContent();  // Show updated plane information
+        } else if (ButtonCenterPressed() && !ButtonStatesPrev[1]) {
+            currentMenuState = MAIN_MENU;  // Return to main menu on center button
+            LCDScreenClear();
+        }
+    }
+    // Update the stored state of buttons after handling logic
+    updateButtonStates();
+}
+
+
 /*
 Right now I just am getting the current value of the given axis, but I still need to:
   - link the button to get current value of coordinate posotion o ngiven axis (mayve have individual varibales for each value)
@@ -344,6 +447,7 @@ Right now I just am getting the current value of the given axis, but I still nee
 //   }
 // }
 
+/* I need to create unique X_last_ABS and X_Last_INC to be unqie for each of the 12 Coordinate planes so that we dont duplicate positions or overide measurements from curr pos */
 // Separate ISRs for each encoder
 void IRAM_ATTR handleEncoder1Interrupt()
 {
@@ -351,6 +455,11 @@ void IRAM_ATTR handleEncoder1Interrupt()
   // for all axis on ABS Mode
   planes[currentPlaneIndex].encoderValueABS[0] = encoder1.position - X_last_ABS;
   planes[currentPlaneIndex].encoderValueINC[0] = encoder1.position - X_last_INC;
+
+  // // Optionally add point on certain condition but we might not needs this at all 
+  //   if (some_condition_met) {
+  //       addPointToPlane(currentPlaneIndex, encoder1.position, encoder2.position);
+  //   }
 }
 
 // Separate ISRs for each encoder
@@ -513,6 +622,8 @@ button:hover {
           <div class="readout modeDisplay" id="mode-readout">
             <span id="modeMeasureIndicator">INCH</span>
           </div>
+          <div class="readout" id="currentPlane">Plane: 1</div>
+
           
           <div class="readout" id="x-readout">X: <span id="position"></span></div>
           <div class="readout" id="y-readout">Y: <span id="position2"></span></div>
@@ -787,12 +898,27 @@ setInterval(updatePosition, 100);  // Update every second
     })
     .catch(console.error);
 }
- 
+
+function updatePlaneDisplay() {
+    fetch("/get-current-plane")
+    .then(response => response.text())
+    .then(data => {
+        console.log("Updated Plane Index: ", data); // Log for debugging
+        document.getElementById("currentPlane").innerText = "Plane: " + data;
+    })
+    .catch(error => console.error("Failed to update plane display:", error));
+}
 
 
  
+function updatePositionsAndPlane() {
+    updatePosition();
+    updatePlaneDisplay();
+}
 
  
+
+  setInterval(updatePositionsAndPlane, 1000); // Adjust interval to 1000 ms
   setInterval(updatePosition, 50);   // Call updatePositions() every 1000ms (1 second) but right now it is 50ms so stupid fast 
 </script>
 </body>
@@ -936,6 +1062,13 @@ void setup()
                 resetEncoderValue(2);
                 request->send(200, "text/plain", "All positions reset"); 
               });
+
+server.on("/get-current-plane", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(200, "text/plain", String(currentPlaneIndex + 1));  // +1 to make it human-readable (1-based index)
+});
+
+
+
 
   // server.on("/reset-encoder", HTTP_GET, [](AsyncWebServerRequest *request)
   //           {
@@ -1200,3 +1333,21 @@ void TaskUpdateDisplay(void *pvParameters)
     // vTaskDelay(pdMS_TO_TICKS(100));
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+/* Add manner we can switch from different Coordinate Planes on the (HTML or on OLED screen)
+   Based on the index of the current plane, store multiple points to start drawing shapes 
+   Display the number of the current Coordinate Plane in use
+   Create display to show the coordinates being displayed 
+   Only store ABS values in its own Coordinate plane */
+   
+   
