@@ -300,6 +300,18 @@ void clearPointsInPlane(int planeIndex) {
     }
 }
 
+void addCurrentPositionToPoint() {
+    int currentX = planes[currentPlaneIndex].encoderValueABS[0]; // or encoderValueINC based on mode
+    int currentY = planes[currentPlaneIndex].encoderValueABS[1]; // or encoderValueINC based on mode
+    int currentZ = planes[currentPlaneIndex].encoderValueABS[2]; // or encoderValueINC based on mode
+
+    // Adds the current position as a new point to the current plane
+    planes[currentPlaneIndex].shapePoints.emplace_back(currentX, currentY, currentZ);
+
+    
+}
+
+
 
 
 int X_last_ABS = 0;
@@ -628,6 +640,8 @@ button:hover {
           <div class="readout" id="x-readout">X: <span id="position"></span></div>
           <div class="readout" id="y-readout">Y: <span id="position2"></span></div>
           <div class="readout" id="z-readout">Z: <span id="position3"></span></div>
+          <button onclick="saveCurrentPosition()">Save Current Position</button>
+          
           <span id="calctemp"></span>
           <button id="plusBtn" class="operator" onclick="addOperation('+')">PLUS</button>
           <button id="multiplyBtn" class="operator" onclick="addOperation('*')">MULTI</button>
@@ -636,6 +650,21 @@ button:hover {
           <button onclick="calculate()">EQUAL</button>
           
         </div>
+
+        <div class="dro-container">
+          <input type="number" id="xInput" placeholder="X-coordinate">
+          <input type="number" id="yInput" placeholder="Y-coordinate">
+          <input type="number" id="zInput" placeholder="Z-coordinate">
+          <button onclick="savePoint()">Save Point</button>
+        <div id="lastPoint">Last Point: None</div>
+
+        <div class="dro-container">
+    <button onclick="getAllPoints()">Show All Points</button>
+    <ul id="pointsList"></ul>
+</div>
+
+</div>
+
       </div>
 
       <div class="right-column">
@@ -916,6 +945,67 @@ function updatePositionsAndPlane() {
     updatePlaneDisplay();
 }
 
+function savePoint() {
+    const x = document.getElementById('xInput').value;
+    const y = document.getElementById('yInput').value;
+    const z = document.getElementById('zInput').value;
+
+    fetch(`/add-point?x=${x}&y=${y}&z=${z}`, { method: 'POST' })
+        .then(response => response.text())
+        .then(data => {
+            alert('Point saved');
+            getLastPoint(); // Fetch the last point after saving
+        })
+        .catch(error => console.error('Error saving point:', error));
+}
+
+function getLastPoint() {
+    fetch('/get-last-point')
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('lastPoint').innerText = 'Last Point: ' + data;
+        })
+        .catch(error => {
+            console.error('Error fetching last point:', error);
+            document.getElementById('lastPoint').innerText = 'Last Point: Error';
+        });
+}
+
+function getAllPoints() {
+    fetch('/get-all-points')
+        .then(response => {
+            if (!response.ok) throw new Error('No points found');
+            return response.json();
+        })
+        .then(data => {
+            const pointsList = document.getElementById('pointsList');
+            pointsList.innerHTML = '';  // Clear existing points
+            data.points.forEach(point => {
+                const pointItem = document.createElement('li');
+                pointItem.textContent = `Point: (${point.x}, ${point.y}, ${point.z})`;
+                pointsList.appendChild(pointItem);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching all points:', error);
+            document.getElementById('pointsList').innerText = 'Failed to load points';
+        });
+}
+
+function saveCurrentPosition() {
+    fetch("/save-current-position")
+    .then(response => {
+        if (response.ok) {
+            return response.text();
+        }
+        throw new Error('Could not save position');
+    })
+    .then(message => {
+        console.log(message);
+        getAllPoints();  // Refresh the points display
+    })
+    .catch(error => console.error('Error:', error));
+}
  
 
   setInterval(updatePositionsAndPlane, 1000); // Adjust interval to 1000 ms
@@ -1067,6 +1157,57 @@ server.on("/get-current-plane", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(200, "text/plain", String(currentPlaneIndex + 1));  // +1 to make it human-readable (1-based index)
 });
 
+// Endpoint to add a point to the current plane
+server.on("/add-point", HTTP_POST, [](AsyncWebServerRequest *request) {
+    int x = 0, y = 0, z = 0;
+    if (request->hasParam("x") && request->hasParam("y") && request->hasParam("z")) {
+        x = request->getParam("x")->value().toInt();
+        y = request->getParam("y")->value().toInt();
+        z = request->getParam("z")->value().toInt();
+        planes[currentPlaneIndex].shapePoints.emplace_back(x, y, z);
+        request->send(200, "text/plain", "Point added");
+    } else {
+        request->send(400, "text/plain", "Missing parameters");
+    }
+});
+
+// Endpoint to get the last saved point on the current plane
+server.on("/get-last-point", HTTP_GET, [](AsyncWebServerRequest *request) {
+    if (!planes[currentPlaneIndex].shapePoints.empty()) {
+        Point lastPoint = planes[currentPlaneIndex].shapePoints.back();
+        char buffer[100];
+        snprintf(buffer, sizeof(buffer), "%d,%d,%d", lastPoint.x, lastPoint.y, lastPoint.z);
+        request->send(200, "text/plain", buffer);
+    } else {
+        request->send(404, "text/plain", "No points saved");
+    }
+});
+
+// Endpoint to get all saved points on the current plane
+server.on("/get-all-points", HTTP_GET, [](AsyncWebServerRequest *request) {
+    if (!planes[currentPlaneIndex].shapePoints.empty()) {
+        String jsonOutput;
+        StaticJsonDocument<1024> doc;  // Adjust size as needed based on expected data volume
+        JsonArray pointsArray = doc.createNestedArray("points");
+
+        for (const auto& point : planes[currentPlaneIndex].shapePoints) {
+            JsonObject pointObj = pointsArray.createNestedObject();
+            pointObj["x"] = point.x;
+            pointObj["y"] = point.y;
+            pointObj["z"] = point.z;
+        }
+
+        serializeJson(doc, jsonOutput);
+        request->send(200, "application/json", jsonOutput);
+    } else {
+        request->send(404, "text/plain", "No points saved");
+    }
+});
+
+server.on("/save-current-position", HTTP_GET, [](AsyncWebServerRequest *request) {
+    addCurrentPositionToPoint();  // Call the function to add the point
+    request->send(200, "text/plain", "Current position saved");
+});
 
 
 
