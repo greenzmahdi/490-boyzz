@@ -24,8 +24,8 @@
 bool isInchMode = true;
 
 // Inch and milimeter factors
-const float factor_mm = 0.01;        // 0.01 mm per pulse
-const float factor_inch = 0.0003937; // Accurate conversion to maintain equivalence
+float factor_mm = 0.01;        // 0.01 mm per pulse
+float factor_inch = 0.0003937; // Accurate conversion to maintain equivalence
 
 #define SCREEN_WIDTH 128 // OLED display width
 #define CHAR_WIDTH 6     // Width of each character in pixels
@@ -641,14 +641,6 @@ button:hover {
           <div class="readout" id="y-readout">Y: <span id="position2"></span></div>
           <div class="readout" id="z-readout">Z: <span id="position3"></span></div>
           <button onclick="saveCurrentPosition()">Save Current Position</button>
-          
-          <span id="calctemp"></span>
-          <button id="plusBtn" class="operator" onclick="addOperation('+')">PLUS</button>
-          <button id="multiplyBtn" class="operator" onclick="addOperation('*')">MULTI</button>
-          <button id="subtractBtn" class="operator" onclick="addOperation('-')">SUB</button>
-          <button id="divideBtn" class="operator" onclick="addOperation('/')">DIV</button>
-          <button onclick="calculate()">EQUAL</button>
-          
         </div>
 
         <div class="dro-container">
@@ -676,6 +668,13 @@ button:hover {
             <button onclick="resetPosition('select_y')">Select Y</button>
             <button onclick="resetPosition('z')">Zo</button>        
             <button onclick="resetPosition('select_z')">Select Z</button>
+            <form id="factorForm">
+              <label for="factor_mm">Factor (mm per pulse):</label><br>
+              <input type="text" id="factor_mm" name="factor_mm"><br>
+              <label for="factor_inch">Factor (inch per pulse):</label><br>
+              <input type="text" id="factor_inch" name="factor_inch">
+              <button type="button" onclick="updateFactors()">Update Factors</button>
+            </form>
           </div>
         </div>
 
@@ -734,6 +733,12 @@ button:hover {
         <button onclick="addDecimal()">.</button>
         <button onclick="addNumber(0)">0</button>
         <button>+/-</button>
+        <span id="calctemp"></span>
+        <button id="plusBtn" class="operator" onclick="addOperation('+')">PLUS</button>
+        <button id="multiplyBtn" class="operator" onclick="addOperation('*')">MULTI</button>
+        <button id="subtractBtn" class="operator" onclick="addOperation('-')">SUB</button>
+        <button id="divideBtn" class="operator" onclick="addOperation('/')">DIV</button>
+        <button onclick="calculate()">EQUAL</button>
       </div>
     </div>
 
@@ -756,6 +761,31 @@ var currentOperation = null;
 var tempNumber = "";
 var currentValue = 0;
 var calculatorMode = false;
+
+function updateFactors() {
+    var factor_mm = document.getElementById("factor_mm").value;
+    var factor_inch = document.getElementById("factor_inch").value;
+    fetch("/define-factor", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "factor_mm=" + encodeURIComponent(factor_mm) + "&factor_inch=" + encodeURIComponent(factor_inch)
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.text();
+        } else {
+            throw new Error("Network response was not ok");
+        }
+    })
+    .then(data => {
+        document.getElementById("message").innerText = data;
+    })
+    .catch(error => {
+        console.error("Error:", error);
+    });
+}
 
 function toggleCalculatorMode() {
     calculatorMode = !calculatorMode;
@@ -1170,6 +1200,19 @@ server.on("/add-point", HTTP_POST, [](AsyncWebServerRequest *request) {
         request->send(400, "text/plain", "Missing parameters");
     }
 });
+
+server.on("/define-factor", HTTP_POST, [](AsyncWebServerRequest *request) {
+  if(request->hasParam("factor_mm", true) && request->hasParam("factor_inch", true)){
+    float new_factor_mm = request->getParam("factor_mm", true) ->value().toFloat();
+    float new_factor_inch = request->getParam("factor_inch", true) ->value().toFloat();
+  factor_mm = new_factor_mm;
+  factor_inch = new_factor_inch;
+  request->send(200, "text/plain", "Factor updated succesfully");
+  } else {
+      request->send(400, "text/plain", "Missing parameter");
+  }
+});
+
 
 // Endpoint to get the last saved point on the current plane
 server.on("/get-last-point", HTTP_GET, [](AsyncWebServerRequest *request) {

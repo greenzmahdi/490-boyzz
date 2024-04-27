@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DRO Interface</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f0f0f0;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    height: 100vh;
+    align-items: center;
+  }
+
+  .flex-container {
+    display: flex;
+    width: 90%;
+    height: 90%;
+    align-items: stretch;
+  }
+
+  .left-column,
+  .right-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .left-column {
+    flex: 3;
+  }
+
+  .right-column {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .dro-container {
+    background: #ddd;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+  }
+
+  .readout {
+  font-family: 'Digital', sans-serif;
+  background: #000;
+  color: #00ff00;
+  padding: 15px; /* Increased padding */
+  font-size: 1.2em; /* Larger font size */
+  margin-bottom: 10px; /* Adjusted margin */
+  border: 1px solid #333; /* Subtle border */
+}
+
+  .calculator-grid{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .zeroSelect-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: px;
+  }
+
+  button {
+  padding: 15px;
+  background: #f5f5f5; /* Lighter background */
+  border: 1px solid #bbb; /* Softer border color */
+  border-radius: 5px;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.3s; /* Smooth transition for hover effect */
+}
+
+button:hover {
+  background: #e0e0e0; /* Subtle hover effect */
+}
+
+  .wide {
+    grid-column: span 3;
+  }
+#calculatorModeBtn {
+    /* Add default styles for the button */
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+}
+
+.calculator-mode-enabled {
+    /* Add styles for the button when calculator mode is enabled */
+    background-color: green;
+    color: white;
+}
+
+.calculator-mode-disabled {
+    /* Add styles for the button when calculator mode is disabled */
+    background-color: gray;
+    color: white;
+}
+</style>
+</head>
+<body>
+
+<div class="flex-container">
+  <div class="left-column">
+    <!-- Container 1: Readout displays (X, Y, Z) -->
+    <div class="flex-container">
+      <div class="left-column">
+        <div class="dro-container">
+          <div class="readout" id="modeIndicator">ABS</div>
+
+          <div class="readout modeDisplay" id="mode-readout">
+            <span id="modeMeasureIndicator">INCH</span>
+          </div>
+          <div class="readout" id="currentPlane">Plane: 1</div>
+
+          
+          <div class="readout" id="x-readout">X: <span id="position"></span></div>
+          <div class="readout" id="y-readout">Y: <span id="position2"></span></div>
+          <div class="readout" id="z-readout">Z: <span id="position3"></span></div>
+          <button onclick="saveCurrentPosition()">Save Current Position</button>
+        </div>
+
+        <div class="dro-container">
+          <input type="number" id="xInput" placeholder="X-coordinate">
+          <input type="number" id="yInput" placeholder="Y-coordinate">
+          <input type="number" id="zInput" placeholder="Z-coordinate">
+          <button onclick="savePoint()">Save Point</button>
+        <div id="lastPoint">Last Point: None</div>
+
+        <div class="dro-container">
+    <button onclick="getAllPoints()">Show All Points</button>
+    <ul id="pointsList"></ul>
+</div>
+
+</div>
+
+      </div>
+
+      <div class="right-column">
+        <div class="dro-container">
+          <div class="zeroSelect-grid">
+            <button onclick="resetPosition('x')">Xo</button>
+            <button onclick="resetPosition('select_x')">Select X</button>
+            <button onclick="resetPosition('y')">Yo</button>
+            <button onclick="resetPosition('select_y')">Select Y</button>
+            <button onclick="resetPosition('z')">Zo</button>        
+            <button onclick="resetPosition('select_z')">Select Z</button>
+            <form id="factorForm">
+              <label for="factor_mm">Factor (mm per pulse):</label><br>
+              <input type="text" id="factor_mm" name="factor_mm"><br>
+              <label for="factor_inch">Factor (inch per pulse):</label><br>
+              <input type="text" id="factor_inch" name="factor_inch">
+              <button type="button" onclick="updateFactors()">Update Factors</button>
+            </form>
+          </div>
+        </div>
+
+      </div>
+  
+
+    </div>
+    <!-- Container 5: Function keys -->
+    <div class="dro-container">
+      <button>F1</button>
+      <button>F2</button>
+      <button>F3</button>
+      <button>F4</button>
+      <button>F5</button>
+      <button>F6</button>
+    </div>
+
+    <div class="dro-container">
+      <button>Process Holes Circle </button>
+      <button>Process Holes Line</button>
+      <button>R Cut</button>
+      <button>Process Slope</button>
+    
+    </div>
+
+    <!-- Container 6: Arrow keys -->
+    <div class="dro-container">
+      <button>↑</button>
+      <button>→</button>
+      <button>↓</button>
+      <button>←</button>
+    </div>
+  </div>
+
+  <div class="right-column">
+    <!-- Container 2: Axis selection and zeroing -->
+    
+    <!-- Container 3: Calculator grid -->
+    <div class="dro-container wide">
+      <div class="calculator-grid">
+        <button>1/2</button>
+        <button id="toggleButton" onclick="toggleMeasureMode()">INCH/MM</button>
+        <!-- <span id="modeMeasureIndicator">INCH</span> -->
+        <!-- <p>Position: <span id="poss">0</span></p> -->
+
+        <button id="calculatorModeBtn" onclick="toggleCalculatorMode()">Calculator Mode</button>
+        <button onclick="addNumber(9)">9</button>
+        <button onclick="addNumber(8)">8</button>
+        <button onclick="addNumber(7)">7</button>
+        <button onclick="addNumber(6)">6</button>
+        <button onclick="addNumber(5)">5</button>
+        <button onclick="addNumber(4)">4</button>
+        <button onclick="addNumber(3)">3</button>
+        <button onclick="addNumber(2)">2</button>
+        <button onclick="addNumber(1)">1</button>
+        <button onclick="addDecimal()">.</button>
+        <button onclick="addNumber(0)">0</button>
+        <button>+/-</button>
+        <span id="calctemp"></span>
+        <button id="plusBtn" class="operator" onclick="addOperation('+')">PLUS</button>
+        <button id="multiplyBtn" class="operator" onclick="addOperation('*')">MULTI</button>
+        <button id="subtractBtn" class="operator" onclick="addOperation('-')">SUB</button>
+        <button id="divideBtn" class="operator" onclick="addOperation('/')">DIV</button>
+        <button onclick="calculate()">EQUAL</button>
+      </div>
+    </div>
+
+    <!-- Container 4: Additional control buttons -->
+    <div class="dro-container wide">
+      <div class="zeroSelect-grid">
+        <button onclick="toggleMode()">Toggle ABS/INC</button>
+        <button id="zeroAllButton" onclick="zeroAllAxis()">XYZo</button>
+        <button>CA</button>
+        <button>ENT</button>
+        <button onclick="resetPosition('xInc')">Abs X</button>
+        <button onclick="resetPosition('xAbs')">Inc</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var currentOperation = null;
+var tempNumber = "";
+var currentValue = 0;
+var calculatorMode = false;
+
+function updateFactors() {
+    var factor_mm = document.getElementById("factor_mm").value;
+    var factor_inch = document.getElementById("factor_inch").value;
+
+    fetch("/define-factor", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "factor_mm=" + encodeURIComponent(factor_mm) + "&factor_inch=" + encodeURIComponent(factor_inch)
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.text();
+        } else {
+            throw new Error("Network response was not ok");
+        }
+    })
+    .then(data => {
+        document.getElementById("message").innerText = data;
+    })
+    .catch(error => {
+        console.error("Error:", error);
+    });
+}
+
+
+
+function toggleCalculatorMode() {
+    calculatorMode = !calculatorMode;
+    updateCalculatorModeButton(); // Update button style
+    updateOperatorButtons(); // Update operator buttons based on the calculator mode 
+}
+
+function updateCalculatorModeButton() {
+    var calculatorModeBtn = document.getElementById("calculatorModeBtn");
+    if (calculatorMode) {
+        calculatorModeBtn.classList.add("calculator-mode-enabled");
+        calculatorModeBtn.classList.remove("calculator-mode-disabled");
+    } 
+    else {
+        calculatorModeBtn.classList.remove("calculator-mode-enabled");
+        calculatorModeBtn.classList.add("calculator-mode-disabled");
+    }
+}
+
+function updateOperatorButtons() {
+    var operatorButtons = document.getElementsByClassName("operator");
+    for (var i = 0; i < operatorButtons.length; i++) {
+        if (calculatorMode) {
+            operatorButtons[i].removeAttribute("disabled");
+        } 
+        else {
+            operatorButtons[i].setAttribute("disabled", "disabled");
+        }
+    }
+}
+
+function addOperation(operation) {
+  if(calculatorMode) {
+      if (currentOperation === null) {
+          currentOperation = operation;
+          currentValue = parseFloat(document.getElementById("position").innerText);
+          tempNumber = "";
+      }
+  }
+}
+
+function addDecimal() {
+    // Ensure tempNumber doesn't already contain a decimal point
+    if (!tempNumber.includes('.')) {
+        tempNumber += '.';
+    }
+    updateDisplay();
+}
+
+function addNumber(number) {
+    tempNumber += number.toString();
+    updateDisplay();
+}
+
+function calculate() {
+    if (currentOperation !== null && tempNumber !== "") {
+        switch (currentOperation) {
+            case '+':
+                currentValue += parseFloat(tempNumber);
+                break;
+            case '*':
+                currentValue *= parseFloat(tempNumber);
+                break;
+            case '-':
+                currentValue -= parseFloat(tempNumber);
+                break;
+            case '/':
+                var divisor = parseFloat(tempNumber);
+                if (divisor !== 0) {
+                  currentValue /= divisor;
+                } 
+                else {
+                  alert("Nuclear threat detected");
+                }
+                break;
+        }
+        currentOperation = null;
+        tempNumber = "";
+        updateDisplay();
+    }
+}
+
+function updateDisplay() {
+    var positionElement = document.getElementById("calctemp");
+    positionElement.innerText = currentValue.toString();
+}
+
+function zeroAllAxis() {
+    fetch("/zero-all-axis")
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.text();
+    })
+    .then(data => {
+        console.log(data); // Log the server response for debugging.
+        alert(data); // Alert the user or update the status on the page.
+    })
+    .catch(error => {
+        console.error('There was a problem with the fetch operation:', error);
+        alert("Failed to zero all axes: " + error.message); // Provide error feedback.
+    });
+}
+
+
+function toggleMode() {
+  fetch("/toggle-mode")
+  .then(response => response.text())
+  .then(data => {
+    // Now using 'modeIndicator' as the ID for the mode display element
+    document.getElementById("modeIndicator").innerText = data;
+    // updatePositions(); // Update positions if needed, otherwise you can remove this line         // off for atm
+  })
+  .catch(console.error);
+}
+
+function toggleMeasureMode() {
+  fetch("/toggle-measure-mode")
+  .then(response => response.text())
+  .then(data => {
+    // Now using 'modeIndicator' as the ID for the mode display element
+    document.getElementById("modeMeasureIndicator").innerText = data;
+    // updatePosition(); // Update positions if needed, otherwise you can remove this line
+  })
+  .catch(console.error);
+}
+
+ 
+function updatePosition() {
+  fetch("/get-positions")
+  .then(response => response.json())
+  .then(data => {
+    document.getElementById("position").innerText = data.positionX;
+    document.getElementById("position2").innerText = data.positionY;
+    document.getElementById("position3").innerText = data.positionZ;
+  })
+  .catch(console.error);
+}
+
+// Call updatePosition at an interval
+setInterval(updatePosition, 100);  // Update every second
+
+  
+    function updatePositions() {
+    fetch("/position")
+      .then(response => response.text())
+      .then(data => document.getElementById("position").innerText = data)
+      .catch(console.error);
+ 
+    fetch("/position2")
+      .then(response => response.text())
+      .then(data => document.getElementById("position2").innerText = data)
+      .catch(console.error);
+ 
+    fetch("/position3")
+      .then(response => response.text())
+      .then(data => document.getElementById("position3").innerText = data)
+      .catch(console.error);
+  }
+ 
+  function resetPosition(axis) {
+  fetch("/reset/" + axis)
+    .then(response => {
+      if (response.ok) {
+        console.log(axis.toUpperCase() + " position reset"); // print message 
+        updatePositions(); // Refresh the positions immediately
+      }
+    })
+    .catch(console.error);
+}
+
+function updatePlaneDisplay() {
+    fetch("/get-current-plane")
+    .then(response => response.text())
+    .then(data => {
+        console.log("Updated Plane Index: ", data); // Log for debugging
+        document.getElementById("currentPlane").innerText = "Plane: " + data;
+    })
+    .catch(error => console.error("Failed to update plane display:", error));
+}
+
+
+ 
+function updatePositionsAndPlane() {
+    updatePosition();
+    updatePlaneDisplay();
+}
+
+function savePoint() {
+    const x = document.getElementById('xInput').value;
+    const y = document.getElementById('yInput').value;
+    const z = document.getElementById('zInput').value;
+
+    fetch(`/add-point?x=${x}&y=${y}&z=${z}`, { method: 'POST' })
+        .then(response => response.text())
+        .then(data => {
+            alert('Point saved');
+            getLastPoint(); // Fetch the last point after saving
+        })
+        .catch(error => console.error('Error saving point:', error));
+}
+
+function getLastPoint() {
+    fetch('/get-last-point')
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('lastPoint').innerText = 'Last Point: ' + data;
+        })
+        .catch(error => {
+            console.error('Error fetching last point:', error);
+            document.getElementById('lastPoint').innerText = 'Last Point: Error';
+        });
+}
+
+function getAllPoints() {
+    fetch('/get-all-points')
+        .then(response => {
+            if (!response.ok) throw new Error('No points found');
+            return response.json();
+        })
+        .then(data => {
+            const pointsList = document.getElementById('pointsList');
+            pointsList.innerHTML = '';  // Clear existing points
+            data.points.forEach(point => {
+                const pointItem = document.createElement('li');
+                pointItem.textContent = `Point: (${point.x}, ${point.y}, ${point.z})`;
+                pointsList.appendChild(pointItem);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching all points:', error);
+            document.getElementById('pointsList').innerText = 'Failed to load points';
+        });
+}
+
+function saveCurrentPosition() {
+    fetch("/save-current-position")
+    .then(response => {
+        if (response.ok) {
+            return response.text();
+        }
+        throw new Error('Could not save position');
+    })
+    .then(message => {
+        console.log(message);
+        getAllPoints();  // Refresh the points display
+    })
+    .catch(error => console.error('Error:', error));
+}
+ 
+
+  setInterval(updatePositionsAndPlane, 1000); // Adjust interval to 1000 ms
+  setInterval(updatePosition, 50);   // Call updatePositions() every 1000ms (1 second) but right now it is 50ms so stupid fast 
+</script>
+</body>
+</html>
