@@ -10,7 +10,7 @@
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_GFX.h>
 #include <ArduinoJson.h>
-#include <cmath> 
+#include <cmath>
 #include <vector> // Include the C++ standard vector library
 
 // file imports
@@ -193,11 +193,6 @@ void updateButtonStates()
 //   // updateAllPinZ(); // update all
 // }
 
-
-
-
-
-
 // Menu setup
 int MotorChannelSelected = 0;
 int MotorChannelWatched = -1;
@@ -228,91 +223,102 @@ Encoder encoder3 = {PIN_A3, PIN_B3, 0, 0, 0, 0, {0}, 1};
 
 bool isABSMode = true; // Start in ABS mode
 
-
 int setupEncoderValuesABs[] = {};
 
-struct Point {
-    int x, y, z; // Include z if you plan to extend to 3D shapes
+struct Point
+{
+  int x, y, z; // Include z if you plan to extend to 3D shapes
 
-    Point(int px, int py, int pz = 0) : x(px), y(py), z(pz) {} // Constructor for initialization
+  Point(int px, int py, int pz = 0) : x(px), y(py), z(pz) {} // Constructor for initialization
 };
 
-struct CoordinatePlane {
-    std::vector<Point> shapePoints; // Store points for each shape in the plane
-    int encoderValueABS[3];    // Store ABS values for X, Y, Z
-    int encoderValueINC[3];    // Store INC values for X, Y, Z
+struct CoordinatePlane
+{
+  std::vector<Point> shapePoints; // Store points for each shape in the plane
+  int encoderValueABS[3];         // Store ABS values for X, Y, Z
+  int encoderValueINC[3];         // Store INC values for X, Y, Z
 };
 
-// Store up to 12 coordinate planes 
+// Store up to 12 coordinate planes
 CoordinatePlane planes[12];
-
 
 int currentPlaneIndex = 0; // Keep track of the current plane index
 
-void selectPlane(int index) {
-    if (index >= 0 && index < 12) {
-        currentPlaneIndex = index;
-        // Update display or other state changes needed when switching planes (needs to be implemented)
-        // updateDisplayContent();
+void selectPlane(int index)
+{
+  if (index >= 0 && index < 12)
+  {
+    currentPlaneIndex = index;
+    refreshAndDrawPoints(); // Refresh display after switching planes
+  }
+  // Update display or other state changes needed when switching planes (needs to be implemented)
+  // updateDisplayContent();
+}
+
+void nextPlane()
+{
+  selectPlane((currentPlaneIndex + 1) % 12);
+  Serial.print("Next Plane: ");
+  Serial.println(currentPlaneIndex + 1);
+}
+
+void previousPlane()
+{
+  selectPlane((currentPlaneIndex + 11) % 12);
+  Serial.print("Previous Plane: ");
+  Serial.println(currentPlaneIndex + 1);
+}
+
+void addPointToCurrentPlane(int planeIndex, int x, int y, int z = 0)
+{
+  if (planeIndex >= 0 && planeIndex < 12)
+  {
+    planes[planeIndex].shapePoints.emplace_back(x, y, z);
+    // updateDisplayContent();  // Assuming you have a method to update display
+  }
+}
+
+void removeLastPointFromCurrentPlane(int planeIndex)
+{
+  if (planeIndex >= 0 && planeIndex < 12 && !planes[planeIndex].shapePoints.empty())
+  {
+    planes[planeIndex].shapePoints.pop_back();
+    // updateDisplayContent();
+  }
+}
+
+void displayCurrentPoints(int planeIndex)
+{
+  if (planeIndex >= 0 && planeIndex < 12)
+  {
+    auto &points = planes[planeIndex].shapePoints;
+    for (size_t i = 0; i < points.size(); ++i)
+    {
+      char buffer[50];
+      snprintf(buffer, sizeof(buffer), "Point %zu: (%d, %d, %d)", i + 1, points[i].x, points[i].y, points[i].z);
+      LCDTextDraw(0, i * 16, buffer, 1, WHITE, BLACK); // Adjust positioning as needed
     }
+  }
 }
 
-void nextPlane() {
-    selectPlane((currentPlaneIndex + 1) % 12);
-    Serial.print("Next Plane: "); Serial.println(currentPlaneIndex + 1);
+void clearPointsInPlane(int planeIndex)
+{
+  if (planeIndex >= 0 && planeIndex < 12)
+  {
+    planes[planeIndex].shapePoints.clear();
+    // updateDisplayContent();
+  }
 }
 
-void previousPlane() {
-    selectPlane((currentPlaneIndex + 11) % 12);
-    Serial.print("Previous Plane: "); Serial.println(currentPlaneIndex + 1);
+void addCurrentPositionToPoint()
+{
+  int currentX = planes[currentPlaneIndex].encoderValueABS[0]; // or encoderValueINC based on mode
+  int currentY = planes[currentPlaneIndex].encoderValueABS[1]; // or encoderValueINC based on mode
+  int currentZ = planes[currentPlaneIndex].encoderValueABS[2]; // or encoderValueINC based on mode
+
+  // Adds the current position as a new point to the current plane
+  planes[currentPlaneIndex].shapePoints.emplace_back(currentX, currentY, currentZ);
 }
-
-
-void addPointToCurrentPlane(int planeIndex, int x, int y, int z = 0) {
-    if (planeIndex >= 0 && planeIndex < 12) {
-        planes[planeIndex].shapePoints.emplace_back(x, y, z);
-        // updateDisplayContent();  // Assuming you have a method to update display
-    }
-}
-
-void removeLastPointFromCurrentPlane(int planeIndex) {
-    if (planeIndex >= 0 && planeIndex < 12 && !planes[planeIndex].shapePoints.empty()) {
-        planes[planeIndex].shapePoints.pop_back();
-        // updateDisplayContent();
-    }
-}
-
-void displayCurrentPoints(int planeIndex) {
-    if (planeIndex >= 0 && planeIndex < 12) {
-        auto& points = planes[planeIndex].shapePoints;
-        for (size_t i = 0; i < points.size(); ++i) {
-            char buffer[50];
-            snprintf(buffer, sizeof(buffer), "Point %zu: (%d, %d, %d)", i + 1, points[i].x, points[i].y, points[i].z);
-            LCDTextDraw(0, i * 16, buffer, 1, WHITE, BLACK);  // Adjust positioning as needed
-        }
-    }
-}
-
-void clearPointsInPlane(int planeIndex) {
-    if (planeIndex >= 0 && planeIndex < 12) {
-        planes[planeIndex].shapePoints.clear();
-        // updateDisplayContent();
-    }
-}
-
-void addCurrentPositionToPoint() {
-    int currentX = planes[currentPlaneIndex].encoderValueABS[0]; // or encoderValueINC based on mode
-    int currentY = planes[currentPlaneIndex].encoderValueABS[1]; // or encoderValueINC based on mode
-    int currentZ = planes[currentPlaneIndex].encoderValueABS[2]; // or encoderValueINC based on mode
-
-    // Adds the current position as a new point to the current plane
-    planes[currentPlaneIndex].shapePoints.emplace_back(currentX, currentY, currentZ);
-
-    
-}
-
-
-
 
 int X_last_ABS = 0;
 int Y_last_ABS = 0;
@@ -334,17 +340,17 @@ void toggleMeasurementMode()
 
 void resetEncoderValue(int encoderIndex)
 {
-  if (encoderIndex < 0 || encoderIndex >= 3) {
-        Serial.println("Error: Encoder index out of range");
-        return; // Add error handling or user feedback
-    }
+  if (encoderIndex < 0 || encoderIndex >= 3)
+  {
+    Serial.println("Error: Encoder index out of range");
+    return; // Add error handling or user feedback
+  }
   // Placeholder for resetting encoder value.
   // if we zero out a value we need to store the last position before zeroing out to calculate the difference of (encoder.position - lastValVisited)
   if (isABSMode)
   {
     // reset value back to 0
     planes[currentPlaneIndex].encoderValueABS[encoderIndex] = 0;
-    
 
     // store last coordinate (value) listed
     if (encoderIndex == 0)
@@ -383,72 +389,92 @@ void resetEncoderValue(int encoderIndex)
 }
 
 // Helper function to format and display axis values based on current settings
-void displayAxisValues(int axis, int yPosition) {
-    char buffer[40];
-    int xOffset;
-    int position = isABSMode ? planes[currentPlaneIndex].encoderValueABS[axis] : planes[currentPlaneIndex].encoderValueINC[axis];
-    snprintf(buffer, sizeof(buffer), "%c: %s", 'X' + axis, formatPosition(position, isInchMode).c_str());
-    xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
-    LCDTextDraw(xOffset, yPosition, buffer, 1, WHITE, BLACK);
+void displayAxisValues(int axis, int yPosition)
+{
+  char buffer[40];
+  int xOffset;
+  int position = isABSMode ? planes[currentPlaneIndex].encoderValueABS[axis] : planes[currentPlaneIndex].encoderValueINC[axis];
+  snprintf(buffer, sizeof(buffer), "%c: %s", 'X' + axis, formatPosition(position, isInchMode).c_str());
+  xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
+  LCDTextDraw(xOffset, yPosition, buffer, 1, WHITE, BLACK);
 }
 
-void handleMenuNavigation() {
-    // Navigate menu options in the main menu
-    if (currentMenuState == MAIN_MENU) {
-        if (ButtonUpPressed() && !ButtonStatesPrev[2]) {
-            menuItemIndex = max(0, menuItemIndex - 1);
-        } else if (ButtonDownPressed() && !ButtonStatesPrev[3]) {
-            menuItemIndex = min(1, menuItemIndex + 1);  // Only two options
-        } else if (ButtonCenterPressed() && !ButtonStatesPrev[1]) {
-            switch (menuItemIndex) {
-                case 0:
-                    LCDScreenClear();
-                    currentMenuState = TWO_AXIS;
-                    break;
-                case 1:
-                    LCDScreenClear();
-                    currentMenuState = THREE_AXIS;
-                    break;
-            }
-        }
+void handleMenuNavigation()
+{
+  // Navigate menu options in the main menu
+  if (currentMenuState == MAIN_MENU)
+  {
+    if (ButtonUpPressed() && !ButtonStatesPrev[2])
+    {
+      menuItemIndex = max(0, menuItemIndex - 1);
     }
-    // Handle plane navigation in the TWO_AXIS state
-    else if (currentMenuState == TWO_AXIS) {
-        if (ButtonLeftPressed() && !ButtonStatesPrev[0]) {
-            previousPlane();
-            // updateDisplayContent();  // Show updated plane information
-        } else if (ButtonRightPressed() && !ButtonStatesPrev[4]) {
-            nextPlane();
-            // updateDisplayContent();  // Show updated plane information
-        } else if (ButtonCenterPressed() && !ButtonStatesPrev[1]) {
-            currentMenuState = MAIN_MENU;  // Return to main menu on center button
-            LCDScreenClear();
-        }
+    else if (ButtonDownPressed() && !ButtonStatesPrev[3])
+    {
+      menuItemIndex = min(1, menuItemIndex + 1); // Only two options
     }
-    // Handle plane navigation in the THREE_AXIS state
-    else if (currentMenuState == THREE_AXIS) {
-        if (ButtonLeftPressed() && !ButtonStatesPrev[0]) {
-            previousPlane();
-            // updateDisplayContent();  // Show updated plane information
-        } else if (ButtonRightPressed() && !ButtonStatesPrev[4]) {
-            nextPlane();
-            // updateDisplayContent();  // Show updated plane information
-        } else if (ButtonCenterPressed() && !ButtonStatesPrev[1]) {
-            currentMenuState = MAIN_MENU;  // Return to main menu on center button
-            LCDScreenClear();
-        }
+    else if (ButtonCenterPressed() && !ButtonStatesPrev[1])
+    {
+      switch (menuItemIndex)
+      {
+      case 0:
+        LCDScreenClear();
+        currentMenuState = TWO_AXIS;
+        break;
+      case 1:
+        LCDScreenClear();
+        currentMenuState = THREE_AXIS;
+        break;
+      }
     }
-    // Update the stored state of buttons after handling logic
-    updateButtonStates();
+  }
+  // Handle plane navigation in the TWO_AXIS state
+  else if (currentMenuState == TWO_AXIS)
+  {
+    if (ButtonLeftPressed() && !ButtonStatesPrev[0])
+    {
+      previousPlane();
+      // updateDisplayContent();  // Show updated plane information
+    }
+    else if (ButtonRightPressed() && !ButtonStatesPrev[4])
+    {
+      nextPlane();
+      // updateDisplayContent();  // Show updated plane information
+    }
+    else if (ButtonCenterPressed() && !ButtonStatesPrev[1])
+    {
+      currentMenuState = MAIN_MENU; // Return to main menu on center button
+      LCDScreenClear();
+    }
+  }
+  // Handle plane navigation in the THREE_AXIS state
+  else if (currentMenuState == THREE_AXIS)
+  {
+    if (ButtonLeftPressed() && !ButtonStatesPrev[0])
+    {
+      previousPlane();
+      // updateDisplayContent();  // Show updated plane information
+    }
+    else if (ButtonRightPressed() && !ButtonStatesPrev[4])
+    {
+      nextPlane();
+      // updateDisplayContent();  // Show updated plane information
+    }
+    else if (ButtonCenterPressed() && !ButtonStatesPrev[1])
+    {
+      currentMenuState = MAIN_MENU; // Return to main menu on center button
+      LCDScreenClear();
+    }
+  }
+  // Update the stored state of buttons after handling logic
+  updateButtonStates();
 }
-
 
 /*
 Right now I just am getting the current value of the given axis, but I still need to:
   - link the button to get current value of coordinate posotion o ngiven axis (mayve have individual varibales for each value)
      but that would depend on the manual whether it allows for multiple axis to be selected at once
-     
-  - We still need to add the path for each sever.on ...... 
+
+  - We still need to add the path for each sever.on ......
   - add css to highlight the selected axis and deselect if presses again */
 // void selectGivenAxis(int encoderIndex){
 //   if (isABSMode)
@@ -468,7 +494,7 @@ void IRAM_ATTR handleEncoder1Interrupt()
   planes[currentPlaneIndex].encoderValueABS[0] = encoder1.position - X_last_ABS;
   planes[currentPlaneIndex].encoderValueINC[0] = encoder1.position - X_last_INC;
 
-  // // Optionally add point on certain condition but we might not needs this at all 
+  // // Optionally add point on certain condition but we might not needs this at all
   //   if (some_condition_met) {
   //       addPointToPlane(currentPlaneIndex, encoder1.position, encoder2.position);
   //   }
@@ -501,6 +527,37 @@ void IRAM_ATTR handleEncoder3Interrupt()
 //   updateZPinState(encoder6.pinA, encoder6.pinB, 14); // For Z6
 //                                                      // Repeat for other Z pins and their corresponding A/B pins
 // }
+
+void updateDisplayWithPoints()
+{
+  LCDScreenClear(); // Clear the screen for fresh update
+  drawGrid();       // Draw the grid
+
+  // Draw each point in the current plane
+  for (const auto &point : planes[currentPlaneIndex].shapePoints)
+  {
+    drawPoint(point.x, point.y);
+  }
+}
+
+void addPointToCurrentPlane(int x, int y, int z = 0)
+{
+  planes[currentPlaneIndex].shapePoints.emplace_back(x, y, z);
+  refreshAndDrawPoints(); // Refresh display after adding point
+}
+
+void refreshAndDrawPoints()
+{
+  // LCDScreenClear(); // temp removed 
+
+  // Iterate over all points in the current plane and draw them
+  for (const auto &point : planes[currentPlaneIndex].shapePoints)
+  {
+    drawPointOnOLED(point.x, point.y);
+  }
+
+  // LCD.display();  // Refresh the display to show all points
+}
 
 const char *h_ssid = "491-DRO-Boyyz";
 const char *h_password = "123456789";
@@ -1270,7 +1327,6 @@ void setup()
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
             { request->send_P(200, "text/html", index_html); });
 
-
   // server.on("/poss", HTTP_GET, [](AsyncWebServerRequest *request)
   //           {
   //             String position1;
@@ -1353,21 +1409,22 @@ void setup()
               toggleMode();
               request->send(200, "text/plain", isABSMode ? "ABS" : "INC"); // Send the new mode back to the client
             });
-    
+
   server.on("/zero-all-axis", HTTP_GET, [](AsyncWebServerRequest *request)
-              {
+            {
                 resetEncoderValue(0);
                 resetEncoderValue(1);
                 resetEncoderValue(2);
-                request->send(200, "text/plain", "All positions reset"); 
-              });
+                request->send(200, "text/plain", "All positions reset"); });
 
-server.on("/get-current-plane", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send(200, "text/plain", String(currentPlaneIndex + 1));  // +1 to make it human-readable (1-based index)
-});
+  server.on("/get-current-plane", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
+              request->send(200, "text/plain", String(currentPlaneIndex + 1)); // +1 to make it human-readable (1-based index)
+            });
 
-// Endpoint to add a point to the current plane
-server.on("/add-point", HTTP_POST, [](AsyncWebServerRequest *request) {
+  // Endpoint to add a point to the current plane
+  server.on("/add-point", HTTP_POST, [](AsyncWebServerRequest *request)
+            {
     int x = 0, y = 0, z = 0;
     if (request->hasParam("x") && request->hasParam("y") && request->hasParam("z")) {
         x = request->getParam("x")->value().toInt();
@@ -1377,10 +1434,10 @@ server.on("/add-point", HTTP_POST, [](AsyncWebServerRequest *request) {
         request->send(200, "text/plain", "Point added");
     } else {
         request->send(400, "text/plain", "Missing parameters");
-    }
-});
+    } });
 
-server.on("/define-factor", HTTP_POST, [](AsyncWebServerRequest *request) {
+  server.on("/define-factor", HTTP_POST, [](AsyncWebServerRequest *request)
+            {
   if(request->hasParam("factor_mm", true) && request->hasParam("factor_inch", true)){
     float new_factor_mm = request->getParam("factor_mm", true) ->value().toFloat();
     float new_factor_inch = request->getParam("factor_inch", true) ->value().toFloat();
@@ -1389,12 +1446,11 @@ server.on("/define-factor", HTTP_POST, [](AsyncWebServerRequest *request) {
   request->send(200, "text/plain", "Factor updated succesfully");
   } else {
       request->send(400, "text/plain", "Missing parameter");
-  }
-});
+  } });
 
-
-// Endpoint to get the last saved point on the current plane
-server.on("/get-last-point", HTTP_GET, [](AsyncWebServerRequest *request) {
+  // Endpoint to get the last saved point on the current plane
+  server.on("/get-last-point", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
     if (!planes[currentPlaneIndex].shapePoints.empty()) {
         Point lastPoint = planes[currentPlaneIndex].shapePoints.back();
         char buffer[100];
@@ -1402,11 +1458,11 @@ server.on("/get-last-point", HTTP_GET, [](AsyncWebServerRequest *request) {
         request->send(200, "text/plain", buffer);
     } else {
         request->send(404, "text/plain", "No points saved");
-    }
-});
+    } });
 
-// Endpoint to get all saved points on the current plane
-  server.on("/get-all-points", HTTP_GET, [](AsyncWebServerRequest *request) {
+  // Endpoint to get all saved points on the current plane
+  server.on("/get-all-points", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
       if (!planes[currentPlaneIndex].shapePoints.empty()) {
           String jsonOutput;
           StaticJsonDocument<1024> doc;  // Adjust size as needed based on expected data volume
@@ -1423,15 +1479,12 @@ server.on("/get-last-point", HTTP_GET, [](AsyncWebServerRequest *request) {
           request->send(200, "application/json", jsonOutput);
       } else {
           request->send(404, "text/plain", "No points saved");
-      }
-  });
+      } });
 
-server.on("/save-current-position", HTTP_GET, [](AsyncWebServerRequest *request) {
+  server.on("/save-current-position", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
     addCurrentPositionToPoint();  // Call the function to add the point
-    request->send(200, "text/plain", "Current position saved");
-});
-
-
+    request->send(200, "text/plain", "Current position saved"); });
 
   // server.on("/reset-encoder", HTTP_GET, [](AsyncWebServerRequest *request)
   //           {
@@ -1491,41 +1544,40 @@ void loop() {} // might not need this
 
 void updateDisplayContent()
 {
-    char buffer[128]; // Make sure the buffer is large enough to hold the string
-    int xOffset; // Horizontal offset to right-align text
+  char buffer[128]; // Make sure the buffer is large enough to hold the string
+  int xOffset;      // Horizontal offset to right-align text
 
-    switch (currentMenuState)
+  switch (currentMenuState)
+  {
+  case MAIN_MENU:
+    LCDTextDraw(7, 0, " COMP491 ESP32 DRO ", 1, WHITE, BLACK);
+    for (int i = 0; i < 2; i++)
     {
-    case MAIN_MENU:
-        LCDTextDraw(7, 0, " COMP491 ESP32 DRO ", 1, WHITE, BLACK);
-        for (int i = 0; i < 2; i++)
-        {
-            sprintf(buffer, "%s %s", (i == menuItemIndex) ? ">" : " ", MenuDroItems[i]);
-            LCDTextDraw(0, 16 * (i + 1), buffer, 1, WHITE, BLACK);
-        }
-        break;
-
-    case TWO_AXIS:
-        // Display the X and Y axes for the two-axis mode
-        displayAxisValues(0, 0); // X-axis
-        displayAxisValues(1, 16); // Y-axis
-        LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK); // Return option
-        break;
-
-    case THREE_AXIS:
-        // Display the X, Y, and Z axes for the three-axis mode including the plane index
-        snprintf(buffer, sizeof(buffer), "Plane %d - %s Mode", currentPlaneIndex + 1, isABSMode ? "ABS" : "INC");
-        LCDTextDraw(0, 0, buffer, 1, WHITE, BLACK); // Display the plane and mode at the top
-        displayAxisValues(0, 16); // X-axis
-        displayAxisValues(1, 32); // Y-axis
-        displayAxisValues(2, 48); // Z-axis
-        LCDTextDraw(0, 64, "> return ", 1, WHITE, BLACK); // Return option
-        break;
+      sprintf(buffer, "%s %s", (i == menuItemIndex) ? ">" : " ", MenuDroItems[i]);
+      LCDTextDraw(0, 16 * (i + 1), buffer, 1, WHITE, BLACK);
     }
+    break;
+
+  case TWO_AXIS:
+    // // Display the X and Y axes for the two-axis mode
+    // displayAxisValues(0, 0); // X-axis
+    // displayAxisValues(1, 16); // Y-axis
+    refreshAndDrawPoints();
+    drawGrid();
+    LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK); // Return option
+    break;
+
+  case THREE_AXIS:
+    // Display the X, Y, and Z axes for the three-axis mode including the plane index
+    snprintf(buffer, sizeof(buffer), "Plane %d - %s Mode", currentPlaneIndex + 1, isABSMode ? "ABS" : "INC");
+    LCDTextDraw(0, 0, buffer, 1, WHITE, BLACK);       // Display the plane and mode at the top
+    displayAxisValues(0, 16);                         // X-axis
+    displayAxisValues(1, 32);                         // Y-axis
+    displayAxisValues(2, 48);                         // Z-axis
+    LCDTextDraw(0, 64, "> return ", 1, WHITE, BLACK); // Return option
+    break;
+  }
 }
-
-
-
 
 // void updateDisplayContent()
 // {
@@ -1592,7 +1644,7 @@ void updateDisplayContent()
 //   }
 // }
 
-// THIS UPDATE DISPLAY HANDLES MODE SWITCHING AND MEASURE MODE // 
+// THIS UPDATE DISPLAY HANDLES MODE SWITCHING AND MEASURE MODE //
 
 // void updateDisplayContent() {
 //     char buffer[32];  // Increased buffer size for larger strings
@@ -1648,7 +1700,6 @@ void updateDisplayContent()
 //     }
 // }
 
-
 void TaskUpdateDisplay(void *pvParameters)
 {
   for (;;)
@@ -1697,20 +1748,8 @@ void TaskUpdateDisplay(void *pvParameters)
   }
 }
 
-
-
-
-
-
-
-
-
-
-
 /* Add manner we can switch from different Coordinate Planes on the (HTML or on OLED screen)
-   Based on the index of the current plane, store multiple points to start drawing shapes 
+   Based on the index of the current plane, store multiple points to start drawing shapes
    Display the number of the current Coordinate Plane in use
-   Create display to show the coordinates being displayed 
+   Create display to show the coordinates being displayed
    Only store ABS values in its own Coordinate plane */
-   
-   
