@@ -1010,9 +1010,13 @@ function getAllPoints() {
         .then(data => {
             const pointsList = document.getElementById('pointsList');
             pointsList.innerHTML = '';  // Clear existing points
-            data.points.forEach(point => {
-                const pointItem = document.createElement('li');
-                pointItem.textContent = `Point: (${point.x}, ${point.y}, ${point.z})`;
+
+            data.points.forEach((point, index) => {
+                const pointItem = document.createElement('button');
+                pointItem.textContent = `Point ${index + 1}: (${point.x}, ${point.y}, ${point.z})`;
+                pointItem.addEventListener('click', () => {
+                    displayPoint(point);
+                });
                 pointsList.appendChild(pointItem);
             });
         })
@@ -1020,6 +1024,12 @@ function getAllPoints() {
             console.error('Error fetching all points:', error);
             document.getElementById('pointsList').innerText = 'Failed to load points';
         });
+}
+
+function displayPoint(point) {
+    document.getElementById('position').textContent = point.x;
+    document.getElementById('position2').textContent = point.y;
+    document.getElementById('position3').textContent = point.z;
 }
 
 function saveCurrentPosition() {
@@ -1227,25 +1237,25 @@ server.on("/get-last-point", HTTP_GET, [](AsyncWebServerRequest *request) {
 });
 
 // Endpoint to get all saved points on the current plane
-server.on("/get-all-points", HTTP_GET, [](AsyncWebServerRequest *request) {
-    if (!planes[currentPlaneIndex].shapePoints.empty()) {
-        String jsonOutput;
-        StaticJsonDocument<1024> doc;  // Adjust size as needed based on expected data volume
-        JsonArray pointsArray = doc.createNestedArray("points");
+  server.on("/get-all-points", HTTP_GET, [](AsyncWebServerRequest *request) {
+      if (!planes[currentPlaneIndex].shapePoints.empty()) {
+          String jsonOutput;
+          StaticJsonDocument<1024> doc;  // Adjust size as needed based on expected data volume
+          JsonArray pointsArray = doc.createNestedArray("points");
 
-        for (const auto& point : planes[currentPlaneIndex].shapePoints) {
-            JsonObject pointObj = pointsArray.createNestedObject();
-            pointObj["x"] = point.x;
-            pointObj["y"] = point.y;
-            pointObj["z"] = point.z;
-        }
+          for (const auto& point : planes[currentPlaneIndex].shapePoints) {
+              JsonObject pointObj = pointsArray.createNestedObject();
+              pointObj["x"] = point.x;
+              pointObj["y"] = point.y;
+              pointObj["z"] = point.z;
+          }
 
-        serializeJson(doc, jsonOutput);
-        request->send(200, "application/json", jsonOutput);
-    } else {
-        request->send(404, "text/plain", "No points saved");
-    }
-});
+          serializeJson(doc, jsonOutput);
+          request->send(200, "application/json", jsonOutput);
+      } else {
+          request->send(404, "text/plain", "No points saved");
+      }
+  });
 
 server.on("/save-current-position", HTTP_GET, [](AsyncWebServerRequest *request) {
     addCurrentPositionToPoint();  // Call the function to add the point
