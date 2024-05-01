@@ -569,6 +569,7 @@ CRGB leds[numLeds];
 AsyncWebServer server(80);
 
 const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -592,7 +593,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
             background-color: #d8d8d8;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
         }
 
@@ -606,7 +607,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
             margin-bottom: 10px;
         }
 
-        
+
 
         /* Mode Display */
         #container {
@@ -638,7 +639,16 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
             top: 390px;
             left: 50px;
             width: 293px;
-            height: 400px;
+            height: 220px;
+        }
+
+        #container12 {
+            position: absolute;
+            top: 660px;
+            left: 50px;
+            width: 650px;
+            height: 123px;
+
         }
 
         /* Zero ut / Selector Buttons */
@@ -665,16 +675,88 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
             left: 393px;
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
+            gap: 5px;
             width: 308px;
+            height: 120px;
         }
 
         /* Arrow Buttons */
         #container7 {
             position: absolute;
-            top: 280px;
             left: 750px;
+            top: 600px;
+            height: 185px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 160px;
+            /* Adjust if necessary */
         }
+
+        .arrow-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Style adjustments for the first row with the Up arrow */
+        .arrow-row.up {
+            margin-bottom: 5px;
+            /* Space between the up arrow and the middle row */
+        }
+
+        .arrow-row.middle {
+            width: 100%;
+            /* Ensures the middle row takes full width of container */
+            justify-content: space-around;
+            /* Evenly spaces items in this row */
+        }
+
+        .arrow-row button {
+            width: 50px;
+            /* Width of each button */
+            height: 56px;
+            /* Height of each button */
+            border-radius: 4px;
+            background-color: #f5f5f5;
+            /* Background color */
+            border: 1px solid #ccc;
+            /* Border color */
+        }
+
+        .arrow-row button:hover {
+            background-color: #e0e0e0;
+            /* Darker background on hover */
+        }
+
+        /* Ensuring that the middle row buttons (left and right) are visually aligned and square */
+        .arrow-row.middle button {
+            width: 56px;
+            /* Making them square */
+        }
+
+        /* Adding icons to the buttons (if you use something like Font Awesome) */
+        .arrow-row button.up-arrow:before {
+            content: '↑';
+            /* Up arrow icon */
+        }
+
+        .arrow-row button.down-arrow:before {
+            content: '↓';
+            /* Down arrow icon */
+        }
+
+        .arrow-row button.left-arrow:before {
+            content: '←';
+            /* Left arrow icon */
+        }
+
+        .arrow-row button.right-arrow:before {
+            content: '→';
+            /* Right arrow icon */
+        }
+
+
 
         /* Calculator Display*/
         #container11 {
@@ -697,21 +779,32 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
             top: 390px;
             left: 750px;
             width: 160px;
-            
+
         }
 
         /* Pulse Factor Adjustment */
         #container10 {
             position: absolute;
-            top: 605px;
+            top: 213px;
             left: 750px;
             width: 160px;
-            
+            height: 123px;
+
+        }
+
+        #container13 {
+            position: absolute;
+            top: 605px;
+            left: 970px;
+            width: 400px;
+            height: 185px;
         }
 
 
 
-       
+
+
+
 
         .calculator-grid {
             display: grid;
@@ -725,7 +818,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
             gap: px;
         }
 
-    
+
 
         button {
             padding: 15px;
@@ -770,37 +863,51 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
 
         /* Media Queries */
 
-/* Smaller screens (tablets) */
-@media (max-width: 768px) {
-    body {
-        flex-direction: column;
-    }
+        /* Smaller screens (tablets) */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
 
-    .dro-container, #container, #container1, #container2, #container3, #container4,
-    #container5, #container6, #container7, #container8, #container9, #container10, #container11 {
-        position: relative;
-        width: 90%;
-        max-width: none;
-        margin: 10px auto;
-    }
+            .dro-container,
+            #container,
+            #container1,
+            #container2,
+            #container3,
+            #container4,
+            #container5,
+            #container6,
+            #container7,
+            #container8,
+            #container9,
+            #container10,
+            #container11 {
+                position: relative;
+                width: 90%;
+                max-width: none;
+                margin: 10px auto;
+            }
 
-    .readout {
-        font-size: 1.2em; /* Smaller font for smaller screens */
-    }
-}
+            .readout {
+                font-size: 1.2em;
+                /* Smaller font for smaller screens */
+            }
+        }
 
-/* Very small screens (phones) */
-@media (max-width: 480px) {
-    .readout {
-        padding: 10px;
-        font-size: 1em; /* Even smaller font for phone screens */
-    }
+        /* Very small screens (phones) */
+        @media (max-width: 480px) {
+            .readout {
+                padding: 10px;
+                font-size: 1em;
+                /* Even smaller font for phone screens */
+            }
 
-    button {
-        padding: 10px;
-        font-size: 0.8em; /* Smaller buttons for easier handling */
-    }
-}
+            button {
+                padding: 10px;
+                font-size: 0.8em;
+                /* Smaller buttons for easier handling */
+            }
+        }
     </style>
 </head>
 
@@ -809,6 +916,11 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
 
     <!-- Container 1: Readout displays (X, Y, Z) -->
 
+    <div class="dro-container" id="container13">
+        <canvas id="coordinateCanvas" width="400" height="400"></canvas>
+    </div>
+    
+
     <div class="dro-container" id="container">
         <div class="readout" id="currentPlane">1</div>
         <div class="readout" id="modeIndicator">ABS</div>
@@ -816,7 +928,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
         <div class="readout modeDisplay" id="mode-readout">
             <span id="modeMeasureIndicator">INCH</span>
         </div>
-        
+
     </div>
 
     <div class="dro-container" id="container1">
@@ -853,10 +965,12 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
         <button onclick="savePoint()">Save Point</button>
         <div id="lastPoint">Last Point: None</div>
 
-        <div class="dro-container">
-            <button onclick="getAllPoints()">Show All Points</button>
-            <ul id="pointsList"></ul>
-        </div>
+
+    </div>
+
+    <div class="dro-container" id="container12">
+        <button onclick="getAllPoints()">Show All Points</button>
+        <ul id="pointsList"></ul>
     </div>
 
 
@@ -895,13 +1009,20 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
         <button>Process Slope</button>
     </div>
 
-    <!-- Container 6: Arrow keys -->
+    <!-- Container 7: Arrow keys -->
     <div class="dro-container" id="container7">
-        <button>↑</button>
-        <button>→</button>
-        <button>↓</button>
-        <button>←</button>
+        <div class="arrow-row up">
+            <button class="up-arrow"></button>
+        </div>
+        <div class="arrow-row middle">
+            <button class="left-arrow"></button>
+            <button class="down-arrow"></button>
+            <button class="right-arrow"></button>
+        </div>
     </div>
+    
+
+
 
 
 
@@ -968,6 +1089,8 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
     </div>
 
     </div>
+
+    
 
     <script>
         var currentOperation = null;
@@ -1272,6 +1395,40 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
                     getAllPoints(); // Refresh the points display
                 })
                 .catch((error) => console.error("Error:", error));
+
+            const canvas = document.getElementById('coordinateCanvas');
+
+            const ctx = canvas.getContext('2d');
+
+            function drawGrid() {
+                const width = canvas.width;
+                const height = canvas.height;
+                ctx.beginPath();
+                ctx.strokeStyle = '#ccc';
+
+                // Draw grid lines every 50 pixels
+                for (let x = 0; x <= width; x += 50) {
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, height);
+                }
+                for (let y = 0; y <= height; y += 50) {
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
+                }
+                ctx.stroke();
+            }
+
+            function drawPoints(points) {
+                ctx.fillStyle = 'red';
+                points.forEach(point => {
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, 5, 0, Math.PI * 2, true); // Draw circle for each point
+                    ctx.fill();
+                });
+            }
+
+            drawGrid();
+
         }
 
         setInterval(updatePositionsAndPlane, 1000); // Adjust interval to 1000 ms
