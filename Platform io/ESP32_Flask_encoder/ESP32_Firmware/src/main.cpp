@@ -33,21 +33,21 @@ float factor_inch = 0.0003937; // Accurate conversion to maintain equivalence
 // Function to format position to fixed decimal places
 String formatPosition(float pulses, bool isInchMode)
 {
-  float convertedValue;
-  char formattedOutput[20]; // Buffer to hold the formatted string
+    float convertedValue;
+    char formattedOutput[20]; // Buffer to hold the formatted string
 
-  if (isInchMode)
-  {
-    convertedValue = pulses * factor_inch;
-    snprintf(formattedOutput, sizeof(formattedOutput), "%7.4f", convertedValue); // Ensures 4 decimal places
-  }
-  else
-  {
-    convertedValue = pulses * factor_mm;
-    snprintf(formattedOutput, sizeof(formattedOutput), "%6.3f", convertedValue); // Ensures 3 decimal places
-  }
+    if (isInchMode)
+    {
+        convertedValue = pulses * factor_inch;
+        snprintf(formattedOutput, sizeof(formattedOutput), "%7.4f", convertedValue); // Ensures 4 decimal places
+    }
+    else
+    {
+        convertedValue = pulses * factor_mm;
+        snprintf(formattedOutput, sizeof(formattedOutput), "%6.3f", convertedValue); // Ensures 3 decimal places
+    }
 
-  return String(formattedOutput); // Convert buffer to Arduino String object for easy use
+    return String(formattedOutput); // Convert buffer to Arduino String object for easy use
 }
 
 // Define LED colors as global constants
@@ -67,10 +67,10 @@ const char *ToAutoAxis[] = {"X: ", "Y: ", "Z: "};
 
 enum MenuState
 {
-  MAIN_MENU,
-  TWO_AXIS,
-  THREE_AXIS,
-  SHAPE_CREATION
+    MAIN_MENU,
+    TWO_AXIS,
+    THREE_AXIS,
+    SHAPE_CREATION
 };
 
 volatile MenuState currentMenuState = MAIN_MENU;
@@ -84,41 +84,41 @@ void TaskUpdateDisplay(void *pvParameters);
 
 bool ButtonRead(int idx)
 {
-  // 0 - left
-  // 1 - center
-  // 2 - up
-  // 3 - down
-  // 4 - right
+    // 0 - left
+    // 1 - center
+    // 2 - up
+    // 3 - down
+    // 4 - right
 
-  if ((idx < 0) || (idx > 4))
-    return false;
+    if ((idx < 0) || (idx > 4))
+        return false;
 
-  return !I2CReadReg(0x20, 1, idx);
+    return !I2CReadReg(0x20, 1, idx);
 }
 
 bool ButtonLeftPressed()
 {
-  return ButtonRead(0);
+    return ButtonRead(0);
 }
 
 bool ButtonCenterPressed()
 {
-  return ButtonRead(1);
+    return ButtonRead(1);
 }
 
 bool ButtonUpPressed()
 {
-  return ButtonRead(2);
+    return ButtonRead(2);
 }
 
 bool ButtonDownPressed()
 {
-  return ButtonRead(3);
+    return ButtonRead(3);
 }
 
 bool ButtonRightPressed()
 {
-  return ButtonRead(4);
+    return ButtonRead(4);
 }
 
 bool ButtonStatesPrev[] = {false, false, false, false, false};
@@ -131,11 +131,11 @@ bool stateButtonRight = ButtonRightPressed();
 
 void updateButtonStates()
 {
-  ButtonStatesPrev[0] = ButtonLeftPressed();
-  ButtonStatesPrev[1] = ButtonCenterPressed();
-  ButtonStatesPrev[2] = ButtonUpPressed();
-  ButtonStatesPrev[3] = ButtonDownPressed();
-  ButtonStatesPrev[4] = ButtonRightPressed();
+    ButtonStatesPrev[0] = ButtonLeftPressed();
+    ButtonStatesPrev[1] = ButtonCenterPressed();
+    ButtonStatesPrev[2] = ButtonUpPressed();
+    ButtonStatesPrev[3] = ButtonDownPressed();
+    ButtonStatesPrev[4] = ButtonRightPressed();
 }
 
 // void handleMenuNavigation()
@@ -206,9 +206,9 @@ const int IdxZ5 = 1;
 const int IdxZ6 = 0;
 
 // Initializing encoders attributes and setting their start (refer to encoder struct to see all parameters)
-Encoder encoder1 = {PIN_A1, PIN_B1, 0, 0, 0, 0, {0}, 1};
-Encoder encoder2 = {PIN_A2, PIN_B2, 0, 0, 0, 0, {0}, 1};
-Encoder encoder3 = {PIN_A3, PIN_B3, 0, 0, 0, 0, {0}, 1};
+Encoder encoder1 = {PIN_A1, PIN_B1, 0, 0, 0, 0, 0, {0}, 1};
+Encoder encoder2 = {PIN_A2, PIN_B2, 0, 0, 0, 0, 0, {0}, 1};
+Encoder encoder3 = {PIN_A3, PIN_B3, 0, 0, 0, 0, 0, {0}, 1};
 
 // Encoder encoder4 = {PIN_A4, PIN_B4, 0, 0, 0, 0, {0}, 1};
 // Encoder encoder5 = {PIN_A5, PIN_B5, 0, 0, 0, 0, {0}, 1};
@@ -227,16 +227,18 @@ int setupEncoderValuesABs[] = {};
 
 struct Point
 {
-  int x, y, z; // Include z if you plan to extend to 3D shapes
+    int x, y, z; // Include z if you plan to extend to 3D shapes
 
-  Point(int px, int py, int pz = 0) : x(px), y(py), z(pz) {} // Constructor for initialization
+    Point(int px, int py, int pz = 0) : x(px), y(py), z(pz) {} // Constructor for initialization
 };
 
 struct CoordinatePlane
 {
-  std::vector<Point> shapePoints; // Store points for each shape in the plane
-  int encoderValueABS[3];         // Store ABS values for X, Y, Z
-  int encoderValueINC[3];         // Store INC values for X, Y, Z
+    std::vector<Point> shapePoints; // Store points for each shape in the plane
+    int encoderValueABS[3];         // Store ABS values for X, Y, Z
+    int encoderValueINC[3];         // Store INC values for X, Y, Z
+    int last_ABS[3];                // Last ABS position for X, Y, Z
+    int last_INC[3];                // Last INC position for X, Y, Z
 };
 
 // Store up to 12 coordinate planes
@@ -246,78 +248,78 @@ int currentPlaneIndex = 0; // Keep track of the current plane index
 
 void selectPlane(int index)
 {
-  if (index >= 0 && index < 12)
-  {
-    currentPlaneIndex = index;
-    refreshAndDrawPoints(); // Refresh display after switching planes
-  }
-  // Update display or other state changes needed when switching planes (needs to be implemented)
-  // updateDisplayContent();
+    if (index >= 0 && index < 12)
+    {
+        currentPlaneIndex = index;
+        refreshAndDrawPoints(); // Refresh display after switching planes
+    }
+    // Update display or other state changes needed when switching planes (needs to be implemented)
+    // updateDisplayContent();
 }
 
 void nextPlane()
 {
-  selectPlane((currentPlaneIndex + 1) % 12);
-  Serial.print("Next Plane: ");
-  Serial.println(currentPlaneIndex + 1);
+    selectPlane((currentPlaneIndex + 1) % 12);
+    Serial.print("Next Plane: ");
+    Serial.println(currentPlaneIndex + 1);
 }
 
 void previousPlane()
 {
-  selectPlane((currentPlaneIndex + 11) % 12);
-  Serial.print("Previous Plane: ");
-  Serial.println(currentPlaneIndex + 1);
+    selectPlane((currentPlaneIndex + 11) % 12);
+    Serial.print("Previous Plane: ");
+    Serial.println(currentPlaneIndex + 1);
 }
 
 void addPointToCurrentPlane(int planeIndex, int x, int y, int z = 0)
 {
-  if (planeIndex >= 0 && planeIndex < 12)
-  {
-    planes[planeIndex].shapePoints.emplace_back(x, y, z);
-    // updateDisplayContent();  // Assuming you have a method to update display
-  }
+    if (planeIndex >= 0 && planeIndex < 12)
+    {
+        planes[planeIndex].shapePoints.emplace_back(x, y, z);
+        // updateDisplayContent();  // Assuming you have a method to update display
+    }
 }
 
 void removeLastPointFromCurrentPlane(int planeIndex)
 {
-  if (planeIndex >= 0 && planeIndex < 12 && !planes[planeIndex].shapePoints.empty())
-  {
-    planes[planeIndex].shapePoints.pop_back();
-    // updateDisplayContent();
-  }
+    if (planeIndex >= 0 && planeIndex < 12 && !planes[planeIndex].shapePoints.empty())
+    {
+        planes[planeIndex].shapePoints.pop_back();
+        // updateDisplayContent();
+    }
 }
 
 void displayCurrentPoints(int planeIndex)
 {
-  if (planeIndex >= 0 && planeIndex < 12)
-  {
-    auto &points = planes[planeIndex].shapePoints;
-    for (size_t i = 0; i < points.size(); ++i)
+    if (planeIndex >= 0 && planeIndex < 12)
     {
-      char buffer[50];
-      snprintf(buffer, sizeof(buffer), "Point %zu: (%d, %d, %d)", i + 1, points[i].x, points[i].y, points[i].z);
-      LCDTextDraw(0, i * 16, buffer, 1, WHITE, BLACK); // Adjust positioning as needed
+        auto &points = planes[planeIndex].shapePoints;
+        for (size_t i = 0; i < points.size(); ++i)
+        {
+            char buffer[50];
+            snprintf(buffer, sizeof(buffer), "Point %zu: (%d, %d, %d)", i + 1, points[i].x, points[i].y, points[i].z);
+            LCDTextDraw(0, i * 16, buffer, 1, WHITE, BLACK); // Adjust positioning as needed
+        }
     }
-  }
 }
 
 void clearPointsInPlane(int planeIndex)
 {
-  if (planeIndex >= 0 && planeIndex < 12)
-  {
-    planes[planeIndex].shapePoints.clear();
-    // updateDisplayContent();
-  }
+    if (planeIndex >= 0 && planeIndex < 12)
+    {
+        planes[planeIndex].shapePoints.clear();
+        // updateDisplayContent();
+    }
 }
 
 void addCurrentPositionToPoint()
 {
-  int currentX = planes[currentPlaneIndex].encoderValueABS[0]; // or encoderValueINC based on mode
-  int currentY = planes[currentPlaneIndex].encoderValueABS[1]; // or encoderValueINC based on mode
-  int currentZ = planes[currentPlaneIndex].encoderValueABS[2]; // or encoderValueINC based on mode
+    int currentX = planes[currentPlaneIndex].encoderValueABS[0]; // or encoderValueINC based on mode
+    int currentY = planes[currentPlaneIndex].encoderValueABS[1]; // or encoderValueINC based on mode
+    int currentZ = planes[currentPlaneIndex].encoderValueABS[2]; // or encoderValueINC based on mode
 
-  // Adds the current position as a new point to the current plane
-  planes[currentPlaneIndex].shapePoints.emplace_back(currentX, currentY, currentZ);
+    // Adds the current position as a new point to the current plane
+    planes[currentPlaneIndex].shapePoints.emplace_back(currentX, currentY, currentZ);
 }
 
 int X_last_ABS = 0;
@@ -331,142 +333,180 @@ int Z_last_INC = 0;
 int currentSelecteAxis = 0;
 void toggleMode()
 {
-  isABSMode = !isABSMode;
+    isABSMode = !isABSMode;
 }
 void toggleMeasurementMode()
 {
-  isInchMode = !isInchMode;
+    isInchMode = !isInchMode;
 }
 
 void resetEncoderValue(int encoderIndex)
 {
-  if (encoderIndex < 0 || encoderIndex >= 3)
-  {
-    Serial.println("Error: Encoder index out of range");
-    return; // Add error handling or user feedback
-  }
-  // Placeholder for resetting encoder value.
-  // if we zero out a value we need to store the last position before zeroing out to calculate the difference of (encoder.position - lastValVisited)
-  if (isABSMode)
-  {
-    // reset value back to 0
-    planes[currentPlaneIndex].encoderValueABS[encoderIndex] = 0;
+    if (encoderIndex < 0 || encoderIndex >= 3)
+    {
+        Serial.println("Error: Encoder index out of range");
+        return; // Add error handling or user feedback
+    }
+    // Placeholder for resetting encoder value.
+    // if we zero out a value we need to store the last position before zeroing out to calculate the difference of (encoder.position - lastValVisited)
+    if (isABSMode)
+    {
+        // reset value back to 0
+        planes[currentPlaneIndex].encoderValueABS[encoderIndex] = 0;
 
-    // store last coordinate (value) listed
-    if (encoderIndex == 0)
-    {
-      X_last_ABS = encoder1.position;
+        // store last coordinate (value) listed
+        if (encoderIndex == 0)
+        {
+            
+            planes[currentPlaneIndex].last_ABS[0] = encoder1.position;
+        }
+        else if (encoderIndex == 1)
+        {
+            planes[currentPlaneIndex].last_ABS[1] = encoder2.position;
+        }
+        else if (encoderIndex == 2)
+        {
+            planes[currentPlaneIndex].last_ABS[2] = encoder3.position;
+        }
     }
-    else if (encoderIndex == 1)
+    else
     {
-      Y_last_ABS = encoder2.position;
-    }
-    else if (encoderIndex == 2)
-    {
-      Z_last_ABS = encoder3.position;
-    }
-  }
-  else
-  {
-    // reset value back to 0
-    planes[currentPlaneIndex].encoderValueINC[encoderIndex] = 0;
+        // reset value back to 0
+        planes[currentPlaneIndex].encoderValueINC[encoderIndex] = 0;
 
-    // store last coordinate (value) listed
-    if (encoderIndex == 0)
-    {
-      X_last_INC = encoder1.position;
+        // store last coordinate (value) listed
+        if (encoderIndex == 0)
+        {
+            planes[currentPlaneIndex].last_INC[0] = encoder1.position;
+        }
+        else if (encoderIndex == 1)
+        {
+            planes[currentPlaneIndex].last_INC[1] = encoder2.position;
+        }
+        else if (encoderIndex == 2)
+        {
+            planes[currentPlaneIndex].last_INC[2] = encoder3.position;
+        }
     }
-    else if (encoderIndex == 1)
-    {
-      Y_last_INC = encoder2.position;
-    }
-    else if (encoderIndex == 2)
-    {
-      Z_last_INC = encoder3.position;
-    }
-  }
-  // Consider adding logic to update the display or take other actions.
+    // Consider adding logic to update the display or take other actions.
 }
+
+// void resetEncoderValue(int encoderIndex) {
+//     if (encoderIndex < 0 || encoderIndex >= 3) {
+//         Serial.println("Error: Encoder index out of range");
+//         return;
+//     }
+
+//     if (isABSMode) {
+//         // Reset the ABS value to zero and store the last position
+//         planes[currentPlaneIndex].encoderValueABS[encoderIndex] = 0;
+//         switch (encoderIndex) {
+//             case 0:
+//                 X_last_ABS[currentPlaneIndex] = encoder1.position;
+//                 break;
+//             case 1:
+//                 Y_last_ABS[currentPlaneIndex] = encoder2.position;
+//                 break;
+//             case 2:
+//                 Z_last_ABS[currentPlaneIndex] = encoder3.position;
+//                 break;
+//         }
+//     } else {
+//         // Reset the INC value to zero and store the last position
+//         planes[currentPlaneIndex].encoderValueINC[encoderIndex] = 0;
+//         switch (encoderIndex) {
+//             case 0:
+//                 X_last_INC[currentPlaneIndex] = encoder1.position;
+//                 break;
+//             case 1:
+//                 Y_last_INC[currentPlaneIndex] = encoder2.position;
+//                 break;
+//             case 2:
+//                 Z_last_INC[currentPlaneIndex] = encoder3.position;
+//                 break;
+//         }
+//     }
+// }
 
 // Helper function to format and display axis values based on current settings
 void displayAxisValues(int axis, int yPosition)
 {
-  char buffer[40];
-  int xOffset;
-  int position = isABSMode ? planes[currentPlaneIndex].encoderValueABS[axis] : planes[currentPlaneIndex].encoderValueINC[axis];
-  snprintf(buffer, sizeof(buffer), "%c: %s", 'X' + axis, formatPosition(position, isInchMode).c_str());
-  xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
-  LCDTextDraw(xOffset, yPosition, buffer, 1, WHITE, BLACK);
+    char buffer[40];
+    int xOffset;
+    int position = isABSMode ? planes[currentPlaneIndex].encoderValueABS[axis] : planes[currentPlaneIndex].encoderValueINC[axis];
+    snprintf(buffer, sizeof(buffer), "%c: %s", 'X' + axis, formatPosition(position, isInchMode).c_str());
+    xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
+    LCDTextDraw(xOffset, yPosition, buffer, 1, WHITE, BLACK);
 }
 
 void handleMenuNavigation()
 {
-  // Navigate menu options in the main menu
-  if (currentMenuState == MAIN_MENU)
-  {
-    if (ButtonUpPressed() && !ButtonStatesPrev[2])
+    // Navigate menu options in the main menu
+    if (currentMenuState == MAIN_MENU)
     {
-      menuItemIndex = max(0, menuItemIndex - 1);
+        if (ButtonUpPressed() && !ButtonStatesPrev[2])
+        {
+            menuItemIndex = max(0, menuItemIndex - 1);
+        }
+        else if (ButtonDownPressed() && !ButtonStatesPrev[3])
+        {
+            menuItemIndex = min(1, menuItemIndex + 1); // Only two options
+        }
+        else if (ButtonCenterPressed() && !ButtonStatesPrev[1])
+        {
+            switch (menuItemIndex)
+            {
+            case 0:
+                LCDScreenClear();
+                currentMenuState = TWO_AXIS;
+                break;
+            case 1:
+                LCDScreenClear();
+                currentMenuState = THREE_AXIS;
+                break;
+            }
+        }
     }
-    else if (ButtonDownPressed() && !ButtonStatesPrev[3])
+    // Handle plane navigation in the TWO_AXIS state
+    else if (currentMenuState == TWO_AXIS)
     {
-      menuItemIndex = min(1, menuItemIndex + 1); // Only two options
+        if (ButtonLeftPressed() && !ButtonStatesPrev[0])
+        {
+            previousPlane();
+            // updateDisplayContent();  // Show updated plane information
+        }
+        else if (ButtonRightPressed() && !ButtonStatesPrev[4])
+        {
+            nextPlane();
+            // updateDisplayContent();  // Show updated plane information
+        }
+        else if (ButtonCenterPressed() && !ButtonStatesPrev[1])
+        {
+            currentMenuState = MAIN_MENU; // Return to main menu on center button
+            LCDScreenClear();
+        }
     }
-    else if (ButtonCenterPressed() && !ButtonStatesPrev[1])
+    // Handle plane navigation in the THREE_AXIS state
+    else if (currentMenuState == THREE_AXIS)
     {
-      switch (menuItemIndex)
-      {
-      case 0:
-        LCDScreenClear();
-        currentMenuState = TWO_AXIS;
-        break;
-      case 1:
-        LCDScreenClear();
-        currentMenuState = THREE_AXIS;
-        break;
-      }
+        if (ButtonLeftPressed() && !ButtonStatesPrev[0])
+        {
+            previousPlane();
+            // updateDisplayContent();  // Show updated plane information
+        }
+        else if (ButtonRightPressed() && !ButtonStatesPrev[4])
+        {
+            nextPlane();
+            // updateDisplayContent();  // Show updated plane information
+        }
+        else if (ButtonCenterPressed() && !ButtonStatesPrev[1])
+        {
+            currentMenuState = MAIN_MENU; // Return to main menu on center button
+            LCDScreenClear();
+        }
     }
-  }
-  // Handle plane navigation in the TWO_AXIS state
-  else if (currentMenuState == TWO_AXIS)
-  {
-    if (ButtonLeftPressed() && !ButtonStatesPrev[0])
-    {
-      previousPlane();
-      // updateDisplayContent();  // Show updated plane information
-    }
-    else if (ButtonRightPressed() && !ButtonStatesPrev[4])
-    {
-      nextPlane();
-      // updateDisplayContent();  // Show updated plane information
-    }
-    else if (ButtonCenterPressed() && !ButtonStatesPrev[1])
-    {
-      currentMenuState = MAIN_MENU; // Return to main menu on center button
-      LCDScreenClear();
-    }
-  }
-  // Handle plane navigation in the THREE_AXIS state
-  else if (currentMenuState == THREE_AXIS)
-  {
-    if (ButtonLeftPressed() && !ButtonStatesPrev[0])
-    {
-      previousPlane();
-      // updateDisplayContent();  // Show updated plane information
-    }
-    else if (ButtonRightPressed() && !ButtonStatesPrev[4])
-    {
-      nextPlane();
-      // updateDisplayContent();  // Show updated plane information
-    }
-    else if (ButtonCenterPressed() && !ButtonStatesPrev[1])
-    {
-      currentMenuState = MAIN_MENU; // Return to main menu on center button
-      LCDScreenClear();
-    }
-  }
-  // Update the stored state of buttons after handling logic
-  updateButtonStates();
+    // Update the stored state of buttons after handling logic
+    updateButtonStates();
 }
 
 /*
@@ -487,34 +527,58 @@ Right now I just am getting the current value of the given axis, but I still nee
 
 /* I need to create unique X_last_ABS and X_Last_INC to be unqie for each of the 12 Coordinate planes so that we dont duplicate positions or overide measurements from curr pos */
 // Separate ISRs for each encoder
+
+
+
 void IRAM_ATTR handleEncoder1Interrupt()
 {
-  handleEncoderInterrupt(&encoder1); // Assume encoder1 is an instance of Encoder
-  // for all axis on ABS Mode
-  planes[currentPlaneIndex].encoderValueABS[0] = encoder1.position - X_last_ABS;
-  planes[currentPlaneIndex].encoderValueINC[0] = encoder1.position - X_last_INC;
+    handleEncoderInterrupt(&encoder1); // Assume encoder1 is an instance of Encoder
+    // for all axis on ABS Mode
+     handleEncoderInterrupt(&encoder1); // Update encoder state
+    planes[currentPlaneIndex].encoderValueABS[0] = encoder1.position - planes[currentPlaneIndex].last_ABS[0];
+    planes[currentPlaneIndex].encoderValueINC[0] = encoder1.position - planes[currentPlaneIndex].last_INC[0];
 
-  // // Optionally add point on certain condition but we might not needs this at all
-  //   if (some_condition_met) {
-  //       addPointToPlane(currentPlaneIndex, encoder1.position, encoder2.position);
-  //   }
+    
+
+    // // Optionally add point on certain condition but we might not needs this at all
+    //   if (some_condition_met) {
+    //       addPointToPlane(currentPlaneIndex, encoder1.position, encoder2.position);
+    //   }
 }
 
 // Separate ISRs for each encoder
 void IRAM_ATTR handleEncoder2Interrupt()
 {
-  handleEncoderInterrupt(&encoder2); // Assume encoder1 is an instance of Encoder
-  planes[currentPlaneIndex].encoderValueABS[1] = encoder2.position - Y_last_ABS;
-  planes[currentPlaneIndex].encoderValueINC[1] = encoder2.position - X_last_INC;
+    handleEncoderInterrupt(&encoder2); // Assume encoder1 is an instance of Encoder
+    planes[currentPlaneIndex].encoderValueABS[1] = encoder2.position - planes[currentPlaneIndex].last_ABS[1];
+    planes[currentPlaneIndex].encoderValueINC[1] = encoder2.position - planes[currentPlaneIndex].last_INC[1];
 }
 
 // Separate ISRs for each encoder
 void IRAM_ATTR handleEncoder3Interrupt()
 {
-  handleEncoderInterrupt(&encoder3); // Assume encoder1 is an instance of Encoder
-  planes[currentPlaneIndex].encoderValueABS[2] = encoder3.position - Z_last_ABS;
-  planes[currentPlaneIndex].encoderValueINC[2] = encoder3.position - X_last_INC;
+     handleEncoderInterrupt(&encoder3); // Update encoder state
+    planes[currentPlaneIndex].encoderValueABS[2] = encoder3.position - planes[currentPlaneIndex].last_ABS[2];
+    planes[currentPlaneIndex].encoderValueINC[2] = encoder3.position - planes[currentPlaneIndex].last_INC[2];
 }
+
+// void IRAM_ATTR handleEncoder1Interrupt() {
+//     handleEncoderInterrupt(&encoder1); // Handle the encoder update
+//     planes[currentPlaneIndex].encoderValueABS[0] = encoder1.position - X_last_ABS[currentPlaneIndex];
+//     planes[currentPlaneIndex].encoderValueINC[0] = encoder1.position - X_last_INC[currentPlaneIndex];
+// }
+
+// void IRAM_ATTR handleEncoder2Interrupt() {
+//     handleEncoderInterrupt(&encoder2);
+//     planes[currentPlaneIndex].encoderValueABS[1] = encoder2.position - Y_last_ABS[currentPlaneIndex];
+//     planes[currentPlaneIndex].encoderValueINC[1] = encoder2.position - Y_last_INC[currentPlaneIndex];
+// }
+
+// void IRAM_ATTR handleEncoder3Interrupt() {
+//     handleEncoderInterrupt(&encoder3);
+//     planes[currentPlaneIndex].encoderValueABS[2] = encoder3.position - Z_last_ABS[currentPlaneIndex];
+//     planes[currentPlaneIndex].encoderValueINC[2] = encoder3.position - Z_last_INC[currentPlaneIndex];
+// }
 
 // void updateAllZPins()
 // {
@@ -530,33 +594,33 @@ void IRAM_ATTR handleEncoder3Interrupt()
 
 void updateDisplayWithPoints()
 {
-  LCDScreenClear(); // Clear the screen for fresh update
-  drawGrid();       // Draw the grid
+    LCDScreenClear(); // Clear the screen for fresh update
+    drawGrid();       // Draw the grid
 
-  // Draw each point in the current plane
-  for (const auto &point : planes[currentPlaneIndex].shapePoints)
-  {
-    drawPoint(point.x, point.y);
-  }
+    // Draw each point in the current plane
+    for (const auto &point : planes[currentPlaneIndex].shapePoints)
+    {
+        drawPoint(point.x, point.y);
+    }
 }
 
 void addPointToCurrentPlane(int x, int y, int z = 0)
 {
-  planes[currentPlaneIndex].shapePoints.emplace_back(x, y, z);
-  refreshAndDrawPoints(); // Refresh display after adding point
+    planes[currentPlaneIndex].shapePoints.emplace_back(x, y, z);
+    refreshAndDrawPoints(); // Refresh display after adding point
 }
 
 void refreshAndDrawPoints()
 {
-  // LCDScreenClear(); // temp removed 
+    // LCDScreenClear(); // temp removed
 
-  // Iterate over all points in the current plane and draw them
-  for (const auto &point : planes[currentPlaneIndex].shapePoints)
-  {
-    drawPointOnOLED(point.x, point.y);
-  }
+    // Iterate over all points in the current plane and draw them
+    for (const auto &point : planes[currentPlaneIndex].shapePoints)
+    {
+        drawPointOnOLED(point.x, point.y);
+    }
 
-  // LCD.display();  // Refresh the display to show all points
+    // LCD.display();  // Refresh the display to show all points
 }
 
 const char *h_ssid = "491-DRO-Boyyz";
@@ -1447,147 +1511,147 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
 
 void setup()
 {
-  Serial.begin(115200);
-  delay(10);
-  // PIN SETUP
-  setUpPins();
+    Serial.begin(115200);
+    delay(10);
+    // PIN SETUP
+    setUpPins();
 
-  LEDInit();
+    LEDInit();
 
-  for (int i = 0; i < LEDNum; i++)
-    LEDSet(i, LEDColorDisconnected);
+    for (int i = 0; i < LEDNum; i++)
+        LEDSet(i, LEDColorDisconnected);
 
-  LEDShow();
+    LEDShow();
 
-  FastLED.setBrightness(50);
+    FastLED.setBrightness(50);
 
-  // Init OLED
-  Wire.setPins(PIN_I2C_SDA, PIN_I2C_SCL);
-  Wire.begin();
-  Wire.setClock(400000);
-  LCDInit();
-  LCDScreenClear();
+    // Init OLED
+    Wire.setPins(PIN_I2C_SDA, PIN_I2C_SCL);
+    Wire.begin();
+    Wire.setClock(400000);
+    LCDInit();
+    LCDScreenClear();
 
-  // Initialize LED strip
-  FastLED.addLeds<WS2812B, ledPin, GRB>(leds, numLeds);
-  FastLED.setBrightness(50);
+    // Initialize LED strip
+    FastLED.addLeds<WS2812B, ledPin, GRB>(leds, numLeds);
+    FastLED.setBrightness(50);
 
-  // Initialize SPIFFS
-  if (!SPIFFS.begin(true))
-  {
-    Serial.println("An Error has occurred while mounting SPIFFS");
-    return;
-  }
+    // Initialize SPIFFS
+    if (!SPIFFS.begin(true))
+    {
+        Serial.println("An Error has occurred while mounting SPIFFS");
+        return;
+    }
 
-  // Setting up the ESP32 as an Access Point //
-  WiFi.softAP(h_ssid, h_password);
-  Serial.println("Access Point Started");
-  Serial.print("IP Address: ");
-  Serial.println(WiFi.softAPIP());
+    // Setting up the ESP32 as an Access Point //
+    WiFi.softAP(h_ssid, h_password);
+    Serial.println("Access Point Started");
+    Serial.print("IP Address: ");
+    Serial.println(WiFi.softAPIP());
 
-  // Setting up Routes
-  // Route for root web page
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-            { request->send_P(200, "text/html", index_html); });
+    // Setting up Routes
+    // Route for root web page
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+              { request->send_P(200, "text/html", index_html); });
 
-  // server.on("/poss", HTTP_GET, [](AsyncWebServerRequest *request)
-  //           {
-  //             String position1;
-  //             String position2;
-  //             String position3;
+    // server.on("/poss", HTTP_GET, [](AsyncWebServerRequest *request)
+    //           {
+    //             String position1;
+    //             String position2;
+    //             String position3;
 
-  //             if (isABSMode)
-  //             {
-  //               position1 = String(encoderValueABS[0]);
-  //               position2 = String(encoderValueABS[1]);
-  //               position3 = String(encoderValueABS[2]);
-  //             }
-  //             else
-  //             {
-  //               position1 = String(encoderValueINC[0]);
-  //               position2 = String(encoderValueINC[1]);
-  //               position3 = String(encoderValueINC[2]);
-  //             }
+    //             if (isABSMode)
+    //             {
+    //               position1 = String(encoderValueABS[0]);
+    //               position2 = String(encoderValueABS[1]);
+    //               position3 = String(encoderValueABS[2]);
+    //             }
+    //             else
+    //             {
+    //               position1 = String(encoderValueINC[0]);
+    //               position2 = String(encoderValueINC[1]);
+    //               position3 = String(encoderValueINC[2]);
+    //             }
 
-  //             // This might be the issue since we are converting to measure mode when I think this is jsut in charge of switching from abs to inc
-  //             StaticJsonDocument<200> jsonDoc;
-  //             // jsonDoc["position1"] = formatPosition(position1.toFloat(), isABSMode);
-  //             // jsonDoc["position2"] = formatPosition(position2.toFloat(), isABSMode);
-  //             // jsonDoc["position3"] = formatPosition(position3.toFloat(), isABSMode);
+    //             // This might be the issue since we are converting to measure mode when I think this is jsut in charge of switching from abs to inc
+    //             StaticJsonDocument<200> jsonDoc;
+    //             // jsonDoc["position1"] = formatPosition(position1.toFloat(), isABSMode);
+    //             // jsonDoc["position2"] = formatPosition(position2.toFloat(), isABSMode);
+    //             // jsonDoc["position3"] = formatPosition(position3.toFloat(), isABSMode);
 
-  //             jsonDoc["position1"] = position1;
-  //             jsonDoc["position2"] = position2;
-  //             jsonDoc["position3"] = position3;
+    //             jsonDoc["position1"] = position1;
+    //             jsonDoc["position2"] = position2;
+    //             jsonDoc["position3"] = position3;
 
-  //             String jsonString;
-  //             serializeJson(jsonDoc, jsonString);
+    //             String jsonString;
+    //             serializeJson(jsonDoc, jsonString);
 
-  //             request->send(200, "application/json", jsonString); // Send JSON data
-  //           });
+    //             request->send(200, "application/json", jsonString); // Send JSON data
+    //           });
 
-  server.on("/get-positions", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
-              char formattedX[20], formattedY[20], formattedZ[20];
+    server.on("/get-positions", HTTP_GET, [](AsyncWebServerRequest *request)
+              {
+                  char formattedX[20], formattedY[20], formattedZ[20];
 
-              // Assuming encoder1, encoder2, encoder3 are your encoder instances
-              String positionX = formatPosition(isABSMode ? encoder1.position - X_last_ABS : encoder1.position - X_last_INC, isInchMode);
-              String positionY = formatPosition(isABSMode ? encoder2.position - Y_last_ABS : encoder2.position - Y_last_INC, isInchMode);
-              String positionZ = formatPosition(isABSMode ? encoder3.position - Z_last_ABS : encoder3.position - Z_last_INC, isInchMode);
+                  // Assuming encoder1, encoder2, encoder3 are your encoder instances
+                  String positionX = formatPosition(isABSMode ? encoder1.position - planes[currentPlaneIndex].encoderValueABS[0] : encoder1.position - planes[currentPlaneIndex].last_INC[0], isInchMode);
+                  String positionY = formatPosition(isABSMode ? encoder2.position - planes[currentPlaneIndex].encoderValueABS[1] : encoder2.position - planes[currentPlaneIndex].last_INC[1], isInchMode);
+                  String positionZ = formatPosition(isABSMode ? encoder3.position - planes[currentPlaneIndex].encoderValueABS[2] : encoder3.position - planes[currentPlaneIndex].last_INC[2], isInchMode);
 
-              // Create a JSON object to send the formatted positions
-              StaticJsonDocument<200> jsonDoc;
-              jsonDoc["positionX"] = positionX;
-              jsonDoc["positionY"] = positionY;
-              jsonDoc["positionZ"] = positionZ;
+                  // Create a JSON object to send the formatted positions
+                  StaticJsonDocument<200> jsonDoc;
+                  jsonDoc["positionX"] = positionX;
+                  jsonDoc["positionY"] = positionY;
+                  jsonDoc["positionZ"] = positionZ;
 
-              String jsonString;
-              serializeJson(jsonDoc, jsonString);
+                  String jsonString;
+                  serializeJson(jsonDoc, jsonString);
 
-              request->send(200, "application/json", jsonString); // Send JSON data
-            });
+                  request->send(200, "application/json", jsonString); // Send JSON data
+              });
 
-  server.on("/toggle-measure-mode", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
+    server.on("/toggle-measure-mode", HTTP_GET, [](AsyncWebServerRequest *request)
+              {
     toggleMeasurementMode();
     request->send(200, "text/plain", isInchMode ? "INCH" : "MM"); });
 
-  server.on("/reset/x", HTTP_GET, [](AsyncWebServerRequest *request)
-            {         
+    server.on("/reset/x", HTTP_GET, [](AsyncWebServerRequest *request)
+              {         
             resetEncoderValue(0); // Reset encoder for X-axis
 
     request->send(200, "text/plain", "X position reset"); });
 
-  server.on("/reset/y", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
+    server.on("/reset/y", HTTP_GET, [](AsyncWebServerRequest *request)
+              {
     resetEncoderValue(1); // Reset encoder for Y-axis
     request->send(200, "text/plain", "Y position reset"); });
 
-  server.on("/reset/z", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
+    server.on("/reset/z", HTTP_GET, [](AsyncWebServerRequest *request)
+              {
     resetEncoderValue(2); // Reset encoder for Z-axis
     request->send(200, "text/plain", "Z position reset"); });
 
-  server.on("/toggle-mode", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
-              toggleMode();
-              request->send(200, "text/plain", isABSMode ? "ABS" : "INC"); // Send the new mode back to the client
-            });
+    server.on("/toggle-mode", HTTP_GET, [](AsyncWebServerRequest *request)
+              {
+                  toggleMode();
+                  request->send(200, "text/plain", isABSMode ? "ABS" : "INC"); // Send the new mode back to the client
+              });
 
-  server.on("/zero-all-axis", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
+    server.on("/zero-all-axis", HTTP_GET, [](AsyncWebServerRequest *request)
+              {
                 resetEncoderValue(0);
                 resetEncoderValue(1);
                 resetEncoderValue(2);
                 request->send(200, "text/plain", "All positions reset"); });
 
-  server.on("/get-current-plane", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
-              request->send(200, "text/plain", String(currentPlaneIndex + 1)); // +1 to make it human-readable (1-based index)
-            });
+    server.on("/get-current-plane", HTTP_GET, [](AsyncWebServerRequest *request)
+              {
+                  request->send(200, "text/plain", String(currentPlaneIndex + 1)); // +1 to make it human-readable (1-based index)
+              });
 
-  // Endpoint to add a point to the current plane
-  server.on("/add-point", HTTP_POST, [](AsyncWebServerRequest *request)
-            {
+    // Endpoint to add a point to the current plane
+    server.on("/add-point", HTTP_POST, [](AsyncWebServerRequest *request)
+              {
     int x = 0, y = 0, z = 0;
     if (request->hasParam("x") && request->hasParam("y") && request->hasParam("z")) {
         x = request->getParam("x")->value().toInt();
@@ -1599,8 +1663,8 @@ void setup()
         request->send(400, "text/plain", "Missing parameters");
     } });
 
-  server.on("/define-factor", HTTP_POST, [](AsyncWebServerRequest *request)
-            {
+    server.on("/define-factor", HTTP_POST, [](AsyncWebServerRequest *request)
+              {
   if(request->hasParam("factor_mm", true) && request->hasParam("factor_inch", true)){
     float new_factor_mm = request->getParam("factor_mm", true) ->value().toFloat();
     float new_factor_inch = request->getParam("factor_inch", true) ->value().toFloat();
@@ -1611,9 +1675,9 @@ void setup()
       request->send(400, "text/plain", "Missing parameter");
   } });
 
-  // Endpoint to get the last saved point on the current plane
-  server.on("/get-last-point", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
+    // Endpoint to get the last saved point on the current plane
+    server.on("/get-last-point", HTTP_GET, [](AsyncWebServerRequest *request)
+              {
     if (!planes[currentPlaneIndex].shapePoints.empty()) {
         Point lastPoint = planes[currentPlaneIndex].shapePoints.back();
         char buffer[100];
@@ -1623,9 +1687,9 @@ void setup()
         request->send(404, "text/plain", "No points saved");
     } });
 
-  // Endpoint to get all saved points on the current plane
-  server.on("/get-all-points", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
+    // Endpoint to get all saved points on the current plane
+    server.on("/get-all-points", HTTP_GET, [](AsyncWebServerRequest *request)
+              {
       if (!planes[currentPlaneIndex].shapePoints.empty()) {
           String jsonOutput;
           StaticJsonDocument<1024> doc;  // Adjust size as needed based on expected data volume
@@ -1644,102 +1708,102 @@ void setup()
           request->send(404, "text/plain", "No points saved");
       } });
 
-  server.on("/save-current-position", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
+    server.on("/save-current-position", HTTP_GET, [](AsyncWebServerRequest *request)
+              {
     addCurrentPositionToPoint();  // Call the function to add the point
     request->send(200, "text/plain", "Current position saved"); });
 
-  // server.on("/reset-encoder", HTTP_GET, [](AsyncWebServerRequest *request)
-  //           {
-  // if (request->hasParam("encoder")) {
-  //   auto* param = request->getParam("encoder");
-  //   int encoderIndex = param->value().toInt();
-  //   resetEncoderValue(encoderIndex);
-  //   request->send(200, "text/plain", "Reset done");
-  // } else {
-  //   request->send(400, "text/plain", "Missing encoder parameter");
-  // } });
+    // server.on("/reset-encoder", HTTP_GET, [](AsyncWebServerRequest *request)
+    //           {
+    // if (request->hasParam("encoder")) {
+    //   auto* param = request->getParam("encoder");
+    //   int encoderIndex = param->value().toInt();
+    //   resetEncoderValue(encoderIndex);
+    //   request->send(200, "text/plain", "Reset done");
+    // } else {
+    //   request->send(400, "text/plain", "Missing encoder parameter");
+    // } });
 
-  // Axis Selector buttons
+    // Axis Selector buttons
 
-  server.begin();
+    server.begin();
 
-  // Monitor pin setup //
-  attachInterrupt(digitalPinToInterrupt(encoder1.pinA), handleEncoder1Interrupt, CHANGE); // I need to remove the lambda and include the w/ name of interrupt to ensure we are using the correct one
+    // Monitor pin setup //
+    attachInterrupt(digitalPinToInterrupt(encoder1.pinA), handleEncoder1Interrupt, CHANGE); // I need to remove the lambda and include the w/ name of interrupt to ensure we are using the correct one
 
-  attachInterrupt(digitalPinToInterrupt(encoder1.pinB), handleEncoder1Interrupt, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(encoder1.pinB), handleEncoder1Interrupt, CHANGE);
 
-  attachInterrupt(digitalPinToInterrupt(encoder2.pinA), handleEncoder2Interrupt, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(encoder2.pinA), handleEncoder2Interrupt, CHANGE);
 
-  attachInterrupt(digitalPinToInterrupt(encoder2.pinB), handleEncoder2Interrupt, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(encoder2.pinB), handleEncoder2Interrupt, CHANGE);
 
-  attachInterrupt(digitalPinToInterrupt(encoder3.pinA), handleEncoder3Interrupt, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(encoder3.pinA), handleEncoder3Interrupt, CHANGE);
 
-  attachInterrupt(digitalPinToInterrupt(encoder3.pinB), handleEncoder3Interrupt, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(encoder3.pinB), handleEncoder3Interrupt, CHANGE);
 
-  // attachInterrupt(digitalPinToInterrupt(encoder4.pinA), handleEncoder4Interrupt, CHANGE);
+    // attachInterrupt(digitalPinToInterrupt(encoder4.pinA), handleEncoder4Interrupt, CHANGE);
 
-  // attachInterrupt(digitalPinToInterrupt(encoder4.pinB), handleEncoder4Interrupt, CHANGE);
+    // attachInterrupt(digitalPinToInterrupt(encoder4.pinB), handleEncoder4Interrupt, CHANGE);
 
-  // attachInterrupt(digitalPinToInterrupt(encoder5.pinA), handleEncoder5Interrupt, CHANGE);
+    // attachInterrupt(digitalPinToInterrupt(encoder5.pinA), handleEncoder5Interrupt, CHANGE);
 
-  // attachInterrupt(digitalPinToInterrupt(encoder5.pinB), handleEncoder5Interrupt, CHANGE);
+    // attachInterrupt(digitalPinToInterrupt(encoder5.pinB), handleEncoder5Interrupt, CHANGE);
 
-  // attachInterrupt(digitalPinToInterrupt(encoder6.pinA), handleEncoder6Interrupt, CHANGE);
+    // attachInterrupt(digitalPinToInterrupt(encoder6.pinA), handleEncoder6Interrupt, CHANGE);
 
-  // attachInterrupt(digitalPinToInterrupt(encoder6.pinB), handleEncoder6Interrupt, CHANGE);
+    // attachInterrupt(digitalPinToInterrupt(encoder6.pinB), handleEncoder6Interrupt, CHANGE);
 
-  // Dim LEDs
-  FastLED.setBrightness(24);
+    // Dim LEDs
+    FastLED.setBrightness(24);
 
-  xTaskCreate(
-      TaskUpdateDisplay, // Task function
-      "DisplayTask",     // Name of the task
-      10000,             // Stack size of task
-      NULL,              // Parameter of the task
-      1,                 // Priority of the task
-      NULL);             // Task handle
+    xTaskCreate(
+        TaskUpdateDisplay, // Task function
+        "DisplayTask",     // Name of the task
+        10000,             // Stack size of task
+        NULL,              // Parameter of the task
+        1,                 // Priority of the task
+        NULL);             // Task handle
 
-  // // delay(3000);
+    // // delay(3000);
 }
 
 void loop() {} // might not need this
 
 void updateDisplayContent()
 {
-  char buffer[128]; // Make sure the buffer is large enough to hold the string
-  int xOffset;      // Horizontal offset to right-align text
+    char buffer[128]; // Make sure the buffer is large enough to hold the string
+    int xOffset;      // Horizontal offset to right-align text
 
-  switch (currentMenuState)
-  {
-  case MAIN_MENU:
-    LCDTextDraw(7, 0, " COMP491 ESP32 DRO ", 1, WHITE, BLACK);
-    for (int i = 0; i < 2; i++)
+    switch (currentMenuState)
     {
-      sprintf(buffer, "%s %s", (i == menuItemIndex) ? ">" : " ", MenuDroItems[i]);
-      LCDTextDraw(0, 16 * (i + 1), buffer, 1, WHITE, BLACK);
+    case MAIN_MENU:
+        LCDTextDraw(7, 0, " COMP491 ESP32 DRO ", 1, WHITE, BLACK);
+        for (int i = 0; i < 2; i++)
+        {
+            sprintf(buffer, "%s %s", (i == menuItemIndex) ? ">" : " ", MenuDroItems[i]);
+            LCDTextDraw(0, 16 * (i + 1), buffer, 1, WHITE, BLACK);
+        }
+        break;
+
+    case TWO_AXIS:
+        // // Display the X and Y axes for the two-axis mode
+        // displayAxisValues(0, 0); // X-axis
+        // displayAxisValues(1, 16); // Y-axis
+        refreshAndDrawPoints();
+        drawGrid();
+        LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK); // Return option
+        break;
+
+    case THREE_AXIS:
+        // Display the X, Y, and Z axes for the three-axis mode including the plane index
+        snprintf(buffer, sizeof(buffer), "Plane %d - %s Mode", currentPlaneIndex + 1, isABSMode ? "ABS" : "INC");
+        LCDTextDraw(0, 0, buffer, 1, WHITE, BLACK);       // Display the plane and mode at the top
+        displayAxisValues(0, 16);                         // X-axis
+        displayAxisValues(1, 32);                         // Y-axis
+        displayAxisValues(2, 48);                         // Z-axis
+        LCDTextDraw(0, 64, "> return ", 1, WHITE, BLACK); // Return option
+        break;
     }
-    break;
-
-  case TWO_AXIS:
-    // // Display the X and Y axes for the two-axis mode
-    // displayAxisValues(0, 0); // X-axis
-    // displayAxisValues(1, 16); // Y-axis
-    refreshAndDrawPoints();
-    drawGrid();
-    LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK); // Return option
-    break;
-
-  case THREE_AXIS:
-    // Display the X, Y, and Z axes for the three-axis mode including the plane index
-    snprintf(buffer, sizeof(buffer), "Plane %d - %s Mode", currentPlaneIndex + 1, isABSMode ? "ABS" : "INC");
-    LCDTextDraw(0, 0, buffer, 1, WHITE, BLACK);       // Display the plane and mode at the top
-    displayAxisValues(0, 16);                         // X-axis
-    displayAxisValues(1, 32);                         // Y-axis
-    displayAxisValues(2, 48);                         // Z-axis
-    LCDTextDraw(0, 64, "> return ", 1, WHITE, BLACK); // Return option
-    break;
-  }
 }
 
 // void updateDisplayContent()
@@ -1865,50 +1929,50 @@ void updateDisplayContent()
 
 void TaskUpdateDisplay(void *pvParameters)
 {
-  for (;;)
-  {
-    // // Shows us the angle of current encoder pos for encoders [1,2,3]
-    // long currentPulses1 = encoder1.position; // This should be the net count considering direction
-    // float angleTurned1 = pulsesToDegrees(currentPulses1);
+    for (;;)
+    {
+        // // Shows us the angle of current encoder pos for encoders [1,2,3]
+        // long currentPulses1 = encoder1.position; // This should be the net count considering direction
+        // float angleTurned1 = pulsesToDegrees(currentPulses1);
 
-    // long currentPulses2 = encoder2.position; // This should be the net count considering direction
-    // float angleTurned2 = pulsesToDegrees(currentPulses2);
+        // long currentPulses2 = encoder2.position; // This should be the net count considering direction
+        // float angleTurned2 = pulsesToDegrees(currentPulses2);
 
-    // long currentPulses3 = encoder3.position; // This should be the net count considering direction
-    // float angleTurned3 = pulsesToDegrees(currentPulses3);
+        // long currentPulses3 = encoder3.position; // This should be the net count considering direction
+        // float angleTurned3 = pulsesToDegrees(currentPulses3);
 
-    // Serial.print("Encoder1 Angle Turned: ");
-    // Serial.println(angleTurned1);
+        // Serial.print("Encoder1 Angle Turned: ");
+        // Serial.println(angleTurned1);
 
-    // Serial.print("Encoder2 Angle Turned: ");
-    // Serial.println(angleTurned2);
+        // Serial.print("Encoder2 Angle Turned: ");
+        // Serial.println(angleTurned2);
 
-    // Serial.print("Encoder3 Angle Turned: ");
-    // Serial.println(angleTurned3);
+        // Serial.print("Encoder3 Angle Turned: ");
+        // Serial.println(angleTurned3);
 
-    // Serial.println("----------------------");
+        // Serial.println("----------------------");
 
-    // // Shows us the INCH of current encoder pos for encoders [1,2,3]
-    // float distanceMovedInches1 = pulsesToDistanceInches(currentPulses1);
-    // float distanceMovedInches2 = pulsesToDistanceInches(currentPulses2);
-    // float distanceMovedInches3 = pulsesToDistanceInches(currentPulses3);
+        // // Shows us the INCH of current encoder pos for encoders [1,2,3]
+        // float distanceMovedInches1 = pulsesToDistanceInches(currentPulses1);
+        // float distanceMovedInches2 = pulsesToDistanceInches(currentPulses2);
+        // float distanceMovedInches3 = pulsesToDistanceInches(currentPulses3);
 
-    // Serial.print("Encoder1 Distance Moved: ");
-    // Serial.print(distanceMovedInches1);
-    // Serial.println(" inches");
+        // Serial.print("Encoder1 Distance Moved: ");
+        // Serial.print(distanceMovedInches1);
+        // Serial.println(" inches");
 
-    // Serial.print("Encoder2 Distance Moved: ");
-    // Serial.print(distanceMovedInches2);
-    // Serial.println(" inches");
+        // Serial.print("Encoder2 Distance Moved: ");
+        // Serial.print(distanceMovedInches2);
+        // Serial.println(" inches");
 
-    // Serial.print("Encoder3 Distance Moved: ");
-    // Serial.print(distanceMovedInches3);
-    // Serial.println(" inches");
+        // Serial.print("Encoder3 Distance Moved: ");
+        // Serial.print(distanceMovedInches3);
+        // Serial.println(" inches");
 
-    handleMenuNavigation();
-    updateDisplayContent();
-    // vTaskDelay(pdMS_TO_TICKS(100));
-  }
+        handleMenuNavigation();
+        updateDisplayContent();
+        // vTaskDelay(pdMS_TO_TICKS(100));
+    }
 }
 
 /* Add manner we can switch from different Coordinate Planes on the (HTML or on OLED screen)

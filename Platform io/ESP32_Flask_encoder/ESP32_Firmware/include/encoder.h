@@ -14,6 +14,7 @@
   const uint8_t pinB;
   volatile int position;
   volatile int positionInc;
+  volatile int positionABS;
   volatile int lastEncoded;
   volatile unsigned long lastInterruptTime;
   unsigned long pulseTimes[ENCODER_HISTORY_SIZE]; 
