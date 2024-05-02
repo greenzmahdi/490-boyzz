@@ -642,6 +642,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
             height: 220px;
         }
 
+        /* Coordinate list*/
         #container12 {
             position: absolute;
             top: 660px;
@@ -658,7 +659,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
             left: 750px;
             bottom: 490px;
             max-width: 400px;
-            height: 285px;
+            height: 130px;
         }
 
         /* Function buttons */
@@ -684,8 +685,8 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
         #container7 {
             position: absolute;
             left: 750px;
-            top: 600px;
-            height: 185px;
+            top: 645px;
+            height: 140px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -776,7 +777,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
         /* ABS/INC Toggle Buttons, Zero all out etc */
         #container9 {
             position: absolute;
-            top: 390px;
+            top: 430px;
             left: 750px;
             width: 160px;
 
@@ -785,18 +786,19 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
         /* Pulse Factor Adjustment */
         #container10 {
             position: absolute;
-            top: 213px;
+            top: 235px;
             left: 750px;
             width: 160px;
-            height: 123px;
+            height: 140px;
 
         }
 
+        /* Coordinate plane display */
         #container13 {
             position: absolute;
             top: 605px;
             left: 970px;
-            width: 400px;
+            width: 365px;
             height: 185px;
         }
 
@@ -919,7 +921,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
     <div class="dro-container" id="container13">
         <canvas id="coordinateCanvas" width="400" height="400"></canvas>
     </div>
-    
+
 
     <div class="dro-container" id="container">
         <div class="readout" id="currentPlane">1</div>
@@ -959,17 +961,18 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
 
 
     <div class="dro-container" id="container3">
-        <input type="number" id="xInput" placeholder="X-coordinate" />
-        <input type="number" id="yInput" placeholder="Y-coordinate" />
-        <input type="number" id="zInput" placeholder="Z-coordinate" />
+        <div class="dro-container">
+            <input type="number" id="xInput" placeholder="X-coordinate" />
+            <input type="number" id="yInput" placeholder="Y-coordinate" />
+            <input type="number" id="zInput" placeholder="Z-coordinate" />
+            <div id="lastPoint">Last Point: None</div>
+        </div>
         <button onclick="savePoint()">Save Point</button>
-        <div id="lastPoint">Last Point: None</div>
-
-
+        <button onclick="getAllPoints()">Show All Points</button>
     </div>
 
     <div class="dro-container" id="container12">
-        <button onclick="getAllPoints()">Show All Points</button>
+
         <ul id="pointsList"></ul>
     </div>
 
@@ -989,15 +992,18 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
 
     <div class="dro-container" id="container10">
         <form id="factorForm">
-            <label for="factor_mm">Factor (mm per pulse):</label><br />
-            <input type="text" id="factor_mm" name="factor_mm" /><br />
-            <label for="factor_inch">Factor (inch per pulse):</label><br />
-            <input type="text" id="factor_inch" name="factor_inch" />
+            <!-- <label for="factor_mm">Factor (mm per pulse):</label><br /> -->
+            <input type="text" id="factor_mm" name="factor_mm" value="Default mm value" /><br />
+            <!-- <label for="factor_inch">Factor (inch per pulse):</label><br /> -->
+            <input type="text" id="factor_inch" name="factor_inch" value="Default inch value" />
+            </br>
+            </br>
             <button type="button" onclick="updateFactors()">
                 Update Factors
             </button>
         </form>
     </div>
+
 
 
 
@@ -1020,7 +1026,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
             <button class="right-arrow"></button>
         </div>
     </div>
-    
+
 
 
 
@@ -1090,7 +1096,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
 
     </div>
 
-    
+
 
     <script>
         var currentOperation = null;
