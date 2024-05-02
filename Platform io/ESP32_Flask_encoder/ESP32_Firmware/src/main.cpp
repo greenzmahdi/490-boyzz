@@ -56,9 +56,6 @@ const int LEDColorPurple[3] = {128, 0, 128};
 const int LEDColorTurquoise[3] = {83, 195, 189};
 const int LEDColorPink[3] = {255, 292, 203};
 
-// OLED var const
-// const int RefreshDelay = 1; // original 5
-
 // Menu Options
 const char *MenuOptions[] = {"Connect Online", "Connect Offline"}; // might not need this, depends on design
 const char *MenuDroItems[] = {"2-Axis", "3-Axis"};
@@ -508,25 +505,6 @@ void handleMenuNavigation()
     // Update the stored state of buttons after handling logic
     updateButtonStates();
 }
-
-/*
-Right now I just am getting the current value of the given axis, but I still need to:
-  - link the button to get current value of coordinate posotion o ngiven axis (mayve have individual varibales for each value)
-     but that would depend on the manual whether it allows for multiple axis to be selected at once
-
-  - We still need to add the path for each sever.on ......
-  - add css to highlight the selected axis and deselect if presses again */
-// void selectGivenAxis(int encoderIndex){
-//   if (isABSMode)
-//   {
-//     currentSelecteAxis = encoderValueABS[encoderIndex];
-//   } else {
-//     currentSelecteAxis = encoderValueINC[encoderIndex];
-//   }
-// }
-
-/* I need to create unique X_last_ABS and X_Last_INC to be unqie for each of the 12 Coordinate planes so that we dont duplicate positions or overide measurements from curr pos */
-// Separate ISRs for each encoder
 
 
 
@@ -1554,40 +1532,6 @@ void setup()
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
               { request->send_P(200, "text/html", index_html); });
 
-    // server.on("/poss", HTTP_GET, [](AsyncWebServerRequest *request)
-    //           {
-    //             String position1;
-    //             String position2;
-    //             String position3;
-
-    //             if (isABSMode)
-    //             {
-    //               position1 = String(encoderValueABS[0]);
-    //               position2 = String(encoderValueABS[1]);
-    //               position3 = String(encoderValueABS[2]);
-    //             }
-    //             else
-    //             {
-    //               position1 = String(encoderValueINC[0]);
-    //               position2 = String(encoderValueINC[1]);
-    //               position3 = String(encoderValueINC[2]);
-    //             }
-
-    //             // This might be the issue since we are converting to measure mode when I think this is jsut in charge of switching from abs to inc
-    //             StaticJsonDocument<200> jsonDoc;
-    //             // jsonDoc["position1"] = formatPosition(position1.toFloat(), isABSMode);
-    //             // jsonDoc["position2"] = formatPosition(position2.toFloat(), isABSMode);
-    //             // jsonDoc["position3"] = formatPosition(position3.toFloat(), isABSMode);
-
-    //             jsonDoc["position1"] = position1;
-    //             jsonDoc["position2"] = position2;
-    //             jsonDoc["position3"] = position3;
-
-    //             String jsonString;
-    //             serializeJson(jsonDoc, jsonString);
-
-    //             request->send(200, "application/json", jsonString); // Send JSON data
-    //           });
 
     server.on("/get-positions", HTTP_GET, [](AsyncWebServerRequest *request)
               {
@@ -1713,18 +1657,7 @@ void setup()
     addCurrentPositionToPoint();  // Call the function to add the point
     request->send(200, "text/plain", "Current position saved"); });
 
-    // server.on("/reset-encoder", HTTP_GET, [](AsyncWebServerRequest *request)
-    //           {
-    // if (request->hasParam("encoder")) {
-    //   auto* param = request->getParam("encoder");
-    //   int encoderIndex = param->value().toInt();
-    //   resetEncoderValue(encoderIndex);
-    //   request->send(200, "text/plain", "Reset done");
-    // } else {
-    //   request->send(400, "text/plain", "Missing encoder parameter");
-    // } });
 
-    // Axis Selector buttons
 
     server.begin();
 
@@ -1741,17 +1674,7 @@ void setup()
 
     attachInterrupt(digitalPinToInterrupt(encoder3.pinB), handleEncoder3Interrupt, CHANGE);
 
-    // attachInterrupt(digitalPinToInterrupt(encoder4.pinA), handleEncoder4Interrupt, CHANGE);
 
-    // attachInterrupt(digitalPinToInterrupt(encoder4.pinB), handleEncoder4Interrupt, CHANGE);
-
-    // attachInterrupt(digitalPinToInterrupt(encoder5.pinA), handleEncoder5Interrupt, CHANGE);
-
-    // attachInterrupt(digitalPinToInterrupt(encoder5.pinB), handleEncoder5Interrupt, CHANGE);
-
-    // attachInterrupt(digitalPinToInterrupt(encoder6.pinA), handleEncoder6Interrupt, CHANGE);
-
-    // attachInterrupt(digitalPinToInterrupt(encoder6.pinB), handleEncoder6Interrupt, CHANGE);
 
     // Dim LEDs
     FastLED.setBrightness(24);
@@ -1806,177 +1729,14 @@ void updateDisplayContent()
     }
 }
 
-// void updateDisplayContent()
-// {
-//   char buffer[11];
-//   int xOffset; // Horizontal offset to right-align text
-
-//   switch (currentMenuState)
-//   {
-//   case MAIN_MENU:
-//     LCDTextDraw(7, 0, " COMP491 ESP32 DRO ", 1, WHITE, BLACK);
-//     for (int i = 0; i < 2; i++)
-//     {
-//       sprintf(buffer, "%s %s", (i == menuItemIndex) ? ">" : " ", MenuDroItems[i]);
-//       LCDTextDraw(0, 16 * (i + 1), buffer, 1, WHITE, BLACK);
-//     }
-//     break;
-//   case TWO_AXIS:
-//     LCDRectFill(0, 0, 50, 10, BLACK); // Fill a rectangle area with BLACK to clear previous number
-//                                       // Format and right-align "X" axis label and value
-//     snprintf(buffer, sizeof(buffer), "X: %s", formatPosition(encoder1.position, isInchMode).c_str());
-//     xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
-//     LCDTextDraw(xOffset, 0, buffer, 1, WHITE, BLACK);
-
-//     // Format and right-align "Y" axis label and value
-//     snprintf(buffer, sizeof(buffer), "Y: %s", formatPosition(encoder2.position, isInchMode).c_str());
-//     xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
-//     LCDTextDraw(xOffset, 16, buffer, 1, WHITE, BLACK);
-//     break;
-
-//     LCDRectFill(0, 50, 50, 10, BLACK);
-//     LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK); // menu option to return
-//     break;
-//   case THREE_AXIS:
-//     // Format and right-align "X" axis label and value
-//     snprintf(buffer, sizeof(buffer), "X: %s", formatPosition(encoder1.position, isInchMode).c_str());
-//     xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
-//     LCDTextDraw(xOffset, 0, buffer, 1, WHITE, BLACK);
-
-//     // Format and right-align "Y" axis label and value
-//     snprintf(buffer, sizeof(buffer), "Y: %s", formatPosition(encoder2.position, isInchMode).c_str());
-//     xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
-//     LCDTextDraw(xOffset, 16, buffer, 1, WHITE, BLACK);
-
-//     // Format and right-align "Z" axis label and value
-//     snprintf(buffer, sizeof(buffer), "Z: %s", formatPosition(encoder3.position, isInchMode).c_str());
-//     xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH); // Calculate x offset for right alignment
-//     LCDTextDraw(xOffset, 32, buffer, 1, WHITE, BLACK);
-//     break;
-//     // LCDRectFill(0, 0, 50, 10, BLACK);
-//     // sprintf(buffer, "X: %d", encoder4.position);
-//     // LCDTextDraw(0, 0, buffer, 1, WHITE, BLACK);
-
-//     // LCDRectFill(0, 16, 50, 10, BLACK);
-//     // sprintf(buffer, "Y: %d", encoder5.position);
-//     // LCDTextDraw(0, 16, buffer, 1, WHITE, BLACK);
-
-//     // LCDRectFill(0, 32, 50, 10, BLACK);
-//     // sprintf(buffer, "Z: %d", encoder6.position);
-//     // LCDTextDraw(0, 32, buffer, 1, WHITE, BLACK);
-
-//     LCDRectFill(0, 50, 50, 10, BLACK);
-//     LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK); // menu option to return
-//     break;
-//   }
-// }
-
-// THIS UPDATE DISPLAY HANDLES MODE SWITCHING AND MEASURE MODE //
-
-// void updateDisplayContent() {
-//     char buffer[32];  // Increased buffer size for larger strings
-//     int xOffset;      // Horizontal offset to right-align text
-
-//     switch (currentMenuState) {
-//         case MAIN_MENU:
-//             LCDTextDraw(7, 0, " COMP491 ESP32 DRO ", 1, WHITE, BLACK);
-//             for (int i = 0; i < 2; i++) {
-//                 sprintf(buffer, "%s %s", (i == menuItemIndex) ? ">" : " ", MenuDroItems[i]);
-//                 LCDTextDraw(0, 16 * (i + 1), buffer, 1, WHITE, BLACK);
-//             }
-//             break;
-
-//         case TWO_AXIS:
-//             // Clear the areas for fresh update
-//             LCDRectFill(0, 0, SCREEN_WIDTH, 32, BLACK); // Clear area for X and Y axis values
-
-//             // Display X Axis
-//             snprintf(buffer, sizeof(buffer), "X: %s", formatPosition(isABSMode ? encoder1.position - X_last_ABS : encoder1.position - X_last_INC, isInchMode).c_str());
-//             xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH);
-//             LCDTextDraw(xOffset, 0, buffer, 1, WHITE, BLACK);
-
-//             // Display Y Axis
-//             snprintf(buffer, sizeof(buffer), "Y: %s", formatPosition(isABSMode ? encoder2.position - Y_last_ABS : encoder2.position - Y_last_INC, isInchMode).c_str());
-//             xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH);
-//             LCDTextDraw(xOffset, 16, buffer, 1, WHITE, BLACK);
-
-//             LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK);
-//             break;
-
-//         case THREE_AXIS:
-//             // Clear the entire display area or just the areas being updated to manage flickering
-//             LCDRectFill(0, 0, SCREEN_WIDTH, 48, BLACK); // Clear area for X, Y, Z axis values
-
-//             // Display X Axis
-//             snprintf(buffer, sizeof(buffer), "X: %s", formatPosition(isABSMode ? encoder1.position - X_last_ABS : encoder1.position - X_last_INC, isInchMode).c_str());
-//             xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH);
-//             LCDTextDraw(xOffset, 0, buffer, 1, WHITE, BLACK);
-
-//             // Display Y Axis
-//             snprintf(buffer, sizeof(buffer), "Y: %s", formatPosition(isABSMode ? encoder2.position - Y_last_ABS : encoder2.position - Y_last_INC, isInchMode).c_str());
-//             xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH);
-//             LCDTextDraw(xOffset, 16, buffer, 1, WHITE, BLACK);
-
-//             // Display Z Axis
-//             snprintf(buffer, sizeof(buffer), "Z: %s", formatPosition(isABSMode ? encoder3.position - Z_last_ABS : encoder3.position - Z_last_INC, isInchMode).c_str());
-//             xOffset = SCREEN_WIDTH - (strlen(buffer) * CHAR_WIDTH);
-//             LCDTextDraw(xOffset, 32, buffer, 1, WHITE, BLACK);
-
-//             LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK);
-//             break;
-//     }
-// }
 
 void TaskUpdateDisplay(void *pvParameters)
 {
     for (;;)
     {
-        // // Shows us the angle of current encoder pos for encoders [1,2,3]
-        // long currentPulses1 = encoder1.position; // This should be the net count considering direction
-        // float angleTurned1 = pulsesToDegrees(currentPulses1);
-
-        // long currentPulses2 = encoder2.position; // This should be the net count considering direction
-        // float angleTurned2 = pulsesToDegrees(currentPulses2);
-
-        // long currentPulses3 = encoder3.position; // This should be the net count considering direction
-        // float angleTurned3 = pulsesToDegrees(currentPulses3);
-
-        // Serial.print("Encoder1 Angle Turned: ");
-        // Serial.println(angleTurned1);
-
-        // Serial.print("Encoder2 Angle Turned: ");
-        // Serial.println(angleTurned2);
-
-        // Serial.print("Encoder3 Angle Turned: ");
-        // Serial.println(angleTurned3);
-
-        // Serial.println("----------------------");
-
-        // // Shows us the INCH of current encoder pos for encoders [1,2,3]
-        // float distanceMovedInches1 = pulsesToDistanceInches(currentPulses1);
-        // float distanceMovedInches2 = pulsesToDistanceInches(currentPulses2);
-        // float distanceMovedInches3 = pulsesToDistanceInches(currentPulses3);
-
-        // Serial.print("Encoder1 Distance Moved: ");
-        // Serial.print(distanceMovedInches1);
-        // Serial.println(" inches");
-
-        // Serial.print("Encoder2 Distance Moved: ");
-        // Serial.print(distanceMovedInches2);
-        // Serial.println(" inches");
-
-        // Serial.print("Encoder3 Distance Moved: ");
-        // Serial.print(distanceMovedInches3);
-        // Serial.println(" inches");
-
         handleMenuNavigation();
         updateDisplayContent();
         // vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 
-/* Add manner we can switch from different Coordinate Planes on the (HTML or on OLED screen)
-   Based on the index of the current plane, store multiple points to start drawing shapes
-   Display the number of the current Coordinate Plane in use
-   Create display to show the coordinates being displayed
-   Only store ABS values in its own Coordinate plane */
