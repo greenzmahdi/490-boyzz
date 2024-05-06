@@ -328,6 +328,7 @@ int Y_last_INC = 0;
 int Z_last_INC = 0;
 
 int currentSelecteAxis = 0;
+
 void toggleMode()
 {
     isABSMode = !isABSMode;
@@ -336,57 +337,82 @@ void toggleMeasurementMode()
 {
     isInchMode = !isInchMode;
 }
-
-void resetEncoderValue(int encoderIndex)
-{
-    if (encoderIndex < 0 || encoderIndex >= 3)
-    {
+void resetEncoderValue(int encoderIndex) {
+    if (encoderIndex < 0 || encoderIndex >= 3) {
         Serial.println("Error: Encoder index out of range");
-        return; // Add error handling or user feedback
+        return;
     }
-    // Placeholder for resetting encoder value.
-    // if we zero out a value we need to store the last position before zeroing out to calculate the difference of (encoder.position - lastValVisited)
-    if (isABSMode)
-    {
-        // reset value back to 0
-        planes[currentPlaneIndex].encoderValueABS[encoderIndex] = 0;
 
-        // store last coordinate (value) listed
-        if (encoderIndex == 0)
-        {
-            
-            planes[currentPlaneIndex].last_ABS[0] = encoder1.position;
-        }
-        else if (encoderIndex == 1)
-        {
-            planes[currentPlaneIndex].last_ABS[1] = encoder2.position;
-        }
-        else if (encoderIndex == 2)
-        {
-            planes[currentPlaneIndex].last_ABS[2] = encoder3.position;
-        }
-    }
-    else
-    {
-        // reset value back to 0
-        planes[currentPlaneIndex].encoderValueINC[encoderIndex] = 0;
+    // Get references to the current plane for easier access
+    auto &currentPlane = planes[currentPlaneIndex];
+    auto &lastABS = currentPlane.last_ABS;
+    auto &lastINC = currentPlane.last_INC;
+    auto &encoderValueABS = currentPlane.encoderValueABS;
+    auto &encoderValueINC = currentPlane.encoderValueINC;
 
-        // store last coordinate (value) listed
-        if (encoderIndex == 0)
-        {
-            planes[currentPlaneIndex].last_INC[0] = encoder1.position;
-        }
-        else if (encoderIndex == 1)
-        {
-            planes[currentPlaneIndex].last_INC[1] = encoder2.position;
-        }
-        else if (encoderIndex == 2)
-        {
-            planes[currentPlaneIndex].last_INC[2] = encoder3.position;
-        }
+    Encoder &encoder = (encoderIndex == 0) ? encoder1 : (encoderIndex == 1) ? encoder2 : encoder3;
+
+    if (isABSMode) {
+        encoderValueABS[encoderIndex] = 0; // Zero out the ABS value
+        lastABS[encoderIndex] = encoder.position; // Store last ABS position
+    } else {
+        encoderValueINC[encoderIndex] = 0; // Zero out the INC value
+        lastINC[encoderIndex] = encoder.position; // Store last INC position
     }
-    // Consider adding logic to update the display or take other actions.
 }
+
+
+
+// void resetEncoderValue(int encoderIndex)
+// {
+//     if (encoderIndex < 0 || encoderIndex >= 3)
+//     {
+//         Serial.println("Error: Encoder index out of range");
+//         return; // Add error handling or user feedback
+//     }
+//     // Placeholder for resetting encoder value.
+//     // if we zero out a value we need to store the last position before zeroing out to calculate the difference of (encoder.position - lastValVisited)
+//     if (isABSMode)
+//     {
+//         // reset value back to 0
+//         planes[currentPlaneIndex].encoderValueABS[encoderIndex] = 0;
+
+//         // store last coordinate (value) listed
+//         if (encoderIndex == 0)
+//         {
+
+//             planes[currentPlaneIndex].last_ABS[0] = encoder1.position;
+//         }
+//         else if (encoderIndex == 1)
+//         {
+//             planes[currentPlaneIndex].last_ABS[1] = encoder2.position;
+//         }
+//         else if (encoderIndex == 2)
+//         {
+//             planes[currentPlaneIndex].last_ABS[2] = encoder3.position;
+//         }
+//     }
+//     else
+//     {
+//         // reset value back to 0
+//         planes[currentPlaneIndex].encoderValueINC[encoderIndex] = 0;
+
+//         // store last coordinate (value) listed
+//         if (encoderIndex == 0)
+//         {
+//             planes[currentPlaneIndex].last_INC[0] = encoder1.position;
+//         }
+//         else if (encoderIndex == 1)
+//         {
+//             planes[currentPlaneIndex].last_INC[1] = encoder2.position;
+//         }
+//         else if (encoderIndex == 2)
+//         {
+//             planes[currentPlaneIndex].last_INC[2] = encoder3.position;
+//         }
+//     }
+//     // Consider adding logic to update the display or take other actions.
+// }
 
 // void resetEncoderValue(int encoderIndex) {
 //     if (encoderIndex < 0 || encoderIndex >= 3) {
@@ -506,17 +532,14 @@ void handleMenuNavigation()
     updateButtonStates();
 }
 
-
-
 void IRAM_ATTR handleEncoder1Interrupt()
 {
     handleEncoderInterrupt(&encoder1); // Assume encoder1 is an instance of Encoder
-    // for all axis on ABS Mode
-     handleEncoderInterrupt(&encoder1); // Update encoder state
+                                       // for all axis on ABS Mode
+    // handleEncoderInterrupt(&encoder1); // Update encoder state
+
     planes[currentPlaneIndex].encoderValueABS[0] = encoder1.position - planes[currentPlaneIndex].last_ABS[0];
     planes[currentPlaneIndex].encoderValueINC[0] = encoder1.position - planes[currentPlaneIndex].last_INC[0];
-
-    
 
     // // Optionally add point on certain condition but we might not needs this at all
     //   if (some_condition_met) {
@@ -535,7 +558,7 @@ void IRAM_ATTR handleEncoder2Interrupt()
 // Separate ISRs for each encoder
 void IRAM_ATTR handleEncoder3Interrupt()
 {
-     handleEncoderInterrupt(&encoder3); // Update encoder state
+    handleEncoderInterrupt(&encoder3); // Update encoder state
     planes[currentPlaneIndex].encoderValueABS[2] = encoder3.position - planes[currentPlaneIndex].last_ABS[2];
     planes[currentPlaneIndex].encoderValueINC[2] = encoder3.position - planes[currentPlaneIndex].last_INC[2];
 }
@@ -1287,7 +1310,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
                 .then((data) => {
                     // Now using 'modeIndicator' as the ID for the mode display element
                     document.getElementById("modeIndicator").innerText = data;
-                    // updatePositions(); // Update positions if needed, otherwise you can remove this line         // off for atm
+                    updatePosition(); // Update positions if needed, otherwise you can remove this line         // off for atm
                 })
                 .catch(console.error);
         }
@@ -1303,16 +1326,33 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
                 .catch(console.error);
         }
 
-        function updatePosition() {
-            fetch("/get-positions")
-                .then((response) => response.json())
-                .then((data) => {
-                    document.getElementById("position").innerText = data.positionX;
-                    document.getElementById("position2").innerText = data.positionY;
-                    document.getElementById("position3").innerText = data.positionZ;
-                })
-                .catch(console.error);
-        }
+        // function updatePosition() {
+        //     fetch("/get-positions")
+        //         .then((response) => response.json())
+        //         .then((data) => {
+        //             document.getElementById("position").innerText = data.positionX;
+        //             document.getElementById("position2").innerText = data.positionY;
+        //             document.getElementById("position3").innerText = data.positionZ;
+        //         })
+        //         .catch(console.error);
+        // }
+
+            function updatePosition() {
+    fetch("/get-positions")
+        .then((response) => {
+            if (!response.ok) throw new Error("Failed to fetch positions");
+            return response.json();
+        })
+        .then((data) => {
+            console.log("Received position data:", data); // Debug: log received data
+            document.getElementById("position").innerText = data.positionX;
+            document.getElementById("position2").innerText = data.positionY;
+            document.getElementById("position3").innerText = data.positionZ;
+        })
+        .catch((error) => {
+            console.error("Error fetching positions:", error);
+        });
+}
 
         // // Call updatePosition at an interval
         // setInterval(updatePosition, 100);  // Update every second
@@ -1532,27 +1572,48 @@ void setup()
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
               { request->send_P(200, "text/html", index_html); });
 
+    // server.on("/get-positions", HTTP_GET, [](AsyncWebServerRequest *request)
+    //           {
+    //               char formattedX[20], formattedY[20], formattedZ[20];
 
-    server.on("/get-positions", HTTP_GET, [](AsyncWebServerRequest *request)
-              {
-                  char formattedX[20], formattedY[20], formattedZ[20];
+    //               // Assuming encoder1, encoder2, encoder3 are your encoder instances
+    //               String positionX = formatPosition(isABSMode ? encoder1.position - planes[currentPlaneIndex].encoderValueABS[0] : encoder1.position - planes[currentPlaneIndex].last_INC[0], isInchMode);
+    //               String positionY = formatPosition(isABSMode ? encoder2.position - planes[currentPlaneIndex].encoderValueABS[1] : encoder2.position - planes[currentPlaneIndex].last_INC[1], isInchMode);
+    //               String positionZ = formatPosition(isABSMode ? encoder3.position - planes[currentPlaneIndex].encoderValueABS[2] : encoder3.position - planes[currentPlaneIndex].last_INC[2], isInchMode);
 
-                  // Assuming encoder1, encoder2, encoder3 are your encoder instances
-                  String positionX = formatPosition(isABSMode ? encoder1.position - planes[currentPlaneIndex].encoderValueABS[0] : encoder1.position - planes[currentPlaneIndex].last_INC[0], isInchMode);
-                  String positionY = formatPosition(isABSMode ? encoder2.position - planes[currentPlaneIndex].encoderValueABS[1] : encoder2.position - planes[currentPlaneIndex].last_INC[1], isInchMode);
-                  String positionZ = formatPosition(isABSMode ? encoder3.position - planes[currentPlaneIndex].encoderValueABS[2] : encoder3.position - planes[currentPlaneIndex].last_INC[2], isInchMode);
+    //               // Create a JSON object to send the formatted positions
+    //               StaticJsonDocument<200> jsonDoc;
+    //               jsonDoc["positionX"] = positionX;
+    //               jsonDoc["positionY"] = positionY;
+    //               jsonDoc["positionZ"] = positionZ;
 
-                  // Create a JSON object to send the formatted positions
-                  StaticJsonDocument<200> jsonDoc;
-                  jsonDoc["positionX"] = positionX;
-                  jsonDoc["positionY"] = positionY;
-                  jsonDoc["positionZ"] = positionZ;
+    //               String jsonString;
+    //               serializeJson(jsonDoc, jsonString);
 
-                  String jsonString;
-                  serializeJson(jsonDoc, jsonString);
+    //               request->send(200, "application/json", jsonString); // Send JSON data
+    //           });
 
-                  request->send(200, "application/json", jsonString); // Send JSON data
-              });
+server.on("/get-positions", HTTP_GET, [](AsyncWebServerRequest *request) {
+    String positionX = formatPosition(isABSMode ? encoder1.position - planes[currentPlaneIndex].encoderValueABS[0] : encoder1.position - planes[currentPlaneIndex].last_INC[0], isInchMode);
+    String positionY = formatPosition(isABSMode ? encoder2.position - planes[currentPlaneIndex].encoderValueABS[1] : encoder2.position - planes[currentPlaneIndex].last_INC[1], isInchMode);
+    String positionZ = formatPosition(isABSMode ? encoder3.position - planes[currentPlaneIndex].encoderValueABS[2] : encoder3.position - planes[currentPlaneIndex].last_INC[2], isInchMode);
+
+    StaticJsonDocument<200> jsonDoc;
+    jsonDoc["positionX"] = positionX;
+    jsonDoc["positionY"] = positionY;
+    jsonDoc["positionZ"] = positionZ;
+
+    Serial.println("Mode: " + String(isABSMode ? "ABS" : "INC"));
+    Serial.println("Position X: " + String(positionX));
+    Serial.println("Position Y: " + String(positionY));
+    Serial.println("Position Z: " + String(positionZ));
+
+    String jsonString;
+    serializeJson(jsonDoc, jsonString);
+    request->send(200, "application/json", jsonString);
+});
+
+
 
     server.on("/toggle-measure-mode", HTTP_GET, [](AsyncWebServerRequest *request)
               {
@@ -1657,8 +1718,6 @@ void setup()
     addCurrentPositionToPoint();  // Call the function to add the point
     request->send(200, "text/plain", "Current position saved"); });
 
-
-
     server.begin();
 
     // Monitor pin setup //
@@ -1673,8 +1732,6 @@ void setup()
     attachInterrupt(digitalPinToInterrupt(encoder3.pinA), handleEncoder3Interrupt, CHANGE);
 
     attachInterrupt(digitalPinToInterrupt(encoder3.pinB), handleEncoder3Interrupt, CHANGE);
-
-
 
     // Dim LEDs
     FastLED.setBrightness(24);
@@ -1729,7 +1786,6 @@ void updateDisplayContent()
     }
 }
 
-
 void TaskUpdateDisplay(void *pvParameters)
 {
     for (;;)
@@ -1739,4 +1795,3 @@ void TaskUpdateDisplay(void *pvParameters)
         // vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
-
