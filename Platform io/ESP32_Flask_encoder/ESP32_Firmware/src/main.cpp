@@ -1646,12 +1646,13 @@ void setup()
 server.on("/get-positions", HTTP_GET, [](AsyncWebServerRequest *request)
 {
     StaticJsonDocument<256> jsonDoc;
-    jsonDoc["positionX_ABS"] = encoder1.position - planes[currentPlaneIndex].last_ABS[0];
-    jsonDoc["positionY_ABS"] = encoder2.position - planes[currentPlaneIndex].last_ABS[1];
-    jsonDoc["positionZ_ABS"] = encoder3.position - planes[currentPlaneIndex].last_ABS[2];
-    jsonDoc["positionX_INC"] = encoder1.position - planes[currentPlaneIndex].last_INC[0];
-    jsonDoc["positionY_INC"] = encoder2.position - planes[currentPlaneIndex].last_INC[1];
-    jsonDoc["positionZ_INC"] = encoder3.position - planes[currentPlaneIndex].last_INC[2];
+    jsonDoc["positionX_ABS"] = formatPosition(encoder1.position - planes[currentPlaneIndex].last_ABS[0], isInchMode);
+    jsonDoc["positionY_ABS"] = formatPosition(encoder2.position - planes[currentPlaneIndex].last_ABS[1], isInchMode);
+    jsonDoc["positionZ_ABS"] = formatPosition(encoder3.position - planes[currentPlaneIndex].last_ABS[2], isInchMode);
+
+    jsonDoc["positionX_INC"] = formatPosition(encoder1.position - planes[currentPlaneIndex].last_INC[0], isInchMode);
+    jsonDoc["positionY_INC"] = formatPosition(encoder2.position - planes[currentPlaneIndex].last_INC[1], isInchMode);
+    jsonDoc["positionZ_INC"] = formatPosition(encoder3.position - planes[currentPlaneIndex].last_INC[2], isInchMode);
 
     String jsonString;
     serializeJson(jsonDoc, jsonString);
