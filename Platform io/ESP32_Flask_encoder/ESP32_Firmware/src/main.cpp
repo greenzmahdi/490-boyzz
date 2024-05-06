@@ -1304,16 +1304,27 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
                 });
         }
 
+        // function toggleMode() {
+        //     fetch("/toggle-mode")
+        //         .then((response) => response.text())
+        //         .then((data) => {
+        //             // Now using 'modeIndicator' as the ID for the mode display element
+        //             document.getElementById("modeIndicator").innerText = data;
+        //             updatePosition(); // Update positions if needed, otherwise you can remove this line         // off for atm
+        //         })
+        //         .catch(console.error);
+        // }
+
         function toggleMode() {
-            fetch("/toggle-mode")
-                .then((response) => response.text())
-                .then((data) => {
-                    // Now using 'modeIndicator' as the ID for the mode display element
-                    document.getElementById("modeIndicator").innerText = data;
-                    updatePosition(); // Update positions if needed, otherwise you can remove this line         // off for atm
-                })
-                .catch(console.error);
-        }
+    fetch("/toggle-mode")
+        .then((response) => response.text())
+        .then((mode) => {
+            document.getElementById("modeIndicator").innerText = mode;
+            updatePositions();  // Refresh display to show correct mode values
+        })
+        .catch(console.error);
+}
+
 
         function toggleMeasureMode() {
             fetch("/toggle-measure-mode")
@@ -1357,35 +1368,54 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
         // // Call updatePosition at an interval
         // setInterval(updatePosition, 100);  // Update every second
 
-        function updatePositions() {
-            fetch("/position")
-                .then((response) => response.text())
-                .then(
-                    (data) => (document.getElementById("position").innerText = data)
-                )
-                .catch(console.error);
+        // function updatePositions() {
+        //     fetch("/position")
+        //         .then((response) => response.text())
+        //         .then(
+        //             (data) => (document.getElementById("position").innerText = data)
+        //         )
+        //         .catch(console.error);
 
-            fetch("/position2")
-                .then((response) => response.text())
-                .then(
-                    (data) => (document.getElementById("position2").innerText = data)
-                )
-                .catch(console.error);
+        //     fetch("/position2")
+        //         .then((response) => response.text())
+        //         .then(
+        //             (data) => (document.getElementById("position2").innerText = data)
+        //         )
+        //         .catch(console.error);
 
-            fetch("/position3")
-                .then((response) => response.text())
-                .then(
-                    (data) => (document.getElementById("position3").innerText = data)
-                )
-                .catch(console.error);
-        }
+        //     fetch("/position3")
+        //         .then((response) => response.text())
+        //         .then(
+        //             (data) => (document.getElementById("position3").innerText = data)
+        //         )
+        //         .catch(console.error);
+        // }
+
+function updatePositions() {
+    fetch("/get-positions")
+        .then(response => response.json())
+        .then(data => {
+            const mode = document.getElementById("modeIndicator").innerText;
+            document.getElementById("position").innerText = (mode === "ABS" && data.positionX_ABS !== undefined) ? data.positionX_ABS : data.positionX_INC;
+            document.getElementById("position2").innerText = (mode === "ABS" && data.positionY_ABS !== undefined) ? data.positionY_ABS : data.positionY_INC;
+            document.getElementById("position3").innerText = (mode === "ABS" && data.positionZ_ABS !== undefined) ? data.positionZ_ABS : data.positionZ_INC;
+        })
+        .catch(error => {
+            console.error('Error fetching position data:', error);
+            // Optionally set a default or placeholder text if there is an error
+            document.getElementById("position").innerText = "N/A";
+            document.getElementById("position2").innerText = "N/A";
+            document.getElementById("position3").innerText = "N/A";
+        });
+}
+
 
         function resetPosition(axis) {
             fetch("/reset/" + axis)
                 .then((response) => {
                     if (response.ok) {
                         console.log(axis.toUpperCase() + " position reset"); // print message
-                        updatePositions(); // Refresh the positions immediately
+                        // updatePositions(); // Refresh the positions immediately
                     }
                 })
                 .catch(console.error);
@@ -1520,7 +1550,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
         }
 
         setInterval(updatePositionsAndPlane, 1000); // Adjust interval to 1000 ms
-        setInterval(updatePosition, 50); // Call updatePositions() every 1000ms (1 second) but right now it is 50ms so stupid fast
+        setInterval(updatePositions, 50); // Call updatePositions() every 1000ms (1 second) but right now it is 50ms so stupid fast
     </script>
 </body>
 
@@ -1593,20 +1623,35 @@ void setup()
     //               request->send(200, "application/json", jsonString); // Send JSON data
     //           });
 
-server.on("/get-positions", HTTP_GET, [](AsyncWebServerRequest *request) {
-    String positionX = formatPosition(isABSMode ? encoder1.position - planes[currentPlaneIndex].encoderValueABS[0] : encoder1.position - planes[currentPlaneIndex].last_INC[0], isInchMode);
-    String positionY = formatPosition(isABSMode ? encoder2.position - planes[currentPlaneIndex].encoderValueABS[1] : encoder2.position - planes[currentPlaneIndex].last_INC[1], isInchMode);
-    String positionZ = formatPosition(isABSMode ? encoder3.position - planes[currentPlaneIndex].encoderValueABS[2] : encoder3.position - planes[currentPlaneIndex].last_INC[2], isInchMode);
+// server.on("/get-positions", HTTP_GET, [](AsyncWebServerRequest *request) {
+//     String positionX = formatPosition(isABSMode ? encoder1.position - planes[currentPlaneIndex].encoderValueABS[0] : encoder1.position - planes[currentPlaneIndex].last_INC[0], isInchMode);
+//     String positionY = formatPosition(isABSMode ? encoder2.position - planes[currentPlaneIndex].encoderValueABS[1] : encoder2.position - planes[currentPlaneIndex].last_INC[1], isInchMode);
+//     String positionZ = formatPosition(isABSMode ? encoder3.position - planes[currentPlaneIndex].encoderValueABS[2] : encoder3.position - planes[currentPlaneIndex].last_INC[2], isInchMode);
 
-    StaticJsonDocument<200> jsonDoc;
-    jsonDoc["positionX"] = positionX;
-    jsonDoc["positionY"] = positionY;
-    jsonDoc["positionZ"] = positionZ;
+//     StaticJsonDocument<200> jsonDoc;
+//     jsonDoc["positionX"] = positionX;
+//     jsonDoc["positionY"] = positionY;
+//     jsonDoc["positionZ"] = positionZ;
 
-    Serial.println("Mode: " + String(isABSMode ? "ABS" : "INC"));
-    Serial.println("Position X: " + String(positionX));
-    Serial.println("Position Y: " + String(positionY));
-    Serial.println("Position Z: " + String(positionZ));
+//     Serial.println("Mode: " + String(isABSMode ? "ABS" : "INC"));
+//     Serial.println("Position X: " + String(positionX));
+//     Serial.println("Position Y: " + String(positionY));
+//     Serial.println("Position Z: " + String(positionZ));
+
+//     String jsonString;
+//     serializeJson(jsonDoc, jsonString);
+//     request->send(200, "application/json", jsonString);
+// });
+
+server.on("/get-positions", HTTP_GET, [](AsyncWebServerRequest *request)
+{
+    StaticJsonDocument<256> jsonDoc;
+    jsonDoc["positionX_ABS"] = encoder1.position - planes[currentPlaneIndex].last_ABS[0];
+    jsonDoc["positionY_ABS"] = encoder2.position - planes[currentPlaneIndex].last_ABS[1];
+    jsonDoc["positionZ_ABS"] = encoder3.position - planes[currentPlaneIndex].last_ABS[2];
+    jsonDoc["positionX_INC"] = encoder1.position - planes[currentPlaneIndex].last_INC[0];
+    jsonDoc["positionY_INC"] = encoder2.position - planes[currentPlaneIndex].last_INC[1];
+    jsonDoc["positionZ_INC"] = encoder3.position - planes[currentPlaneIndex].last_INC[2];
 
     String jsonString;
     serializeJson(jsonDoc, jsonString);
