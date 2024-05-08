@@ -45,62 +45,6 @@ void TaskNetwork(void *pvParameters);
 void TaskUpdateDisplay(void *pvParameters);
 
 
-
-// void handleMenuNavigation()
-// {
-//   // check if button being pressed is diff from its last prev state aka (true != false)
-//   if (ButtonUpPressed() && !ButtonStatesPrev[2])
-//   {
-//     // ensures curr state is in MAIN_MENU, ensuring it does not go below 0
-//     if (currentMenuState == MAIN_MENU)
-//     {
-//       menuItemIndex = max(0, menuItemIndex - 1);
-//     }
-//   }
-//   // check if button being pressed is diff from its last prev state aka (true != false)
-//   else if (ButtonDownPressed() && !ButtonStatesPrev[3])
-//   {
-//     if (currentMenuState == MAIN_MENU)
-//     {
-//       menuItemIndex = min(1, menuItemIndex + 1); // For now we just have two menu options
-//       // menuItemIndex = min(2, menuItemIndex + 1); // Assuming we want to add 3 menu items (in the case we want to add another option)
-//     }
-//   }
-//   // check if button being pressed is diff from its last prev state aka (true != false)
-//   else if (ButtonCenterPressed() && !ButtonStatesPrev[1])
-//   {
-//     if (currentMenuState == MAIN_MENU)
-//     {
-//       // based on the state of our menu option, we update our screen with the correct screen
-//       // we clear the screen and update display
-//       switch (menuItemIndex)
-//       {
-//       case 0:
-//         LCDScreenClear();
-//         currentMenuState = TWO_AXIS;
-//         break;
-//       case 1:
-//         LCDScreenClear();
-//         currentMenuState = THREE_AXIS;
-//         break;
-//       }
-//     }
-//     else
-//     {
-//       currentMenuState = MAIN_MENU; // Allow going back to the main menu
-//       LCDScreenClear();
-//     }
-//   }
-//   // Update previous button states at the end of your button handling logic
-//   ButtonStatesPrev[0] = stateButtonCenter;
-//   ButtonStatesPrev[1] = stateButtonUp;
-//   ButtonStatesPrev[2] = stateButtonDown;
-//   ButtonStatesPrev[3] = stateButtonLeft;
-//   ButtonStatesPrev[4] = stateButtonRight;
-
-//   // updateAllPinZ(); // update all
-// }
-
 // Menu setup
 int MotorChannelSelected = 0;
 int MotorChannelWatched = -1;
@@ -120,19 +64,6 @@ int currentPlaneIndex = 0; // Keep track of the current plane index
 Encoder encoder1 = {PIN_A1, PIN_B1, 0, 0, 0, 0, 0, {0}, 1};
 Encoder encoder2 = {PIN_A2, PIN_B2, 0, 0, 0, 0, 0, {0}, 1};
 Encoder encoder3 = {PIN_A3, PIN_B3, 0, 0, 0, 0, 0, {0}, 1};
-
-// Encoder encoder4 = {PIN_A4, PIN_B4, 0, 0, 0, 0, {0}, 1};
-// Encoder encoder5 = {PIN_A5, PIN_B5, 0, 0, 0, 0, {0}, 1};
-// Encoder encoder6 = {PIN_A6, PIN_B6, 0, 0, 0, 0, {0}, 1};
-
-// void IRAM_ATTR handleEncoder1Interrupt() { updateEncoder(&encoder1); }
-// void IRAM_ATTR handleEncoder2Interrupt() { updateEncoder(&encoder2); }
-// void IRAM_ATTR handleEncoder3Interrupt() { updateEncoder(&encoder3); }
-// void IRAM_ATTR handleEncoder4Interrupt() { updateEncoder(&encoder4); }
-// void IRAM_ATTR handleEncoder5Interrupt() { updateEncoder(&encoder5); }
-// void IRAM_ATTR handleEncoder6Interrupt() { updateEncoder(&encoder6); }
-
-
 
 struct Point
 {
@@ -230,93 +161,7 @@ void resetEncoderValue(int encoderIndex) {
 
 
 
-// void resetEncoderValue(int encoderIndex)
-// {
-//     if (encoderIndex < 0 || encoderIndex >= 3)
-//     {
-//         Serial.println("Error: Encoder index out of range");
-//         return; // Add error handling or user feedback
-//     }
-//     // Placeholder for resetting encoder value.
-//     // if we zero out a value we need to store the last position before zeroing out to calculate the difference of (encoder.position - lastValVisited)
-//     if (isABSMode)
-//     {
-//         // reset value back to 0
-//         planes[currentPlaneIndex].encoderValueABS[encoderIndex] = 0;
 
-//         // store last coordinate (value) listed
-//         if (encoderIndex == 0)
-//         {
-
-//             planes[currentPlaneIndex].last_ABS[0] = encoder1.position;
-//         }
-//         else if (encoderIndex == 1)
-//         {
-//             planes[currentPlaneIndex].last_ABS[1] = encoder2.position;
-//         }
-//         else if (encoderIndex == 2)
-//         {
-//             planes[currentPlaneIndex].last_ABS[2] = encoder3.position;
-//         }
-//     }
-//     else
-//     {
-//         // reset value back to 0
-//         planes[currentPlaneIndex].encoderValueINC[encoderIndex] = 0;
-
-//         // store last coordinate (value) listed
-//         if (encoderIndex == 0)
-//         {
-//             planes[currentPlaneIndex].last_INC[0] = encoder1.position;
-//         }
-//         else if (encoderIndex == 1)
-//         {
-//             planes[currentPlaneIndex].last_INC[1] = encoder2.position;
-//         }
-//         else if (encoderIndex == 2)
-//         {
-//             planes[currentPlaneIndex].last_INC[2] = encoder3.position;
-//         }
-//     }
-//     // Consider adding logic to update the display or take other actions.
-// }
-
-// void resetEncoderValue(int encoderIndex) {
-//     if (encoderIndex < 0 || encoderIndex >= 3) {
-//         Serial.println("Error: Encoder index out of range");
-//         return;
-//     }
-
-//     if (isABSMode) {
-//         // Reset the ABS value to zero and store the last position
-//         planes[currentPlaneIndex].encoderValueABS[encoderIndex] = 0;
-//         switch (encoderIndex) {
-//             case 0:
-//                 X_last_ABS[currentPlaneIndex] = encoder1.position;
-//                 break;
-//             case 1:
-//                 Y_last_ABS[currentPlaneIndex] = encoder2.position;
-//                 break;
-//             case 2:
-//                 Z_last_ABS[currentPlaneIndex] = encoder3.position;
-//                 break;
-//         }
-//     } else {
-//         // Reset the INC value to zero and store the last position
-//         planes[currentPlaneIndex].encoderValueINC[encoderIndex] = 0;
-//         switch (encoderIndex) {
-//             case 0:
-//                 X_last_INC[currentPlaneIndex] = encoder1.position;
-//                 break;
-//             case 1:
-//                 Y_last_INC[currentPlaneIndex] = encoder2.position;
-//                 break;
-//             case 2:
-//                 Z_last_INC[currentPlaneIndex] = encoder3.position;
-//                 break;
-//         }
-//     }
-// }
 
 // Helper function to format and display axis values based on current settings
 void displayAxisValues(int axis, int yPosition)
@@ -430,35 +275,6 @@ void IRAM_ATTR handleEncoder3Interrupt()
     planes[currentPlaneIndex].encoderValueINC[2] = encoder3.position - planes[currentPlaneIndex].last_INC[2];
 }
 
-// void IRAM_ATTR handleEncoder1Interrupt() {
-//     handleEncoderInterrupt(&encoder1); // Handle the encoder update
-//     planes[currentPlaneIndex].encoderValueABS[0] = encoder1.position - X_last_ABS[currentPlaneIndex];
-//     planes[currentPlaneIndex].encoderValueINC[0] = encoder1.position - X_last_INC[currentPlaneIndex];
-// }
-
-// void IRAM_ATTR handleEncoder2Interrupt() {
-//     handleEncoderInterrupt(&encoder2);
-//     planes[currentPlaneIndex].encoderValueABS[1] = encoder2.position - Y_last_ABS[currentPlaneIndex];
-//     planes[currentPlaneIndex].encoderValueINC[1] = encoder2.position - Y_last_INC[currentPlaneIndex];
-// }
-
-// void IRAM_ATTR handleEncoder3Interrupt() {
-//     handleEncoderInterrupt(&encoder3);
-//     planes[currentPlaneIndex].encoderValueABS[2] = encoder3.position - Z_last_ABS[currentPlaneIndex];
-//     planes[currentPlaneIndex].encoderValueINC[2] = encoder3.position - Z_last_INC[currentPlaneIndex];
-// }
-
-// void updateAllZPins()
-// {
-//   // Example calls, assuming pinA1Index and pinB1Index are the indexes for A1 and B1 on the expander
-//   updateZPinState(encoder1.pinA, encoder1.pinB, 9);  // For Z1
-//   updateZPinState(encoder2.pinA, encoder2.pinB, 10); // For Z2
-//   updateZPinState(encoder3.pinA, encoder3.pinB, 11); // For Z3
-//   updateZPinState(encoder4.pinA, encoder4.pinB, 12); // For Z4
-//   updateZPinState(encoder5.pinA, encoder5.pinB, 13); // For Z5
-//   updateZPinState(encoder6.pinA, encoder6.pinB, 14); // For Z6
-//                                                      // Repeat for other Z pins and their corresponding A/B pins
-// }
 
 void updateDisplayWithPoints()
 {
@@ -1503,46 +1319,7 @@ void setup()
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
               { request->send_P(200, "text/html", index_html); });
 
-    // server.on("/get-positions", HTTP_GET, [](AsyncWebServerRequest *request)
-    //           {
-    //               char formattedX[20], formattedY[20], formattedZ[20];
 
-    //               // Assuming encoder1, encoder2, encoder3 are your encoder instances
-    //               String positionX = formatPosition(isABSMode ? encoder1.position - planes[currentPlaneIndex].encoderValueABS[0] : encoder1.position - planes[currentPlaneIndex].last_INC[0], isInchMode);
-    //               String positionY = formatPosition(isABSMode ? encoder2.position - planes[currentPlaneIndex].encoderValueABS[1] : encoder2.position - planes[currentPlaneIndex].last_INC[1], isInchMode);
-    //               String positionZ = formatPosition(isABSMode ? encoder3.position - planes[currentPlaneIndex].encoderValueABS[2] : encoder3.position - planes[currentPlaneIndex].last_INC[2], isInchMode);
-
-    //               // Create a JSON object to send the formatted positions
-    //               StaticJsonDocument<200> jsonDoc;
-    //               jsonDoc["positionX"] = positionX;
-    //               jsonDoc["positionY"] = positionY;
-    //               jsonDoc["positionZ"] = positionZ;
-
-    //               String jsonString;
-    //               serializeJson(jsonDoc, jsonString);
-
-    //               request->send(200, "application/json", jsonString); // Send JSON data
-    //           });
-
-// server.on("/get-positions", HTTP_GET, [](AsyncWebServerRequest *request) {
-//     String positionX = formatPosition(isABSMode ? encoder1.position - planes[currentPlaneIndex].encoderValueABS[0] : encoder1.position - planes[currentPlaneIndex].last_INC[0], isInchMode);
-//     String positionY = formatPosition(isABSMode ? encoder2.position - planes[currentPlaneIndex].encoderValueABS[1] : encoder2.position - planes[currentPlaneIndex].last_INC[1], isInchMode);
-//     String positionZ = formatPosition(isABSMode ? encoder3.position - planes[currentPlaneIndex].encoderValueABS[2] : encoder3.position - planes[currentPlaneIndex].last_INC[2], isInchMode);
-
-//     StaticJsonDocument<200> jsonDoc;
-//     jsonDoc["positionX"] = positionX;
-//     jsonDoc["positionY"] = positionY;
-//     jsonDoc["positionZ"] = positionZ;
-
-//     Serial.println("Mode: " + String(isABSMode ? "ABS" : "INC"));
-//     Serial.println("Position X: " + String(positionX));
-//     Serial.println("Position Y: " + String(positionY));
-//     Serial.println("Position Z: " + String(positionZ));
-
-//     String jsonString;
-//     serializeJson(jsonDoc, jsonString);
-//     request->send(200, "application/json", jsonString);
-// });
 
 server.on("/get-positions", HTTP_GET, [](AsyncWebServerRequest *request)
 {
