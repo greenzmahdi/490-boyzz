@@ -19,36 +19,16 @@
 #include "led.h"
 #include "oled.h"
 #include "encoder.h"
+#include "buttons.h"
+#include "format.h"
+#include "menu.h"
+#include "coordinatePlanes.h"
 
-// Mode selector variable
-bool isInchMode = true;
-
-// Inch and milimeter factors
-float factor_mm = 0.01;        // 0.01 mm per pulse
-float factor_inch = 0.0003937; // Accurate conversion to maintain equivalence
 
 #define SCREEN_WIDTH 128 // OLED display width
 #define CHAR_WIDTH 6     // Width of each character in pixels
 
-// Function to format position to fixed decimal places
-String formatPosition(float pulses, bool isInchMode)
-{
-    float convertedValue;
-    char formattedOutput[20]; // Buffer to hold the formatted string
 
-    if (isInchMode)
-    {
-        convertedValue = pulses * factor_inch;
-        snprintf(formattedOutput, sizeof(formattedOutput), "%7.4f", convertedValue); // Ensures 4 decimal places
-    }
-    else
-    {
-        convertedValue = pulses * factor_mm;
-        snprintf(formattedOutput, sizeof(formattedOutput), "%6.3f", convertedValue); // Ensures 3 decimal places
-    }
-
-    return String(formattedOutput); // Convert buffer to Arduino String object for easy use
-}
 
 // Define LED colors as global constants
 const int LEDColorDisconnected[3] = {0, 0, 0};
@@ -56,84 +36,15 @@ const int LEDColorPurple[3] = {128, 0, 128};
 const int LEDColorTurquoise[3] = {83, 195, 189};
 const int LEDColorPink[3] = {255, 292, 203};
 
-// Menu Options
-const char *MenuOptions[] = {"Connect Online", "Connect Offline"}; // might not need this, depends on design
-const char *MenuDroItems[] = {"2-Axis", "3-Axis"};
-const char *SinoAxis[] = {"X: ", "Y: "};
-const char *ToAutoAxis[] = {"X: ", "Y: ", "Z: "};
 
-enum MenuState
-{
-    MAIN_MENU,
-    TWO_AXIS,
-    THREE_AXIS,
-    SHAPE_CREATION
-};
 
-volatile MenuState currentMenuState = MAIN_MENU;
-volatile int menuItemIndex = 0; // Index of the selected menu item
+
 
 // Forward declarations
 void TaskNetwork(void *pvParameters);
 void TaskUpdateDisplay(void *pvParameters);
 
-// BUTTON FUNCTIONS //
 
-bool ButtonRead(int idx)
-{
-    // 0 - left
-    // 1 - center
-    // 2 - up
-    // 3 - down
-    // 4 - right
-
-    if ((idx < 0) || (idx > 4))
-        return false;
-
-    return !I2CReadReg(0x20, 1, idx);
-}
-
-bool ButtonLeftPressed()
-{
-    return ButtonRead(0);
-}
-
-bool ButtonCenterPressed()
-{
-    return ButtonRead(1);
-}
-
-bool ButtonUpPressed()
-{
-    return ButtonRead(2);
-}
-
-bool ButtonDownPressed()
-{
-    return ButtonRead(3);
-}
-
-bool ButtonRightPressed()
-{
-    return ButtonRead(4);
-}
-
-bool ButtonStatesPrev[] = {false, false, false, false, false};
-
-bool stateButtonCenter = ButtonCenterPressed();
-bool stateButtonUp = ButtonUpPressed();
-bool stateButtonDown = ButtonDownPressed();
-bool stateButtonLeft = ButtonLeftPressed();
-bool stateButtonRight = ButtonRightPressed();
-
-void updateButtonStates()
-{
-    ButtonStatesPrev[0] = ButtonLeftPressed();
-    ButtonStatesPrev[1] = ButtonCenterPressed();
-    ButtonStatesPrev[2] = ButtonUpPressed();
-    ButtonStatesPrev[3] = ButtonDownPressed();
-    ButtonStatesPrev[4] = ButtonRightPressed();
-}
 
 // void handleMenuNavigation()
 // {
@@ -202,6 +113,9 @@ const int IdxZ4 = 2;
 const int IdxZ5 = 1;
 const int IdxZ6 = 0;
 
+bool isABSMode = true; // Start in ABS mode
+int currentPlaneIndex = 0; // Keep track of the current plane index
+
 // Initializing encoders attributes and setting their start (refer to encoder struct to see all parameters)
 Encoder encoder1 = {PIN_A1, PIN_B1, 0, 0, 0, 0, 0, {0}, 1};
 Encoder encoder2 = {PIN_A2, PIN_B2, 0, 0, 0, 0, 0, {0}, 1};
@@ -218,9 +132,7 @@ Encoder encoder3 = {PIN_A3, PIN_B3, 0, 0, 0, 0, 0, {0}, 1};
 // void IRAM_ATTR handleEncoder5Interrupt() { updateEncoder(&encoder5); }
 // void IRAM_ATTR handleEncoder6Interrupt() { updateEncoder(&encoder6); }
 
-bool isABSMode = true; // Start in ABS mode
 
-int setupEncoderValuesABs[] = {};
 
 struct Point
 {
@@ -238,10 +150,7 @@ struct CoordinatePlane
     int last_INC[3];                // Last INC position for X, Y, Z
 };
 
-// Store up to 12 coordinate planes
 CoordinatePlane planes[12];
-
-int currentPlaneIndex = 0; // Keep track of the current plane index
 
 void selectPlane(int index)
 {
@@ -267,48 +176,6 @@ void previousPlane()
     Serial.print("Previous Plane: ");
     Serial.println(currentPlaneIndex + 1);
 }
-
-void addPointToCurrentPlane(int planeIndex, int x, int y, int z = 0)
-{
-    if (planeIndex >= 0 && planeIndex < 12)
-    {
-        planes[planeIndex].shapePoints.emplace_back(x, y, z);
-        // updateDisplayContent();  // Assuming you have a method to update display
-    }
-}
-
-void removeLastPointFromCurrentPlane(int planeIndex)
-{
-    if (planeIndex >= 0 && planeIndex < 12 && !planes[planeIndex].shapePoints.empty())
-    {
-        planes[planeIndex].shapePoints.pop_back();
-        // updateDisplayContent();
-    }
-}
-
-void displayCurrentPoints(int planeIndex)
-{
-    if (planeIndex >= 0 && planeIndex < 12)
-    {
-        auto &points = planes[planeIndex].shapePoints;
-        for (size_t i = 0; i < points.size(); ++i)
-        {
-            char buffer[50];
-            snprintf(buffer, sizeof(buffer), "Point %zu: (%d, %d, %d)", i + 1, points[i].x, points[i].y, points[i].z);
-            LCDTextDraw(0, i * 16, buffer, 1, WHITE, BLACK); // Adjust positioning as needed
-        }
-    }
-}
-
-void clearPointsInPlane(int planeIndex)
-{
-    if (planeIndex >= 0 && planeIndex < 12)
-    {
-        planes[planeIndex].shapePoints.clear();
-        // updateDisplayContent();
-    }
-}
-
 void addCurrentPositionToPoint()
 {
     int currentX = planes[currentPlaneIndex].encoderValueABS[0]; // or encoderValueINC based on mode
@@ -605,12 +472,6 @@ void updateDisplayWithPoints()
     }
 }
 
-void addPointToCurrentPlane(int x, int y, int z = 0)
-{
-    planes[currentPlaneIndex].shapePoints.emplace_back(x, y, z);
-    refreshAndDrawPoints(); // Refresh display after adding point
-}
-
 void refreshAndDrawPoints()
 {
     // LCDScreenClear(); // temp removed
@@ -623,6 +484,46 @@ void refreshAndDrawPoints()
 
     // LCD.display();  // Refresh the display to show all points
 }
+
+void addPointToCurrentPlane(int x, int y, int z = 0)
+{
+    planes[currentPlaneIndex].shapePoints.emplace_back(x, y, z);
+    refreshAndDrawPoints(); // Refresh display after adding point
+}
+
+// Functions have not been implemented //
+void removeLastPointFromCurrentPlane(int planeIndex)
+{
+    if (planeIndex >= 0 && planeIndex < 12 && !planes[planeIndex].shapePoints.empty())
+    {
+        planes[planeIndex].shapePoints.pop_back();
+        // updateDisplayContent();
+    }
+}
+
+void displayCurrentPoints(int planeIndex)
+{
+    if (planeIndex >= 0 && planeIndex < 12)
+    {
+        auto &points = planes[planeIndex].shapePoints;
+        for (size_t i = 0; i < points.size(); ++i)
+        {
+            char buffer[50];
+            snprintf(buffer, sizeof(buffer), "Point %zu: (%d, %d, %d)", i + 1, points[i].x, points[i].y, points[i].z);
+            LCDTextDraw(0, i * 16, buffer, 1, WHITE, BLACK); // Adjust positioning as needed
+        }
+    }
+}
+
+void clearPointsInPlane(int planeIndex)
+{
+    if (planeIndex >= 0 && planeIndex < 12)
+    {
+        planes[planeIndex].shapePoints.clear();
+        // updateDisplayContent();
+    }
+}
+
 
 const char *h_ssid = "491-DRO-Boyyz";
 const char *h_password = "123456789";

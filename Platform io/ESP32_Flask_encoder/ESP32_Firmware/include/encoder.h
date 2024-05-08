@@ -34,5 +34,10 @@ void IRAM_ATTR handleEncoderInterrupt(Encoder *encoder);
 // Function to convert pulses to degrees
 float pulsesToDegrees(long pulses);
 float pulsesToDistanceInches(long pulses);
+// void resetEncoderValue(int encoderIndex);
+
+// void IRAM_ATTR handleEncoder1Interrupt();
+// void IRAM_ATTR handleEncoder2Interrupt();
+// void IRAM_ATTR handleEncoder3Interrupt();
 
 #endif
