@@ -33,15 +33,6 @@ void LCDInit()
 {
   LCD.begin(SSD1306_SWITCHCAPVCC, 0x3C);
 }
-// void LCDInit() {
-//     if(!LCD.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
-//         Serial.println("SSD1306 allocation failed");
-//         for(;;); // Don't proceed, loop forever
-//     }
-//     LCD.clearDisplay(); // Clear the display buffer
-//     LCD.display(); // Display the buffer
-// }
-
 
 void LCDLineDraw(int x0, int y0, int x1, int y1, uint16_t color) {
     LCD.drawLine(x0, y0, x1, y1, color);
