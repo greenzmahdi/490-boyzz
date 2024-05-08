@@ -642,7 +642,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
 
 
     <div class="dro-container" id="container">
-        <div class="readout" id="currentPlane">1</div>
+        <div class="readout" id="currentPlane" >1</div>
         <div class="readout" id="modeIndicator">ABS</div>
 
         <div class="readout modeDisplay" id="mode-readout">
@@ -967,22 +967,22 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
                 .catch(console.error);
         }
 
-        function updatePosition() {
-            fetch("/get-positions")
-                .then((response) => {
-                    if (!response.ok) throw new Error("Failed to fetch positions");
-                    return response.json();
-                })
-                .then((data) => {
-                    console.log("Received position data:", data); // Debug: log received data
-                    document.getElementById("position").innerText = data.positionX;
-                    document.getElementById("position2").innerText = data.positionY;
-                    document.getElementById("position3").innerText = data.positionZ;
-                })
-                .catch((error) => {
-                    console.error("Error fetching positions:", error);
-                });
-        }
+        // function updatePosition() {
+        //     fetch("/get-positions")
+        //         .then((response) => {
+        //             if (!response.ok) throw new Error("Failed to fetch positions");
+        //             return response.json();
+        //         })
+        //         .then((data) => {
+        //             console.log("Received position data:", data); // Debug: log received data
+        //             document.getElementById("position").innerText = data.positionX;
+        //             document.getElementById("position2").innerText = data.positionY;
+        //             document.getElementById("position3").innerText = data.positionZ;
+        //         })
+        //         .catch((error) => {
+        //             console.error("Error fetching positions:", error);
+        //         });
+        // }
 
         function updatePositions() {
             fetch("/get-positions")
@@ -1021,6 +1021,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
                     console.log("Updated Plane Index: ", data); // Log for debugging
                     document.getElementById("currentPlane").innerText =
                         "Plane: " + data;
+                        updatePositions();
                 })
                 .catch((error) =>
                     console.error("Failed to update plane display:", error)
@@ -1028,7 +1029,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
         }
 
         function updatePositionsAndPlane() {
-            updatePosition();
+            updatePositions();
             updatePlaneDisplay();
         }
 
@@ -1141,7 +1142,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
             drawGrid();
 
         }
-
+        // setInterval(updatePlaneDisplay, 1000);
         setInterval(updatePositionsAndPlane, 1000); // Adjust interval to 1000 ms
         setInterval(updatePositions, 50); // Call updatePositions() every 1000ms (1 second) but right now it is 50ms so stupid fast
     </script>
@@ -1245,9 +1246,10 @@ void setup()
                 request->send(200, "text/plain", "All positions reset"); });
 
     server.on("/get-current-plane", HTTP_GET, [](AsyncWebServerRequest *request)
-              {
-                  request->send(200, "text/plain", String(currentPlaneIndex + 1)); // +1 to make it human-readable (1-based index)
-              });
+{
+    request->send(200, "text/plain", String(currentPlaneIndex + 1)); // +1 to make it human-readable (1-based index)
+});
+
 
     // Endpoint to add a point to the current plane
     server.on("/add-point", HTTP_POST, [](AsyncWebServerRequest *request)
