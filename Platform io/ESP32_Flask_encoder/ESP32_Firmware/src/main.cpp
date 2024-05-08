@@ -24,11 +24,8 @@
 #include "menu.h"
 #include "coordinatePlanes.h"
 
-
 #define SCREEN_WIDTH 128 // OLED display width
 #define CHAR_WIDTH 6     // Width of each character in pixels
-
-
 
 // Define LED colors as global constants
 const int LEDColorDisconnected[3] = {0, 0, 0};
@@ -36,14 +33,9 @@ const int LEDColorPurple[3] = {128, 0, 128};
 const int LEDColorTurquoise[3] = {83, 195, 189};
 const int LEDColorPink[3] = {255, 292, 203};
 
-
-
-
-
 // Forward declarations
 void TaskNetwork(void *pvParameters);
 void TaskUpdateDisplay(void *pvParameters);
-
 
 // Menu setup
 int MotorChannelSelected = 0;
@@ -57,7 +49,7 @@ const int IdxZ4 = 2;
 const int IdxZ5 = 1;
 const int IdxZ6 = 0;
 
-bool isABSMode = true; // Start in ABS mode
+bool isABSMode = true;     // Start in ABS mode
 int currentPlaneIndex = 0; // Keep track of the current plane index
 
 // Initializing encoders attributes and setting their start (refer to encoder struct to see all parameters)
@@ -135,8 +127,10 @@ void toggleMeasurementMode()
 {
     isInchMode = !isInchMode;
 }
-void resetEncoderValue(int encoderIndex) {
-    if (encoderIndex < 0 || encoderIndex >= 3) {
+void resetEncoderValue(int encoderIndex)
+{
+    if (encoderIndex < 0 || encoderIndex >= 3)
+    {
         Serial.println("Error: Encoder index out of range");
         return;
     }
@@ -148,20 +142,20 @@ void resetEncoderValue(int encoderIndex) {
     auto &encoderValueABS = currentPlane.encoderValueABS;
     auto &encoderValueINC = currentPlane.encoderValueINC;
 
-    Encoder &encoder = (encoderIndex == 0) ? encoder1 : (encoderIndex == 1) ? encoder2 : encoder3;
+    Encoder &encoder = (encoderIndex == 0) ? encoder1 : (encoderIndex == 1) ? encoder2
+                                                                            : encoder3;
 
-    if (isABSMode) {
-        encoderValueABS[encoderIndex] = 0; // Zero out the ABS value
+    if (isABSMode)
+    {
+        encoderValueABS[encoderIndex] = 0;        // Zero out the ABS value
         lastABS[encoderIndex] = encoder.position; // Store last ABS position
-    } else {
-        encoderValueINC[encoderIndex] = 0; // Zero out the INC value
+    }
+    else
+    {
+        encoderValueINC[encoderIndex] = 0;        // Zero out the INC value
         lastINC[encoderIndex] = encoder.position; // Store last INC position
     }
 }
-
-
-
-
 
 // Helper function to format and display axis values based on current settings
 void displayAxisValues(int axis, int yPosition)
@@ -275,7 +269,6 @@ void IRAM_ATTR handleEncoder3Interrupt()
     planes[currentPlaneIndex].encoderValueINC[2] = encoder3.position - planes[currentPlaneIndex].last_INC[2];
 }
 
-
 void updateDisplayWithPoints()
 {
     LCDScreenClear(); // Clear the screen for fresh update
@@ -339,7 +332,6 @@ void clearPointsInPlane(int planeIndex)
         // updateDisplayContent();
     }
 }
-
 
 const char *h_ssid = "491-DRO-Boyyz";
 const char *h_password = "123456789";
@@ -584,12 +576,6 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
             height: 185px;
         }
 
-
-
-
-
-
-
         .calculator-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -601,8 +587,6 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
             grid-template-columns: repeat(2, 1fr);
             gap: px;
         }
-
-
 
         button {
             padding: 15px;
@@ -643,54 +627,6 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
             /* Add styles for the button when calculator mode is disabled */
             background-color: gray;
             color: white;
-        }
-
-        /* Media Queries */
-
-        /* Smaller screens (tablets) */
-        @media (max-width: 768px) {
-            body {
-                flex-direction: column;
-            }
-
-            .dro-container,
-            #container,
-            #container1,
-            #container2,
-            #container3,
-            #container4,
-            #container5,
-            #container6,
-            #container7,
-            #container8,
-            #container9,
-            #container10,
-            #container11 {
-                position: relative;
-                width: 90%;
-                max-width: none;
-                margin: 10px auto;
-            }
-
-            .readout {
-                font-size: 1.2em;
-                /* Smaller font for smaller screens */
-            }
-        }
-
-        /* Very small screens (phones) */
-        @media (max-width: 480px) {
-            .readout {
-                padding: 10px;
-                font-size: 1em;
-                /* Even smaller font for phone screens */
-            }
-
-            button {
-                padding: 10px;
-                font-size: 0.8em;
-                /* Smaller buttons for easier handling */
-            }
         }
     </style>
 </head>
@@ -759,7 +695,6 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
     </div>
 
 
-
     <div class="dro-container" id="container4">
         <div class="zeroSelect-grid">
             <button onclick="resetPosition('x')">Xo</button>
@@ -786,10 +721,6 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
         </form>
     </div>
 
-
-
-
-
     <div class="dro-container" id="container6">
         <button>Process Holes Circle</button>
         <button>Process Holes Line</button>
@@ -808,11 +739,6 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
             <button class="right-arrow"></button>
         </div>
     </div>
-
-
-
-
-
 
     <!-- Display the value of the calculator -->
     <div class="dro-container" id="container11">
@@ -871,8 +797,6 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
             <button id="zeroAllButton" onclick="zeroAllAxis()">XYZo</button>
             <button>CA</button>
             <button>ENT</button>
-            <button onclick="resetPosition('xInc')">Abs X</button>
-            <button onclick="resetPosition('xAbs')">Inc</button>
         </div>
     </div>
 
@@ -1021,26 +945,15 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
                 });
         }
 
-        // function toggleMode() {
-        //     fetch("/toggle-mode")
-        //         .then((response) => response.text())
-        //         .then((data) => {
-        //             // Now using 'modeIndicator' as the ID for the mode display element
-        //             document.getElementById("modeIndicator").innerText = data;
-        //             updatePosition(); // Update positions if needed, otherwise you can remove this line         // off for atm
-        //         })
-        //         .catch(console.error);
-        // }
-
         function toggleMode() {
-    fetch("/toggle-mode")
-        .then((response) => response.text())
-        .then((mode) => {
-            document.getElementById("modeIndicator").innerText = mode;
-            updatePositions();  // Refresh display to show correct mode values
-        })
-        .catch(console.error);
-}
+            fetch("/toggle-mode")
+                .then((response) => response.text())
+                .then((mode) => {
+                    document.getElementById("modeIndicator").innerText = mode;
+                    updatePositions();  // Refresh display to show correct mode values
+                })
+                .catch(console.error);
+        }
 
 
         function toggleMeasureMode() {
@@ -1054,77 +967,40 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
                 .catch(console.error);
         }
 
-        // function updatePosition() {
-        //     fetch("/get-positions")
-        //         .then((response) => response.json())
-        //         .then((data) => {
-        //             document.getElementById("position").innerText = data.positionX;
-        //             document.getElementById("position2").innerText = data.positionY;
-        //             document.getElementById("position3").innerText = data.positionZ;
-        //         })
-        //         .catch(console.error);
-        // }
+        function updatePosition() {
+            fetch("/get-positions")
+                .then((response) => {
+                    if (!response.ok) throw new Error("Failed to fetch positions");
+                    return response.json();
+                })
+                .then((data) => {
+                    console.log("Received position data:", data); // Debug: log received data
+                    document.getElementById("position").innerText = data.positionX;
+                    document.getElementById("position2").innerText = data.positionY;
+                    document.getElementById("position3").innerText = data.positionZ;
+                })
+                .catch((error) => {
+                    console.error("Error fetching positions:", error);
+                });
+        }
 
-            function updatePosition() {
-    fetch("/get-positions")
-        .then((response) => {
-            if (!response.ok) throw new Error("Failed to fetch positions");
-            return response.json();
-        })
-        .then((data) => {
-            console.log("Received position data:", data); // Debug: log received data
-            document.getElementById("position").innerText = data.positionX;
-            document.getElementById("position2").innerText = data.positionY;
-            document.getElementById("position3").innerText = data.positionZ;
-        })
-        .catch((error) => {
-            console.error("Error fetching positions:", error);
-        });
-}
-
-        // // Call updatePosition at an interval
-        // setInterval(updatePosition, 100);  // Update every second
-
-        // function updatePositions() {
-        //     fetch("/position")
-        //         .then((response) => response.text())
-        //         .then(
-        //             (data) => (document.getElementById("position").innerText = data)
-        //         )
-        //         .catch(console.error);
-
-        //     fetch("/position2")
-        //         .then((response) => response.text())
-        //         .then(
-        //             (data) => (document.getElementById("position2").innerText = data)
-        //         )
-        //         .catch(console.error);
-
-        //     fetch("/position3")
-        //         .then((response) => response.text())
-        //         .then(
-        //             (data) => (document.getElementById("position3").innerText = data)
-        //         )
-        //         .catch(console.error);
-        // }
-
-function updatePositions() {
-    fetch("/get-positions")
-        .then(response => response.json())
-        .then(data => {
-            const mode = document.getElementById("modeIndicator").innerText;
-            document.getElementById("position").innerText = (mode === "ABS" && data.positionX_ABS !== undefined) ? data.positionX_ABS : data.positionX_INC;
-            document.getElementById("position2").innerText = (mode === "ABS" && data.positionY_ABS !== undefined) ? data.positionY_ABS : data.positionY_INC;
-            document.getElementById("position3").innerText = (mode === "ABS" && data.positionZ_ABS !== undefined) ? data.positionZ_ABS : data.positionZ_INC;
-        })
-        .catch(error => {
-            console.error('Error fetching position data:', error);
-            // Optionally set a default or placeholder text if there is an error
-            document.getElementById("position").innerText = "N/A";
-            document.getElementById("position2").innerText = "N/A";
-            document.getElementById("position3").innerText = "N/A";
-        });
-}
+        function updatePositions() {
+            fetch("/get-positions")
+                .then(response => response.json())
+                .then(data => {
+                    const mode = document.getElementById("modeIndicator").innerText;
+                    document.getElementById("position").innerText = (mode === "ABS" && data.positionX_ABS !== undefined) ? data.positionX_ABS : data.positionX_INC;
+                    document.getElementById("position2").innerText = (mode === "ABS" && data.positionY_ABS !== undefined) ? data.positionY_ABS : data.positionY_INC;
+                    document.getElementById("position3").innerText = (mode === "ABS" && data.positionZ_ABS !== undefined) ? data.positionZ_ABS : data.positionZ_INC;
+                })
+                .catch(error => {
+                    console.error('Error fetching position data:', error);
+                    // Optionally set a default or placeholder text if there is an error
+                    document.getElementById("position").innerText = "N/A";
+                    document.getElementById("position2").innerText = "N/A";
+                    document.getElementById("position3").innerText = "N/A";
+                });
+        }
 
 
         function resetPosition(axis) {
@@ -1319,10 +1195,8 @@ void setup()
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
               { request->send_P(200, "text/html", index_html); });
 
-
-
-server.on("/get-positions", HTTP_GET, [](AsyncWebServerRequest *request)
-{
+    server.on("/get-positions", HTTP_GET, [](AsyncWebServerRequest *request)
+              {
     StaticJsonDocument<256> jsonDoc;
     jsonDoc["positionX_ABS"] = formatPosition(encoder1.position - planes[currentPlaneIndex].last_ABS[0], isInchMode);
     jsonDoc["positionY_ABS"] = formatPosition(encoder2.position - planes[currentPlaneIndex].last_ABS[1], isInchMode);
@@ -1334,10 +1208,7 @@ server.on("/get-positions", HTTP_GET, [](AsyncWebServerRequest *request)
 
     String jsonString;
     serializeJson(jsonDoc, jsonString);
-    request->send(200, "application/json", jsonString);
-});
-
-
+    request->send(200, "application/json", jsonString); });
 
     server.on("/toggle-measure-mode", HTTP_GET, [](AsyncWebServerRequest *request)
               {

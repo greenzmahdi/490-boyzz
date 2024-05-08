@@ -231,12 +231,6 @@
             height: 185px;
         }
 
-
-
-
-
-
-
         .calculator-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -248,8 +242,6 @@
             grid-template-columns: repeat(2, 1fr);
             gap: px;
         }
-
-
 
         button {
             padding: 15px;
@@ -292,53 +284,7 @@
             color: white;
         }
 
-        /* Media Queries */
-
-        /* Smaller screens (tablets) */
-        @media (max-width: 768px) {
-            body {
-                flex-direction: column;
-            }
-
-            .dro-container,
-            #container,
-            #container1,
-            #container2,
-            #container3,
-            #container4,
-            #container5,
-            #container6,
-            #container7,
-            #container8,
-            #container9,
-            #container10,
-            #container11 {
-                position: relative;
-                width: 90%;
-                max-width: none;
-                margin: 10px auto;
-            }
-
-            .readout {
-                font-size: 1.2em;
-                /* Smaller font for smaller screens */
-            }
-        }
-
-        /* Very small screens (phones) */
-        @media (max-width: 480px) {
-            .readout {
-                padding: 10px;
-                font-size: 1em;
-                /* Even smaller font for phone screens */
-            }
-
-            button {
-                padding: 10px;
-                font-size: 0.8em;
-                /* Smaller buttons for easier handling */
-            }
-        }
+        
     </style>
 </head>
 
@@ -406,7 +352,6 @@
     </div>
 
 
-
     <div class="dro-container" id="container4">
         <div class="zeroSelect-grid">
             <button onclick="resetPosition('x')">Xo</button>
@@ -433,10 +378,6 @@
         </form>
     </div>
 
-
-
-
-
     <div class="dro-container" id="container6">
         <button>Process Holes Circle</button>
         <button>Process Holes Line</button>
@@ -455,11 +396,6 @@
             <button class="right-arrow"></button>
         </div>
     </div>
-
-
-
-
-
 
     <!-- Display the value of the calculator -->
     <div class="dro-container" id="container11">
@@ -518,8 +454,6 @@
             <button id="zeroAllButton" onclick="zeroAllAxis()">XYZo</button>
             <button>CA</button>
             <button>ENT</button>
-            <button onclick="resetPosition('xInc')">Abs X</button>
-            <button onclick="resetPosition('xAbs')">Inc</button>
         </div>
     </div>
 
@@ -671,13 +605,13 @@
         function toggleMode() {
             fetch("/toggle-mode")
                 .then((response) => response.text())
-                .then((data) => {
-                    // Now using 'modeIndicator' as the ID for the mode display element
-                    document.getElementById("modeIndicator").innerText = data;
-                    // updatePositions(); // Update positions if needed, otherwise you can remove this line         // off for atm
+                .then((mode) => {
+                    document.getElementById("modeIndicator").innerText = mode;
+                    updatePositions();  // Refresh display to show correct mode values
                 })
                 .catch(console.error);
         }
+
 
         function toggleMeasureMode() {
             fetch("/toggle-measure-mode")
@@ -692,47 +626,46 @@
 
         function updatePosition() {
             fetch("/get-positions")
-                .then((response) => response.json())
+                .then((response) => {
+                    if (!response.ok) throw new Error("Failed to fetch positions");
+                    return response.json();
+                })
                 .then((data) => {
+                    console.log("Received position data:", data); // Debug: log received data
                     document.getElementById("position").innerText = data.positionX;
                     document.getElementById("position2").innerText = data.positionY;
                     document.getElementById("position3").innerText = data.positionZ;
                 })
-                .catch(console.error);
+                .catch((error) => {
+                    console.error("Error fetching positions:", error);
+                });
         }
-
-        // // Call updatePosition at an interval
-        // setInterval(updatePosition, 100);  // Update every second
 
         function updatePositions() {
-            fetch("/position")
-                .then((response) => response.text())
-                .then(
-                    (data) => (document.getElementById("position").innerText = data)
-                )
-                .catch(console.error);
-
-            fetch("/position2")
-                .then((response) => response.text())
-                .then(
-                    (data) => (document.getElementById("position2").innerText = data)
-                )
-                .catch(console.error);
-
-            fetch("/position3")
-                .then((response) => response.text())
-                .then(
-                    (data) => (document.getElementById("position3").innerText = data)
-                )
-                .catch(console.error);
+            fetch("/get-positions")
+                .then(response => response.json())
+                .then(data => {
+                    const mode = document.getElementById("modeIndicator").innerText;
+                    document.getElementById("position").innerText = (mode === "ABS" && data.positionX_ABS !== undefined) ? data.positionX_ABS : data.positionX_INC;
+                    document.getElementById("position2").innerText = (mode === "ABS" && data.positionY_ABS !== undefined) ? data.positionY_ABS : data.positionY_INC;
+                    document.getElementById("position3").innerText = (mode === "ABS" && data.positionZ_ABS !== undefined) ? data.positionZ_ABS : data.positionZ_INC;
+                })
+                .catch(error => {
+                    console.error('Error fetching position data:', error);
+                    // Optionally set a default or placeholder text if there is an error
+                    document.getElementById("position").innerText = "N/A";
+                    document.getElementById("position2").innerText = "N/A";
+                    document.getElementById("position3").innerText = "N/A";
+                });
         }
+
 
         function resetPosition(axis) {
             fetch("/reset/" + axis)
                 .then((response) => {
                     if (response.ok) {
                         console.log(axis.toUpperCase() + " position reset"); // print message
-                        updatePositions(); // Refresh the positions immediately
+                        // updatePositions(); // Refresh the positions immediately
                     }
                 })
                 .catch(console.error);
@@ -867,7 +800,7 @@
         }
 
         setInterval(updatePositionsAndPlane, 1000); // Adjust interval to 1000 ms
-        setInterval(updatePosition, 50); // Call updatePositions() every 1000ms (1 second) but right now it is 50ms so stupid fast
+        setInterval(updatePositions, 50); // Call updatePositions() every 1000ms (1 second) but right now it is 50ms so stupid fast
     </script>
 </body>
 
