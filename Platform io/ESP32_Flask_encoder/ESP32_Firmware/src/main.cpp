@@ -57,22 +57,6 @@ Encoder encoder1 = {PIN_A1, PIN_B1, 0, 0, 0, 0, 0, {0}, 1};
 Encoder encoder2 = {PIN_A2, PIN_B2, 0, 0, 0, 0, 0, {0}, 1};
 Encoder encoder3 = {PIN_A3, PIN_B3, 0, 0, 0, 0, 0, {0}, 1};
 
-struct Point
-{
-    int x, y, z; // Include z if you plan to extend to 3D shapes
-
-    Point(int px, int py, int pz = 0) : x(px), y(py), z(pz) {} // Constructor for initialization
-};
-
-struct CoordinatePlane
-{
-    std::vector<Point> shapePoints; // Store points for each shape in the plane
-    int encoderValueABS[3];         // Store ABS values for X, Y, Z
-    int encoderValueINC[3];         // Store INC values for X, Y, Z
-    int last_ABS[3];                // Last ABS position for X, Y, Z
-    int last_INC[3];                // Last INC position for X, Y, Z
-};
-
 CoordinatePlane planes[12];
 
 void selectPlane(int index)
@@ -333,7 +317,7 @@ void clearPointsInPlane(int planeIndex)
     }
 }
 
-const char *h_ssid = "491-DRO-Boyyz";
+const char *h_ssid = "DRO-491";
 const char *h_password = "123456789";
 
 const int ledPin = 12;  // The GPIO pin connected to your LED strip
