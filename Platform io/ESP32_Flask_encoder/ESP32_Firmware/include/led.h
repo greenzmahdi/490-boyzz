@@ -11,4 +11,6 @@ void LEDSet(int idx, const int color[3]);
 void LEDShow();
 void LEDInit();
 
+void turnOffLEDs();
+
 #endif

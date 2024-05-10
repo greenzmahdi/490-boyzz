@@ -4,6 +4,11 @@
 
 // Number of LEDs
 const int LEDNum = 12;
+// Define LED colors as global constants
+const int LEDColorDisconnected[3] = {0, 0, 0};
+const int LEDColorPurple[3] = {128, 0, 128};
+const int LEDColorTurquoise[3] = {83, 195, 189};
+const int LEDColorPink[3] = {255, 292, 203};
 
 CRGB LEDs[LEDNum];
 
@@ -20,4 +25,15 @@ void LEDShow() {
 
 void LEDInit() {
     FastLED.addLeds<WS2812, PIN_LED, GRB>(LEDs, LEDNum);
+}
+
+void turnOffLEDs(){
+    LEDInit();
+
+    for (int i = 0; i < LEDNum; i++)
+        LEDSet(i, LEDColorDisconnected);
+
+    LEDShow();
+
+    FastLED.setBrightness(50);
 }
