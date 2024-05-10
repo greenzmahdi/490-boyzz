@@ -37,6 +37,7 @@ void setup()
 
     // setting up LEDs
     turnOffLEDs();
+    
 
     // Init OLED
     Wire.setPins(PIN_I2C_SDA, PIN_I2C_SCL);
@@ -84,7 +85,7 @@ void setup()
 
 }
 
-void loop() {} 
+void loop() {rollingPurpleLEDs();} 
 
 
 void TaskUpdateDisplay(void *pvParameters)

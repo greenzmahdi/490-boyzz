@@ -37,3 +37,24 @@ void turnOffLEDs(){
 
     FastLED.setBrightness(50);
 }
+void rollingPurpleLEDs() {
+    int delayTime = 100; // milliseconds delay between LEDs
+
+    while (true) { // Loop forever or replace true with a condition to stop when needed
+        // Move forward
+        for (int i = 0; i < LEDNum; i++) {
+            turnOffLEDs();
+            LEDSet(i, LEDColorPurple);
+            LEDShow();
+            delay(delayTime);
+        }
+
+        // Move backward
+        for (int i = LEDNum - 2; i > 0; i--) {
+            turnOffLEDs();
+            LEDSet(i, LEDColorPurple);
+            LEDShow();
+            delay(delayTime);
+        }
+    }
+}

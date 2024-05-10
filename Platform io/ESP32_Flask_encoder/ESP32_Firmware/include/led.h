@@ -12,5 +12,6 @@ void LEDShow();
 void LEDInit();
 
 void turnOffLEDs();
+void rollingPurpleLEDs();
 
 #endif
