@@ -9,14 +9,13 @@
 #include "format.h"
 #include "htmlContent.h"
 
-
-
 const char *h_ssid = "DRO-491";
 const char *h_password = "123456789";
 
 AsyncWebServer server(80);
 
-void setupAccessPoint(){
+void setupAccessPoint()
+{
     // Setting up the ESP32 as an Access Point //
     WiFi.softAP(h_ssid, h_password);
     Serial.println("Access Point Started");
@@ -24,7 +23,8 @@ void setupAccessPoint(){
     Serial.println(WiFi.softAPIP());
 }
 
-void setupWebServerRoutes(){
+void setupWebServerRoutes()
+{
     // Setting up Routes
     // Route for root web page
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
@@ -80,10 +80,9 @@ void setupWebServerRoutes(){
                 request->send(200, "text/plain", "All positions reset"); });
 
     server.on("/get-current-plane", HTTP_GET, [](AsyncWebServerRequest *request)
-{
-    request->send(200, "text/plain", String(currentPlaneIndex + 1)); // +1 to make it human-readable (1-based index)
-});
-
+              {
+                  request->send(200, "text/plain", String(currentPlaneIndex + 1)); // +1 to make it human-readable (1-based index)
+              });
 
     // Endpoint to add a point to the current plane
     server.on("/add-point", HTTP_POST, [](AsyncWebServerRequest *request)
@@ -151,4 +150,3 @@ void setupWebServerRoutes(){
 
     server.begin();
 }
-

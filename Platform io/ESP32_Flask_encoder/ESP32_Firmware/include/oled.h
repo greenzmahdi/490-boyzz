@@ -19,12 +19,8 @@ void LCDScreenClear();
 void LCDInit();
 
 void drawGrid();
-
 void drawPoint(int x, int y);
-
 void updateDisplayWithPoints();
-
-//
 void drawPointOnOLED(int x, int y);
 void refreshAndDrawPoints();
 

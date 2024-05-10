@@ -49,12 +49,10 @@ void handleMenuNavigation()
         if (ButtonLeftPressed() && !ButtonStatesPrev[0])
         {
             previousPlane();
-            // updateDisplayContent();  // Show updated plane information
         }
         else if (ButtonRightPressed() && !ButtonStatesPrev[4])
         {
             nextPlane();
-            // updateDisplayContent();  // Show updated plane information
         }
         else if (ButtonCenterPressed() && !ButtonStatesPrev[1])
         {
@@ -68,12 +66,10 @@ void handleMenuNavigation()
         if (ButtonLeftPressed() && !ButtonStatesPrev[0])
         {
             previousPlane();
-            // updateDisplayContent();  // Show updated plane information
         }
         else if (ButtonRightPressed() && !ButtonStatesPrev[4])
         {
             nextPlane();
-            // updateDisplayContent();  // Show updated plane information
         }
         else if (ButtonCenterPressed() && !ButtonStatesPrev[1])
         {
@@ -102,9 +98,6 @@ void updateDisplayContent()
         break;
 
     case TWO_AXIS:
-        // // Display the X and Y axes for the two-axis mode
-        // displayAxisValues(0, 0); // X-axis
-        // displayAxisValues(1, 16); // Y-axis
         refreshAndDrawPoints();
         drawGrid();
         LCDTextDraw(0, 50, "> return ", 1, WHITE, BLACK); // Return option

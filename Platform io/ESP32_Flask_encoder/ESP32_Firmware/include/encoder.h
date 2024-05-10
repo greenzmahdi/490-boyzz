@@ -4,11 +4,11 @@
 #include <AccelStepper.h>
 
 #define ENCODER_HISTORY_SIZE 4
-#define SPEED_THRESHOLD 0.01 // Example threshold, adjust based on your application
+#define SPEED_THRESHOLD 0.01         // Example threshold, adjust based on your application
 #define POSITION_CHANGE_HIGH_SPEED 2 // needs to be tuned
-#define POSITION_CHANGE_LOW_SPEED 1 // needs to be tuned 
+#define POSITION_CHANGE_LOW_SPEED 1  // needs to be tuned
 
-  struct Encoder
+struct Encoder
 {
   const uint8_t pinA;
   const uint8_t pinB;
@@ -17,7 +17,7 @@
   volatile int positionABS;
   volatile int lastEncoded;
   volatile unsigned long lastInterruptTime;
-  unsigned long pulseTimes[ENCODER_HISTORY_SIZE]; 
+  unsigned long pulseTimes[ENCODER_HISTORY_SIZE];
   unsigned long debounceDelay;
   float speed;
   int direction;

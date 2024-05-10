@@ -37,28 +37,22 @@ void LCDInit()
 
 void LCDLineDraw(int x0, int y0, int x1, int y1, uint16_t color) {
     LCD.drawLine(x0, y0, x1, y1, color);
-    // LCD.display(); // Update the display to reflect changes
 }
 
 void LCDCircleFill(int x, int y, int radius, uint16_t color) {
     LCD.fillCircle(x, y, radius, color);
-    // LCD.display(); // Update the display to reflect changes
 }
-
-
-
 
 void drawGrid() {
     // Draw horizontal and vertical axis
     LCDLineDraw(SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT, WHITE);  // Vertical
     LCDLineDraw(0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2, WHITE);  // Horizontal
 
-    // Optionally, add scale marks on axes
 }
 
 void drawPoint(int x, int y) {
     // Convert real coordinates to display coordinates
-    int displayX = (x * scaleFactor) + (SCREEN_WIDTH / 2);  // Assuming zero is at the center
+    int displayX = (x * scaleFactor) + (SCREEN_WIDTH / 2);  
     int displayY = (SCREEN_HEIGHT / 2) - (y * scaleFactor);
 
     // Draw point
