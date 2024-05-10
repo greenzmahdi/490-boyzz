@@ -17,4 +17,7 @@ extern const char *MenuOptions[];
 extern const char *MenuDroItems[];
 extern const char *SinoAxis[];
 extern const char *ToAutoAxis[];
+
+void handleMenuNavigation();
+void updateDisplayContent();
 #endif

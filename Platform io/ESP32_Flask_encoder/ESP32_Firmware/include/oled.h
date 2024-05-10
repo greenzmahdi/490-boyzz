@@ -7,6 +7,8 @@
 #define SCREEN_HEIGHT 64 // OLED display height
 #define scaleFactor 2
 
+extern int CHAR_WIDTH;
+
 #define maxX 123
 #define maxY 59
 

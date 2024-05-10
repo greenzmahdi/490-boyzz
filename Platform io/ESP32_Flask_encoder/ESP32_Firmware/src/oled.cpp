@@ -3,6 +3,7 @@
 #include <Adafruit_SSD1306.h>
 #include "oled.h"
 
+int CHAR_WIDTH = 6;   
 
 // OLED setup
 Adafruit_SSD1306 LCD(128, 64, &Wire);

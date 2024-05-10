@@ -7,6 +7,11 @@ bool isInchMode = true;
 float factor_mm = 0.01;        // 0.01 mm per pulse
 float factor_inch = 0.0003937; // Accurate conversion to maintain equivalence
 
+void toggleMeasurementMode()
+{
+    isInchMode = !isInchMode;
+}
+
 // Function to format position to fixed decimal places
 String formatPosition(float pulses, bool isInchMode)
 {

@@ -3,6 +3,9 @@
 
 #include <vector>
 
+extern int currentPlaneIndex; // Keep track of the current plane index
+extern bool isABSMode;     // Start in ABS mode
+
 struct Point
 {
     int x, y, z; // Include z if you plan to extend to 3D shapes
@@ -19,5 +22,28 @@ struct CoordinatePlane
     int last_INC[3];                // Last INC position for X, Y, Z
 };
 
+extern CoordinatePlane planes[12];
 
+void selectPlane(int index);
+
+void nextPlane();
+void previousPlane();
+void addCurrentPositionToPoint();
+void resetEncoderValue(int encoderIndex);
+// Helper function to format and display axis values based on current settings
+void displayAxisValues(int axis, int yPosition);
+void toggleMode();
+
+void updateDisplayWithPoints();
+
+void refreshAndDrawPoints();
+
+void addPointToCurrentPlane(int x, int y, int z);
+
+// Functions have not been implemented //
+void removeLastPointFromCurrentPlane(int planeIndex);
+
+void displayCurrentPoints(int planeIndex);
+
+void clearPointsInPlane(int planeIndex);
 #endif

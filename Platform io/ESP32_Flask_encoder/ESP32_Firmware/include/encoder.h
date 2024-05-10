@@ -23,6 +23,11 @@
   int direction;
 };
 
+// Initializing encoders attributes and setting their start (refer to encoder struct to see all parameters)
+extern Encoder encoder1;
+extern Encoder encoder2;
+extern Encoder encoder3;
+
 unsigned long average(unsigned long arr[], int numElements);
 unsigned long standardDeviation(unsigned long arr[], int numElements, unsigned long mean);
 void updatePulseTimes(Encoder *encoder, unsigned long pulseTime);
@@ -35,5 +40,8 @@ void IRAM_ATTR handleEncoderInterrupt(Encoder *encoder);
 float pulsesToDegrees(long pulses);
 float pulsesToDistanceInches(long pulses);
 
+void IRAM_ATTR handleEncoder1Interrupt();
+void IRAM_ATTR handleEncoder2Interrupt();
+void IRAM_ATTR handleEncoder3Interrupt();
 
 #endif

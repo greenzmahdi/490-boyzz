@@ -14,4 +14,5 @@ extern float factor_inch;
 // Function to format position to fixed decimal places
 String formatPosition(float pulses, bool isInchMode);
 
+void toggleMeasurementMode();
 #endif
