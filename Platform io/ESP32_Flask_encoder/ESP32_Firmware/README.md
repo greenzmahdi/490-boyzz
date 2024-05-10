@@ -14,6 +14,7 @@ This project is a collaborative effort by Randy, Gabe, and Mahdi at CSUN during 
 - Wireless connectivity allowing remote monitoring and control via a web interface.
 
 ## Design of GUI
+
 The GUI emulates an actual TOAUTO Digital Readout, including features essential for precise machining tasks. It updates the encoder or lathe's position at regular intervals through GET requests to the ESP32. The interface includes:
 - Plane indicators for up to 12 different planes.
 - ABS/INC toggle for absolute or relative coordinate display.
@@ -52,8 +53,8 @@ Access the ESP32 web server using a web browser by connecting to the ESP32’s W
 
 ## Contributors
 - **Gabriel Sosa** 
-- **Randy Herrea** 
-- **Mahdi** 
+- **Mahdi Mazloumi** 
+- **Randy Herrera** 
 
 ## Acknowledgments
 Special thanks to Professor Jeffrey Wiegley for his guidance and support throughout the project and providing the resources necessary for this project.
